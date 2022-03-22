@@ -12,8 +12,9 @@
     },
     "version": "2.3.7-p2",
     "require": {
+        "magento/composer-root-update-plugin": "~1.1",
         "magento/product-community-edition": "2.3.7-p2",
-        "magento/composer-root-update-plugin": "~1.1"
+        "mageplaza/magento-2-blog-extension": "2.6.2"
     },
     "autoload": {
         "exclude-from-classmap": [
@@ -67,12 +68,16 @@
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
-    "repositories": [
-        {
+    "repositories": {
+        "grin": {
+            "type": "vcs",
+            "url": "git@github.com:grininc/grin-magento-module.git"
+        },
+        "0": {
             "type": "composer",
             "url": "https://repo.magento.com/"
         }
-    ],
+    },
     "extra": {
         "magento-force": "override"
     }
