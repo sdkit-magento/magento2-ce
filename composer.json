@@ -8,12 +8,20 @@
     ],
     "config": {
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "magento/magento-composer-installer": true,
+            "magento/inventory-composer-installer": true,
+            "laminas/laminas-dependency-plugin": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "magento/composer-root-update-plugin": true
+        }
     },
     "version": "2.3.7-p2",
     "require": {
-        "magento/composer-root-update-plugin": "~1.1",
-        "magento/product-community-edition": "2.3.7-p2",
+        "avalara/avatax-magento": "2.2.4",
+        "magento/composer-root-update-plugin": "~1.1.2",
+        "magento/product-community-edition": "2.3.7-p4",
         "mageplaza/magento-2-blog-extension": "2.6.2"
     },
     "autoload": {
