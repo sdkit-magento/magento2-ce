@@ -9,17 +9,20 @@ namespace Magento\AdobeStockImageAdminUi\Controller\Adminhtml\Preview;
 
 use Magento\AdobeStockImageApi\Api\GetRelatedImagesInterface;
 use Magento\Backend\App\Action;
+use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Controller\ResultFactory;
-use Psr\Log\LoggerInterface;
+use Magento\Framework\Exception\AuthenticationException;
 
 /**
- * Class RelatedImages
+ * Controller providing related images (same model and same series) for the provided Adobe Stock asset id
  */
-class RelatedImages extends Action
+class RelatedImages extends Action implements HttpGetActionInterface
 {
     private const HTTP_OK = 200;
     private const HTTP_INTERNAL_ERROR = 500;
+    private const IMAGE_ID = 'image_id';
+    private const LIMIT = 'limit';
 
     /**
      * @see _isAllowed()
@@ -32,25 +35,17 @@ class RelatedImages extends Action
     private $getRelatedImages;
 
     /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    /**
      * RelatedImages constructor.
      *
      * @param Action\Context $context
      * @param GetRelatedImagesInterface $getRelatedImages
-     * @param LoggerInterface $logger
      */
     public function __construct(
         Action\Context $context,
-        GetRelatedImagesInterface $getRelatedImages,
-        LoggerInterface $logger
+        GetRelatedImagesInterface $getRelatedImages
     ) {
         parent::__construct($context);
         $this->getRelatedImages = $getRelatedImages;
-        $this->logger = $logger;
     }
     /**
      * @inheritdoc
@@ -58,20 +53,37 @@ class RelatedImages extends Action
     public function execute()
     {
         try {
-            $params = $params = $this->getRequest()->getParams();
-            $imageId = (int) $params['image_id'];
-            $limit = (int) ($params['limit'] ?? 4);
+            $params = $this->getRequest()->getParams();
+            $imageId = (int) $params[self::IMAGE_ID];
+            $limit = (int) ($params[self::LIMIT] ?? 4);
             $relatedImages = $this->getRelatedImages->execute($imageId, $limit);
 
             $responseCode = self::HTTP_OK;
             $responseContent = [
                 'success' => true,
                 'message' => __('Get related images finished successfully'),
-                'result' => $relatedImages,
+                'result' => $relatedImages
+            ];
+        } catch (AuthenticationException $exception) {
+            $responseCode = self::HTTP_INTERNAL_ERROR;
+            $responseContent = [
+                'success' => false,
+                'message' => __(
+                    'Failed to authenticate to Adobe Stock API. <br> Please correct the API credentials in '
+                    . '<a href="%url">Configuration → System → Adobe Stock Integration.</a>',
+                    [
+                        'url' => $this->getUrl(
+                            'adminhtml/system_config/edit',
+                            [
+                                'section' => 'system',
+                                '_fragment' => 'system_adobe_stock_integration-link'
+                            ]
+                        )
+                    ]
+                )
             ];
         } catch (\Exception $exception) {
             $responseCode = self::HTTP_INTERNAL_ERROR;
-            $this->logger->critical($exception);
             $responseContent = [
                 'success' => false,
                 'message' => __('An error occurred on attempt to fetch related images.'),

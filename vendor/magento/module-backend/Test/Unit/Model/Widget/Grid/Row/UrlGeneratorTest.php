@@ -3,19 +3,29 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Backend\Test\Unit\Model\Widget\Grid\Row;
 
-class UrlGeneratorTest extends \PHPUnit\Framework\TestCase
+use Magento\Backend\Model\Url;
+use Magento\Backend\Model\Widget\Grid\Row\UrlGenerator;
+use Magento\Framework\DataObject;
+use PHPUnit\Framework\TestCase;
+
+class UrlGeneratorTest extends TestCase
 {
     public function testGetUrl()
     {
         $itemId = 3;
         $urlPath = 'mng/item/edit';
 
-        $itemMock = $this->createPartialMock(\Magento\Framework\DataObject::class, ['getItemId']);
+        $itemMock = $this->getMockBuilder(DataObject::class)
+            ->addMethods(['getItemId'])
+            ->disableOriginalConstructor()
+            ->getMock();
         $itemMock->expects($this->once())->method('getItemId')->willReturn($itemId);
 
-        $urlModelMock = $this->createMock(\Magento\Backend\Model\Url::class);
+        $urlModelMock = $this->createMock(Url::class);
         $urlModelMock->expects(
             $this->once()
         )->method(
@@ -24,7 +34,7 @@ class UrlGeneratorTest extends \PHPUnit\Framework\TestCase
             'http://localhost/' . $urlPath . '/flag/1/item_id/' . $itemId
         );
 
-        $model = new \Magento\Backend\Model\Widget\Grid\Row\UrlGenerator(
+        $model = new UrlGenerator(
             $urlModelMock,
             [
                 'path' => $urlPath,

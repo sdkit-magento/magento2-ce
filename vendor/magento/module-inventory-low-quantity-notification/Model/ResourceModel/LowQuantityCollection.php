@@ -16,6 +16,7 @@ use Magento\Framework\Data\Collection\EntityFactoryInterface;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\EntityManager\MetadataPool;
 use Magento\Framework\Event\ManagerInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
 use Magento\Framework\Model\ResourceModel\Db\Collection\AbstractCollection;
 use Magento\Inventory\Model\ResourceModel\Source;
@@ -29,8 +30,6 @@ use Magento\Store\Model\Store;
 use Psr\Log\LoggerInterface;
 
 /**
- * Low quantity report collection.
- *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class LowQuantityCollection extends AbstractCollection
@@ -121,7 +120,18 @@ class LowQuantityCollection extends AbstractCollection
      */
     public function addStoreFilter(int $storeId)
     {
-        $this->filterStoreId = $storeId;
+        $this->filterStoreId = $storeId ? [$storeId] : $storeId;
+    }
+
+    /**
+     * Set store ids to filter.
+     *
+     * @param array $storeIds
+     * @return void
+     */
+    public function addStoresFilter(array $storeIds)
+    {
+        $this->filterStoreId = $storeIds;
     }
 
     /**
@@ -137,6 +147,7 @@ class LowQuantityCollection extends AbstractCollection
             $this->addNotifyStockQtyFilter();
             $this->addEnabledSourceFilter();
             $this->addSourceItemInStockFilter();
+            $this->addSourceItemStoreFilter();
         }
         return parent::_renderFilters();
     }
@@ -156,6 +167,7 @@ class LowQuantityCollection extends AbstractCollection
      * JoinCatalogProduct depends on dynamic condition 'filterStoreId'
      *
      * @return void
+     * @throws NoSuchEntityException
      */
     private function joinCatalogProduct(): void
     {
@@ -190,11 +202,22 @@ class LowQuantityCollection extends AbstractCollection
         );
 
         if (null !== $this->filterStoreId) {
+            $productEavVarcharCondition = [
+                'product_entity_varchar_store.' . $linkField . ' = product_entity.' . $linkField,
+                $this->getConnection()->quoteInto(
+                    'product_entity_varchar_store.store_id IN (?)',
+                    $this->filterStoreId,
+                    \Zend_Db::INT_TYPE
+                ),
+                $this->getConnection()->quoteInto(
+                    'product_entity_varchar_store.attribute_id = ?',
+                    (int)$nameAttribute->getAttributeId(),
+                    \Zend_Db::INT_TYPE
+                )
+            ];
             $this->getSelect()->joinLeft(
                 ['product_entity_varchar_store' => $productEavVarcharTable],
-                'product_entity_varchar_store.' . $linkField . ' = product_entity.' . $linkField . ' ' .
-                'AND product_entity_varchar_store.store_id = ' . (int)$this->filterStoreId . ' ' .
-                'AND product_entity_varchar_store.attribute_id = ' . (int)$nameAttribute->getAttributeId(),
+                join(' AND ', $productEavVarcharCondition),
                 [
                     'product_name' => $this->getConnection()->getIfNullSql(
                         'product_entity_varchar_store.value',
@@ -202,11 +225,23 @@ class LowQuantityCollection extends AbstractCollection
                     ),
                 ]
             );
+
+            $productEavIntCondition = [
+                'product_entity_int_store.' . $linkField . ' = product_entity.' . $linkField,
+                $this->getConnection()->quoteInto(
+                    'product_entity_int_store.attribute_id = ?',
+                    (int)$statusAttribute->getAttributeId(),
+                    \Zend_Db::INT_TYPE
+                ),
+                $this->getConnection()->quoteInto(
+                    'product_entity_int_store.store_id IN (?)',
+                    $this->filterStoreId,
+                    \Zend_Db::INT_TYPE
+                )
+            ];
             $this->getSelect()->joinLeft(
                 ['product_entity_int_store' => $productEavIntTable],
-                'product_entity_int_store.' . $linkField . ' = product_entity.' . $linkField . ' ' .
-                'AND product_entity_int_store.attribute_id = ' . (int)$statusAttribute->getAttributeId()
-                . ' AND product_entity_int_store.store_id = ' . $this->filterStoreId,
+                join(' AND ', $productEavIntCondition),
                 []
             )->where(
                 $this->getConnection()->getIfNullSql(
@@ -301,8 +336,49 @@ class LowQuantityCollection extends AbstractCollection
     private function addSourceItemInStockFilter(): void
     {
         $condition = '(' . SourceItemInterface::QUANTITY . ' > 0 AND main_table.status = ' .
-            SourceItemInterface::STATUS_IN_STOCK . ') OR
-            (' . SourceItemInterface::QUANTITY . ' = 0)';
+            SourceItemInterface::STATUS_IN_STOCK . ')';
         $this->getSelect()->where($condition);
+    }
+
+    /**
+     * Filter source items by store if provided.
+     *
+     * @return void
+     */
+    private function addSourceItemStoreFilter(): void
+    {
+        if ($this->filterStoreId === null) {
+            return;
+        }
+
+        $storeCondition = [
+            'store.website_id = website.website_id',
+            $this->getConnection()->quoteInto(
+                'store.store_id IN (?)',
+                $this->filterStoreId,
+                \Zend_Db::INT_TYPE
+            )
+        ];
+        $this->getSelect()->joinInner(
+            ['source_stock_link' => $this->getTable('inventory_source_stock_link')],
+            'source_stock_link.source_code = inventory_source.source_code',
+            []
+        )->joinInner(
+            ['stock' => $this->getTable('inventory_stock')],
+            'stock.stock_id = source_stock_link.stock_id',
+            []
+        )->joinInner(
+            ['sales_channel' => $this->getTable('inventory_stock_sales_channel')],
+            'sales_channel.stock_id = stock.stock_id',
+            []
+        )->joinInner(
+            ['website' => $this->getTable('store_website')],
+            'website.code = sales_channel.code and sales_channel.type = "website"',
+            []
+        )->joinInner(
+            ['store' => $this->getTable('store')],
+            join(' AND ', $storeCondition),
+            []
+        );
     }
 }

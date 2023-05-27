@@ -18,6 +18,7 @@ use Magento\Sitemap\Model\EmailNotification;
 use Magento\Sitemap\Model\Observer;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\Store;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -36,25 +37,28 @@ class EmailNotificationTest extends TestCase
     private $model;
 
     /**
-     * @var ScopeConfigInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var ScopeConfigInterface|MockObject
      */
     private $scopeConfigMock;
 
     /**
-     * @var TransportBuilder|\PHPUnit\Framework\MockObject\MockObject
+     * @var TransportBuilder|MockObject
      */
     private $transportBuilderMock;
 
     /**
-     * @var StateInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var StateInterface|MockObject
      */
     private $inlineTranslationMock;
 
     /**
-     * @var ObjectManagerInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var ObjectManagerInterface|MockObject
      */
     private $objectManagerMock;
 
+    /**
+     * @inheritDoc
+     */
     protected function setUp(): void
     {
         $this->objectManagerMock = $this->getMockBuilder(ObjectManagerInterface::class)
@@ -73,51 +77,46 @@ class EmailNotificationTest extends TestCase
             [
                 'inlineTranslation' => $this->inlineTranslationMock,
                 'scopeConfig' => $this->scopeConfigMock,
-                'transportBuilder' => $this->transportBuilderMock,
+                'transportBuilder' => $this->transportBuilderMock
             ]
         );
     }
 
-    public function testSendErrors()
+    /**
+     * @return void
+     */
+    public function testSendErrors(): void
     {
         $exception = 'Sitemap Exception';
         $transport = $this->getMockForAbstractClass(TransportInterface::class);
 
-        $this->scopeConfigMock->expects($this->at(0))
+        $this->scopeConfigMock
             ->method('getValue')
-            ->with(
-                Observer::XML_PATH_ERROR_TEMPLATE,
-                ScopeInterface::SCOPE_STORE
-            )
-            ->willReturn('error-recipient@example.com');
+            ->withConsecutive([Observer::XML_PATH_ERROR_TEMPLATE, ScopeInterface::SCOPE_STORE])
+            ->willReturn(['error-recipient@example.com']);
 
         $this->inlineTranslationMock->expects($this->once())
             ->method('suspend');
 
         $this->transportBuilderMock->expects($this->once())
-            ->method('setTemplateIdentifier')
-            ->willReturnSelf();
+            ->method('setTemplateIdentifier')->willReturnSelf();
 
         $this->transportBuilderMock->expects($this->once())
             ->method('setTemplateOptions')
             ->with([
                 'area' => FrontNameResolver::AREA_CODE,
                 'store' => Store::DEFAULT_STORE_ID,
-            ])
-            ->willReturnSelf();
+            ])->willReturnSelf();
 
         $this->transportBuilderMock->expects($this->once())
             ->method('setTemplateVars')
-            ->with(['warnings' => $exception])
-            ->willReturnSelf();
+            ->with(['warnings' => $exception])->willReturnSelf();
 
         $this->transportBuilderMock->expects($this->once())
-            ->method('setFrom')
-            ->willReturnSelf();
+            ->method('setFrom')->willReturnSelf();
 
         $this->transportBuilderMock->expects($this->once())
-            ->method('addTo')
-            ->willReturnSelf();
+            ->method('addTo')->willReturnSelf();
 
         $this->transportBuilderMock->expects($this->once())
             ->method('getTransport')

@@ -4,7 +4,7 @@
  * See COPYING.txt for license details.
  */
 
-//phpcs:disable
+// @codingStandardsIgnoreStart
 /**
  * Script to operate on a test suite defined in a phpunit configuration xml or xml.dist file; split the tests
  * in the suite into groups by required size; return total number of groups or generate phpunit_<index>.xml file
@@ -55,7 +55,7 @@ See https://www.php.net/manual/en/function.getopt.php
 
 USAGE
 );
-//phpcs:enable
+// @codingStandardsIgnoreEnd
 
 $options = getopt(
     '',
@@ -89,7 +89,7 @@ try {
         $generateConfig = false;
     } else {
         assertUsage(
-            (empty($options['get-group']) || !ctype_digit($options['get-group']))
+            (empty($options['get-group']) || !(is_string($options['get-group']) && ctype_digit($options['get-group'])))
             && strtolower($options['get-group']) != 'all',
             "Option --get-group: must be a positive integer or 'all'\n"
         );
@@ -121,9 +121,9 @@ try {
     );
 
     if (!$generateConfig) {
-        // phpcs:ignore Magento2.Security.LanguageConstruct.DirectOutput
-        echo $totalGroups;
-        // phpcs:ignore Magento2.Security.LanguageConstruct.ExitUsage
+        //phpcs:ignore Magento2.Security.LanguageConstruct
+        print $totalGroups;
+        //phpcs:ignore Magento2.Security.LanguageConstruct
         exit(0);
     }
 
@@ -152,12 +152,13 @@ try {
         createGroupConfig($configFile, $groupConfigFile, $groupTests, $index);
         $successMsg .= "{$groupConfigFile}, group: {$index}, test suite: group_{$index}\n";
     }
-    // phpcs:ignore Magento2.Security.LanguageConstruct.DirectOutput
-    echo $successMsg;
+    //phpcs:ignore Magento2.Security.LanguageConstruct
+    print $successMsg;
+
 } catch (Exception $e) {
-    // phpcs:ignore Magento2.Security.LanguageConstruct.DirectOutput
-    echo $e->getMessage();
-    // phpcs:ignore Magento2.Security.LanguageConstruct.ExitUsage
+    //phpcs:ignore Magento2.Security.LanguageConstruct
+    print $e->getMessage();
+    //phpcs:ignore Magento2.Security.LanguageConstruct
     exit(1);
 }
 
@@ -168,6 +169,7 @@ try {
  * @param string  $out
  * @param array   $group
  * @param integer $index
+ *
  * @return void
  * @throws Exception
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
@@ -235,10 +237,12 @@ function getFormattedGroup($group, $index)
  *
  * @param string $configFile
  * @param string $suiteName
+ *
  * @return array
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
- * phpcs:disable Generic.Metrics.NestingLevel
+ * @phpcs:disable Generic.Metrics.NestingLevel
+ * @phpcs:disable Generic.Metrics.CyclomaticComplexity
  */
 function getTestList($configFile, $suiteName)
 {
@@ -286,7 +290,6 @@ function getTestList($configFile, $suiteName)
     sort($testCases);
     return $testCases;
 }
-//phpcs:enable Generic.Metrics.NestingLevel
 
 /**
  * Determine if a file contains an abstract class

@@ -36,7 +36,7 @@
                 <requiredEntity createDataKey="createCategory"/>
             </createData>
             <createData entity="Msi_US_Customer" stepKey="createCustomer"/>
-            <actionGroup ref="LoginAsAdmin" stepKey="loginToAdminArea"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="loginToAdminArea"/>
             <waitForPageLoad stepKey="waitForDashboardLoad"/>
 
             <comment userInput="Assign created source to stock." stepKey="assignSourceToStock"/>
@@ -71,7 +71,7 @@
                 <argument name="sourceCode" value="$$createSource.source[source_code]$$"/>
             </actionGroup>
             <fillField selector="{{AdminProductSourcesGrid.rowQty('0')}}" userInput="1000" stepKey="fillTestSourceQtyField"/>
-            <actionGroup ref="AdminFormSaveAndClose" stepKey="saveAndCloseProductForm"/>
+            <actionGroup ref="AdminFormSaveAndCloseActionGroup" stepKey="saveAndCloseProductForm"/>
         </before>
         <after>
             <comment userInput="Revert config 'Only X left Threshold' changes." stepKey="revertConfigChangesComment"/>
@@ -97,11 +97,12 @@
                 <argument name="sourceCode" value="$$createSource.source[source_code]$$"/>
             </actionGroup>
 
-            <actionGroup ref="logout" stepKey="logoutFromAdminArea"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logoutFromAdminArea"/>
             <deleteData createDataKey="createCategory" stepKey="deleteCategory"/>
             <deleteData createDataKey="createSimpleProduct" stepKey="deleteProduct"/>
             <deleteData createDataKey="createCustomer" stepKey="deleteCustomer"/>
             <deleteData createDataKey="createStock" stepKey="deleteStock"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </after>
 
         <comment userInput="Customer login to storefront." stepKey="customerLoginToStorefrontComment"/>
@@ -110,7 +111,7 @@
         </actionGroup>
 
         <comment userInput="Add product to cart" stepKey="addProductToCartComment"/>
-        <amOnPage url="{{StorefrontCategoryPage.url($$createCategory.name$$)}}" stepKey="navigateToCategory"/>
+        <amOnPage url="{{StorefrontCategoryPage.url($$createCategory.custom_attributes[url_key]$$)}}" stepKey="navigateToCategory"/>
         <waitForPageLoad time="30" stepKey="waitForPageLoad1"/>
         <click selector="{{StorefrontCategoryMainSection.specifiedProductItemInfo($$createSimpleProduct.product[name]$$)}}" stepKey="openProductPage"/>
         <waitForPageLoad time="30" stepKey="waitForPageLoad2"/>
@@ -123,17 +124,17 @@
         <waitForPageLoad time="30" stepKey="waitForPageLoad5"/>
         <click selector="{{CheckoutShippingMethodsSection.firstShippingMethod}}" stepKey="selectShippingMethod"/>
         <waitForPageLoad time="30" stepKey="waitForPageLoad6"/>
-        <click selector="{{CheckoutShippingMethodsSection.next}}" stepKey="navigateToSecondCheckoutStep"/>
-        <waitForPageLoad time="30" stepKey="waitForPageLoad7"/>
+        <actionGroup ref="StorefrontCheckoutClickNextButtonActionGroup" stepKey="navigateToSecondCheckoutStep"/>
+        <comment userInput="BIC workaround" stepKey="waitForPageLoad7"/>
         <actionGroup ref="CheckoutSelectCheckMoneyOrderPaymentActionGroup" stepKey="selectCheckMoneyOrderPayment"/>
-        <waitForPageLoad time="30" stepKey="waitForPageLoad8"/>
+        <comment userInput="BIC workaround" stepKey="waitForPageLoad8"/>
         <see selector="{{CheckoutPaymentSection.billingAddress}}" userInput="{{US_Address_TX.street[0]}}" stepKey="chooseBillingAddress"/>
-        <click selector="{{CheckoutPaymentSection.placeOrder}}" stepKey="placeOrder"/>
-        <waitForPageLoad time="30" stepKey="waitForPageLoad9"/>
+        <actionGroup ref="ClickPlaceOrderActionGroup" stepKey="placeOrder"/>
+        <comment userInput="BIC workaround" stepKey="waitForPageLoad9"/>
         <see selector="{{CheckoutSuccessMainSection.success}}" userInput="Your order number is:" stepKey="checkOrderPlaceSuccessMessage"/>
 
         <comment userInput="Verify that message 'Only 500 left' appeared on product page on frontend." stepKey="verifyMessageIsDisplayedComment"/>
-        <amOnPage url="{{StorefrontCategoryPage.url($$createCategory.name$$)}}" stepKey="navigateToCategoryForVerifyMessage"/>
+        <amOnPage url="{{StorefrontCategoryPage.url($$createCategory.custom_attributes[url_key]$$)}}" stepKey="navigateToCategoryForVerifyMessage"/>
         <waitForPageLoad time="30" stepKey="waitForPageLoad10"/>
         <click selector="{{StorefrontCategoryMainSection.specifiedProductItemInfo(SimpleProduct.name)}}" stepKey="openProductPageForVerifyMessage"/>
         <waitForPageLoad time="30" stepKey="waitForPageLoad11"/>

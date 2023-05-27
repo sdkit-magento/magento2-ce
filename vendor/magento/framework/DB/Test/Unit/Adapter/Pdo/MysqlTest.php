@@ -28,6 +28,8 @@ use PHPUnit\Framework\TestCase;
  */
 class MysqlTest extends TestCase
 {
+    public const CUSTOM_ERROR_HANDLER_MESSAGE = 'Custom error handler message';
+
     /**
      * @var SelectFactory|MockObject
      */
@@ -146,19 +148,15 @@ class MysqlTest extends TestCase
      */
     public function testCheckDdlTransaction($ddlQuery)
     {
-        $this->expectException(\Exception::class);
+        $this->expectException('Exception');
         $this->expectExceptionMessage('DDL statements are not allowed in transactions');
-
         $this->getMysqlPdoAdapterMockForDdlQueryTest()->query($ddlQuery);
     }
 
-    /**
-     */
     public function testMultipleQueryException()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException('Magento\Framework\Exception\LocalizedException');
         $this->expectExceptionMessage('Multiple queries can\'t be executed. Run a single query and try again.');
-
         $sql = "SELECT COUNT(*) AS _num FROM test; ";
         $sql .= "INSERT INTO test(id) VALUES (1); ";
         $sql .= "SELECT COUNT(*) AS _num FROM test; ";
@@ -325,7 +323,7 @@ class MysqlTest extends TestCase
             $adapter->rollBack();
             $adapter->commit();
             throw new \Exception('Test Failed!');
-        } catch (\Exception $e) {//phpcs:ignore
+        } catch (\Exception $e) {
             $this->assertEquals(
                 AdapterInterface::ERROR_ROLLBACK_INCOMPLETE_MESSAGE,
                 $e->getMessage()
@@ -349,7 +347,7 @@ class MysqlTest extends TestCase
             $adapter->rollBack();
             $adapter->beginTransaction();
             throw new \Exception('Test Failed!');
-        } catch (\Exception $e) {//phpcs:ignore
+        } catch (\Exception $e) {
             $this->assertEquals(
                 AdapterInterface::ERROR_ROLLBACK_INCOMPLETE_MESSAGE,
                 $e->getMessage()
@@ -428,7 +426,7 @@ class MysqlTest extends TestCase
         );
         $adapter->expects($this->any())->method('getSchemaListener')->willReturn($this->schemaListenerMock);
         $adapter->expects($this->any())->method('_getTableName')->willReturnArgument(0);
-        $adapter->expects($this->any())->method('quote')->willReturnArgument(0);
+        $adapter->expects($this->any())->method('quote')->willReturnOnConsecutiveCalls('', 'Some field');
         $adapter->expects($this->once())->method('rawQuery')->with($expectedQuery);
         $adapter->addColumn('tableName', 'columnName', $options);
     }
@@ -492,15 +490,12 @@ class MysqlTest extends TestCase
         $this->assertInstanceOf(Mysql::class, $subject);
     }
 
-    /**
-     */
     public function testConfigValidationByPortWithException()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException('InvalidArgumentException');
         $this->expectExceptionMessage(
             'Port must be configured within host (like \'localhost:33390\') parameter, not within port'
         );
-
         (new ObjectManager($this))->getObject(
             Mysql::class,
             ['config' => ['host' => 'localhost', 'port' => '33390']]

@@ -8,8 +8,9 @@ declare(strict_types=1);
 use Magento\Quote\Api\CartManagementInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
-require __DIR__ . '/../../Checkout/_files/customer_quote_ready_for_order.php';
+Resolver::getInstance()->requireDataFixture('Magento/Checkout/_files/customer_quote_ready_for_order.php');
 
 $objectManager = Bootstrap::getObjectManager();
 /** @var CartRepositoryInterface $quoteRepository */

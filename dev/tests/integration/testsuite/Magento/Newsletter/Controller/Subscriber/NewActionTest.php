@@ -7,13 +7,15 @@ declare(strict_types=1);
 
 namespace Magento\Newsletter\Controller\Subscriber;
 
-use Laminas\Stdlib\Parameters;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Model\Session;
+use Magento\Customer\Model\Url;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Newsletter\Model\ResourceModel\Subscriber as SubscriberResource;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
+use Magento\Newsletter\Model\ResourceModel\Subscriber\Grid\Collection as GridCollection;
 use Magento\TestFramework\TestCase\AbstractController;
+use Laminas\Stdlib\Parameters;
 
 /**
  * Class checks subscription behaviour from frontend
@@ -38,6 +40,9 @@ class NewActionTest extends AbstractController
     /** @var CustomerRepositoryInterface */
     private $customerRepository;
 
+    /** @var Url */
+    private $customerUrl;
+
     /**
      * @inheritdoc
      */
@@ -49,6 +54,7 @@ class NewActionTest extends AbstractController
         $this->subscriberCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
         $this->subscriberResource = $this->_objectManager->get(SubscriberResource::class);
         $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
+        $this->customerUrl = $this->_objectManager->get(Url::class);
     }
 
     /**
@@ -102,15 +108,31 @@ class NewActionTest extends AbstractController
 
     /**
      * @magentoDataFixture Magento/Customer/_files/new_customer.php
+     * @dataProvider emailAndStatusDataProvider
      *
      * @return void
      */
-    public function testNewActionUsedEmail(): void
+    public function testNewActionUsedEmail($email, $subscriptionType): void
     {
-        $this->prepareRequest('new_customer@example.com');
+        $this->prepareRequest($email);
         $this->dispatch('newsletter/subscriber/new');
 
+        /** @var GridCollection $gridCollection */
+        $gridCollection = $this->_objectManager->create(GridCollection::class);
+        $item = $gridCollection->getFirstItem();
+        self::assertEquals($subscriptionType, (int)$item->getType());
         $this->performAsserts('Thank you for your subscription.');
+    }
+
+    /**
+     * @return array
+     */
+    public function emailAndStatusDataProvider()
+    {
+        return [
+            'customer' => ['new_customer@example.com', 2],
+            'not_a_customer' => ['not_a_customer@gmail.com', 1],
+        ];
     }
 
     /**
@@ -147,12 +169,15 @@ class NewActionTest extends AbstractController
      */
     public function testWithNotAllowedGuestSubscription(): void
     {
-        $this->markTestSkipped('Blocked by MC-31520');
+        $message = sprintf(
+            'Sorry, but the administrator denied subscription for guests. Please <a href="%s">register</a>.',
+            $this->customerUrl->getRegisterUrl()
+        );
         $this->subscriberToDelete = 'guest@example.com';
         $this->prepareRequest('guest@example.com');
         $this->dispatch('newsletter/subscriber/new');
 
-        $this->performAsserts('Sorry, but the administrator denied subscription for guests. Please register.');
+        $this->performAsserts($message);
     }
 
     /**

@@ -8,7 +8,6 @@ declare(strict_types=1);
 namespace Magento\GroupedProductGraphQl\Model;
 
 use Magento\Framework\GraphQl\Query\Resolver\TypeResolverInterface;
-use Magento\CatalogGraphQl\Model\ProductLinksTypeResolver;
 
 /**
  * @inheritdoc

@@ -13,9 +13,10 @@ use Magento\Quote\Model\Quote\AddressFactory;
 use Magento\Quote\Model\QuoteFactory;
 use Magento\Store\Api\WebsiteRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
-require __DIR__ . '/../../Customer/_files/customer_with_addresses.php';
-require __DIR__ . '/../../../Magento/Catalog/_files/products.php';
+Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer_with_addresses.php');
+Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/products.php');
 
 $objectManager = Bootstrap::getObjectManager();
 

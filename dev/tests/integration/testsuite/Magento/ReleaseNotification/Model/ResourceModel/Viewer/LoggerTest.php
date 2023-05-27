@@ -52,9 +52,12 @@ class LoggerTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($firstLog->getId(), $secondLog->getId());
     }
 
+    /**
+     */
     public function testLogNonExistUser()
     {
         $this->expectException(\Zend_Db_Statement_Exception::class);
+
         $this->logger->log(200, '2.2.2');
     }
 }

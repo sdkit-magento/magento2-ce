@@ -9,6 +9,9 @@
  */
 namespace Magento\Framework\DB\Adapter;
 
+/**
+ * @magentoDbIsolation disabled
+ */
 class InterfaceTest extends \PHPUnit\Framework\TestCase
 {
     /**
@@ -208,9 +211,12 @@ class InterfaceTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
+    /**
+     */
     public function testInsertArrayTwoColumnsWithSimpleData()
     {
         $this->expectException(\Zend_Db_Exception::class);
+
         $this->_connection->insertArray($this->_tableName, ['column1', 'column2'], [1, 2]);
     }
 

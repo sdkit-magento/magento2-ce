@@ -8,7 +8,6 @@ use Laminas\Db\Adapter\Platform\PlatformInterface;
 
 use function array_key_exists;
 use function array_merge;
-use function get_class;
 use function gettype;
 use function is_array;
 use function is_object;
@@ -53,7 +52,7 @@ class Combine extends AbstractPreparableSql
      * @param Select|array $select
      * @param string $type
      * @param string $modifier
-     * @return self Provides a fluent interface
+     * @return $this Provides a fluent interface
      * @throws Exception\InvalidArgumentException
      */
     public function combine($select, $type = self::COMBINE_UNION, $modifier = '')
@@ -76,7 +75,7 @@ class Combine extends AbstractPreparableSql
         if (! $select instanceof Select) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '$select must be a array or instance of Select, "%s" given',
-                is_object($select) ? get_class($select) : gettype($select)
+                is_object($select) ? $select::class : gettype($select)
             ));
         }
 
@@ -93,7 +92,7 @@ class Combine extends AbstractPreparableSql
      *
      * @param Select|array $select
      * @param string       $modifier
-     * @return self
+     * @return $this
      */
     public function union($select, $modifier = '')
     {
@@ -105,7 +104,7 @@ class Combine extends AbstractPreparableSql
      *
      * @param Select|array $select
      * @param string       $modifier
-     * @return self
+     * @return $this
      */
     public function except($select, $modifier = '')
     {
@@ -117,7 +116,7 @@ class Combine extends AbstractPreparableSql
      *
      * @param Select|array $select
      * @param string $modifier
-     * @return self
+     * @return $this
      */
     public function intersect($select, $modifier = '')
     {
@@ -154,7 +153,7 @@ class Combine extends AbstractPreparableSql
     }
 
     /**
-     * @return self Provides a fluent interface
+     * @return $this Provides a fluent interface
      */
     public function alignColumns()
     {

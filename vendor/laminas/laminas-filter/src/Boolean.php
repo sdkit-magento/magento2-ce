@@ -1,50 +1,67 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
 use Laminas\Stdlib\ArrayUtils;
 use Traversable;
 
+use function array_search;
+use function get_debug_type;
+use function gettype;
+use function is_array;
+use function is_bool;
+use function is_float;
+use function is_int;
+use function is_string;
+use function sprintf;
+use function strtolower;
+
+/**
+ * @psalm-type Options = array{
+ *     type?: int-mask-of<self::TYPE_*>,
+ *     casting?: bool,
+ *     translations?: array,
+ * }
+ * @extends AbstractFilter<Options>
+ */
 class Boolean extends AbstractFilter
 {
-    const TYPE_BOOLEAN      = 1;
-    const TYPE_INTEGER      = 2;
-    const TYPE_FLOAT        = 4;
-    const TYPE_STRING       = 8;
-    const TYPE_ZERO_STRING  = 16;
-    const TYPE_EMPTY_ARRAY  = 32;
-    const TYPE_NULL         = 64;
-    const TYPE_PHP          = 127;
-    const TYPE_FALSE_STRING = 128;
-    const TYPE_LOCALIZED    = 256;
-    const TYPE_ALL          = 511;
+    public const TYPE_BOOLEAN      = 1;
+    public const TYPE_INTEGER      = 2;
+    public const TYPE_FLOAT        = 4;
+    public const TYPE_STRING       = 8;
+    public const TYPE_ZERO_STRING  = 16;
+    public const TYPE_EMPTY_ARRAY  = 32;
+    public const TYPE_NULL         = 64;
+    public const TYPE_PHP          = 127;
+    public const TYPE_FALSE_STRING = 128;
+    public const TYPE_LOCALIZED    = 256;
+    public const TYPE_ALL          = 511;
 
     /**
-     * @var array
+     * @deprecated since 2.26 - superseded by self::CONSTANTS
+     *
+     * @var array<self::TYPE_*, string>
      */
-    protected $constants = [
-        self::TYPE_BOOLEAN       => 'boolean',
-        self::TYPE_INTEGER       => 'integer',
-        self::TYPE_FLOAT         => 'float',
-        self::TYPE_STRING        => 'string',
-        self::TYPE_ZERO_STRING   => 'zero',
-        self::TYPE_EMPTY_ARRAY   => 'array',
-        self::TYPE_NULL          => 'null',
-        self::TYPE_PHP           => 'php',
-        self::TYPE_FALSE_STRING  => 'false',
-        self::TYPE_LOCALIZED     => 'localized',
-        self::TYPE_ALL           => 'all',
+    protected $constants = self::CONSTANTS;
+
+    private const CONSTANTS = [
+        self::TYPE_BOOLEAN      => 'boolean',
+        self::TYPE_INTEGER      => 'integer',
+        self::TYPE_FLOAT        => 'float',
+        self::TYPE_STRING       => 'string',
+        self::TYPE_ZERO_STRING  => 'zero',
+        self::TYPE_EMPTY_ARRAY  => 'array',
+        self::TYPE_NULL         => 'null',
+        self::TYPE_PHP          => 'php',
+        self::TYPE_FALSE_STRING => 'false',
+        self::TYPE_LOCALIZED    => 'localized',
+        self::TYPE_ALL          => 'all',
     ];
 
-    /**
-     * @var array
-     */
+    /** @var Options */
     protected $options = [
         'type'         => self::TYPE_PHP,
         'casting'      => true,
@@ -52,42 +69,41 @@ class Boolean extends AbstractFilter
     ];
 
     /**
-     * Constructor
-     *
-     * @param int|string|array|Traversable|null $typeOrOptions
+     * phpcs:ignore Generic.Files.LineLength.TooLong
+     * @param self::TYPE_*|value-of<self::CONSTANTS>|list<self::TYPE_*>|int-mask-of<self::TYPE_*>|Options|iterable|null $typeOrOptions
      * @param bool  $casting
      * @param array $translations
      */
     public function __construct($typeOrOptions = null, $casting = true, $translations = [])
     {
-        if ($typeOrOptions !== null) {
-            if ($typeOrOptions instanceof Traversable) {
-                $typeOrOptions = ArrayUtils::iteratorToArray($typeOrOptions);
-            }
-
-            if (is_array($typeOrOptions)) {
-                if (isset($typeOrOptions['type'])
-                    || isset($typeOrOptions['casting'])
-                    || isset($typeOrOptions['translations'])
-                ) {
-                    $this->setOptions($typeOrOptions);
-                } else {
-                    $this->setType($typeOrOptions);
-                    $this->setCasting($casting);
-                    $this->setTranslations($translations);
-                }
-            } else {
-                $this->setType($typeOrOptions);
-                $this->setCasting($casting);
-                $this->setTranslations($translations);
-            }
+        if ($typeOrOptions instanceof Traversable) {
+            $typeOrOptions = ArrayUtils::iteratorToArray($typeOrOptions);
         }
+
+        if (
+            is_array($typeOrOptions) && (
+                isset($typeOrOptions['type'])
+                || isset($typeOrOptions['casting'])
+                || isset($typeOrOptions['translations'])
+            )
+        ) {
+            $this->setOptions($typeOrOptions);
+
+            return;
+        }
+
+        if (is_array($typeOrOptions) || is_int($typeOrOptions) || is_string($typeOrOptions)) {
+            $this->setType($typeOrOptions);
+        }
+
+        $this->setCasting($casting);
+        $this->setTranslations($translations);
     }
 
     /**
      * Set boolean types
      *
-     * @param  int|string|array $type
+     * @param  self::TYPE_*|int-mask-of<self::TYPE_*>|value-of<self::CONSTANTS>|list<self::TYPE_*>|null $type
      * @throws Exception\InvalidArgumentException
      * @return self
      */
@@ -98,13 +114,13 @@ class Boolean extends AbstractFilter
             foreach ($type as $value) {
                 if (is_int($value)) {
                     $detected |= $value;
-                } elseif (($found = array_search($value, $this->constants, true)) !== false) {
+                } elseif (($found = array_search($value, self::CONSTANTS, true)) !== false) {
                     $detected |= $found;
                 }
             }
 
             $type = $detected;
-        } elseif (is_string($type) && ($found = array_search($type, $this->constants, true)) !== false) {
+        } elseif (is_string($type) && ($found = array_search($type, self::CONSTANTS, true)) !== false) {
             $type = $found;
         }
 
@@ -123,7 +139,7 @@ class Boolean extends AbstractFilter
     /**
      * Returns defined boolean types
      *
-     * @return int
+     * @return int-mask-of<self::TYPE_*>
      */
     public function getType()
     {
@@ -165,7 +181,7 @@ class Boolean extends AbstractFilter
             throw new Exception\InvalidArgumentException(sprintf(
                 '"%s" expects an array or Traversable; received "%s"',
                 __METHOD__,
-                (is_object($translations) ? get_class($translations) : gettype($translations))
+                get_debug_type($translations)
             ));
         }
 

@@ -78,14 +78,13 @@ class ReportWriterTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->configInterfaceMock = $this->getMockBuilder(ConfigInterface::class)->getMockForAbstractClass();
-        $this->reportValidatorMock = $this->getMockBuilder(ReportValidator::class)
-            ->disableOriginalConstructor()->getMock();
-        $this->providerFactoryMock = $this->getMockBuilder(ProviderFactory::class)
-            ->disableOriginalConstructor()->getMock();
-        $this->reportProviderMock = $this->getMockBuilder(ReportProvider::class)
-            ->disableOriginalConstructor()->getMock();
-        $this->directoryMock = $this->getMockBuilder(DirectoryWriteInterface::class)->getMockForAbstractClass();
+        $this->configInterfaceMock = $this->getMockBuilder(ConfigInterface::class)
+            ->getMockForAbstractClass();
+        $this->reportValidatorMock = $this->createMock(ReportValidator::class);
+        $this->providerFactoryMock = $this->createMock(ProviderFactory::class);
+        $this->reportProviderMock = $this->createMock(ReportProvider::class);
+        $this->directoryMock = $this->getMockBuilder(DirectoryWriteInterface::class)
+            ->getMockForAbstractClass();
         $this->objectManagerHelper = new ObjectManagerHelper($this);
 
         $this->reportWriter = $this->objectManagerHelper->getObject(
@@ -104,9 +103,9 @@ class ReportWriterTest extends TestCase
      * @param array $expectedFileData
      * @return void
      *
-     * @dataProvider configDataProvider
+     * @dataProvider writeDataProvider
      */
-    public function testWrite(array $configData, array $fileData, array $expectedFileData)
+    public function testWrite(array $configData, array $fileData, array $expectedFileData): void
     {
         $errors = [];
         $this->configInterfaceMock
@@ -163,9 +162,9 @@ class ReportWriterTest extends TestCase
      * @param array $configData
      * @return void
      *
-     * @dataProvider configDataProvider
+     * @dataProvider writeErrorFileDataProvider
      */
-    public function testWriteErrorFile($configData)
+    public function testWriteErrorFile(array $configData): void
     {
         $errors = ['orders', 'SQL Error: test'];
         $this->configInterfaceMock->expects($this->once())->method('get')->willReturn([$configData]);
@@ -185,7 +184,7 @@ class ReportWriterTest extends TestCase
     /**
      * @return void
      */
-    public function testWriteEmptyReports()
+    public function testWriteEmptyReports(): void
     {
         $this->configInterfaceMock->expects($this->once())->method('get')->willReturn([]);
         $this->reportValidatorMock->expects($this->never())->method('validate');
@@ -196,10 +195,75 @@ class ReportWriterTest extends TestCase
     /**
      * @return array
      */
-    public function configDataProvider()
+    public function writeDataProvider(): array
+    {
+        $configData = [
+            'providers' => [
+                [
+                    'name' => $this->providerName,
+                    'class' => $this->providerClass,
+                    'parameters' => [
+                        'name' => $this->reportName
+                    ],
+                ]
+            ]
+        ];
+        return [
+            [
+                'configData' => $configData,
+                'fileData' => [
+                    ['number' => 1, 'type' => 'Shoes\"" Usual\\\\"']
+                ],
+                'expectedFileData' => [
+                    ['number' => 1, 'type' => 'Shoes"" Usual"']
+                ]
+            ],
+            [
+                'configData' => $configData,
+                'fileData' => [
+                    ['number' => 1, 'type' => 'hello "World"']
+                ],
+                'expectedFileData' => [
+                    ['number' => 1, 'type' => 'hello "World"']
+                ]
+            ],
+            [
+                'configData' => $configData,
+                'fileData' => [
+                    ['number' => 1, 'type' => 'hello \"World\"']
+                ],
+                'expectedFileData' => [
+                    ['number' => 1, 'type' => 'hello "World"']
+                ]
+            ],
+            [
+                'configData' => $configData,
+                'fileData' => [
+                    ['number' => 1, 'type' => 'hello \\"World\\"']
+                ],
+                'expectedFileData' => [
+                    ['number' => 1, 'type' => 'hello "World"']
+                ]
+            ],
+            [
+                'configData' => $configData,
+                'fileData' => [
+                    ['number' => 1, 'type' => 'hello \\\"World\\\"']
+                ],
+                'expectedFileData' => [
+                    ['number' => 1, 'type' => 'hello "World"']
+                ]
+            ],
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function writeErrorFileDataProvider(): array
     {
         return [
-            'reportProvider' => [
+            [
                 'configData' => [
                     'providers' => [
                         [
@@ -211,12 +275,6 @@ class ReportWriterTest extends TestCase
                         ]
                     ]
                 ],
-                'fileData' => [
-                    ['number' => 1, 'type' => 'Shoes\"" Usual\\\\"']
-                ],
-                'expectedFileData' => [
-                    ['number' => 1, 'type' => 'Shoes\"\" Usual\\"']
-                ]
             ],
         ];
     }

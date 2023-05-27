@@ -7,22 +7,17 @@ declare(strict_types=1);
 
 namespace Magento\AdobeStockImage\Test\Unit\Model;
 
-use Magento\MediaGalleryApi\Model\Asset\Command\SaveInterface;
-use Magento\MediaGalleryApi\Model\Keyword\Command\SaveAssetKeywordsInterface;
+use Magento\AdobeStockAssetApi\Api\Data\AssetInterface;
 use Magento\AdobeStockAssetApi\Api\SaveAssetInterface;
 use Magento\AdobeStockImage\Model\Extract\AdobeStockAsset as DocumentToAsset;
-use Magento\AdobeStockImage\Model\Extract\Keywords as DocumentToKeywords;
-use Magento\AdobeStockImage\Model\Extract\MediaGalleryAsset as DocumentToMediaGalleryAsset;
 use Magento\AdobeStockImage\Model\SaveImage;
-use Magento\AdobeStockImage\Model\Storage\Save as StorageSave;
-use Magento\AdobeStockImage\Model\Storage\Delete as StorageDelete;
-use Magento\Framework\Api\AttributeInterface;
+use Magento\AdobeStockImage\Model\SaveImageFile;
+use Magento\AdobeStockImage\Model\SaveMediaGalleryAsset;
 use Magento\Framework\Api\Search\Document;
-use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
  * Test for Save image model.
@@ -31,34 +26,9 @@ use Psr\Log\LoggerInterface;
 class SaveImageTest extends TestCase
 {
     /**
-     * @var MockObject|StorageSave
-     */
-    private $storageSave;
-
-    /**
-     * @var MockObject|StorageDelete
-     */
-    private $storageDelete;
-
-    /**
-     * @var MockObject|LoggerInterface
-     */
-    private $logger;
-
-    /**
-     * @var MockObject|SaveInterface
-     */
-    private $saveMediaAsset;
-
-    /**
      * @var MockObject|SaveAssetInterface
      */
     private $saveAdobeStockAsset;
-
-    /**
-     * @var MockObject|DocumentToMediaGalleryAsset
-     */
-    private $documentToMediaGalleryAsset;
 
     /**
      * @var MockObject|DocumentToAsset
@@ -66,14 +36,14 @@ class SaveImageTest extends TestCase
     private $documentToAsset;
 
     /**
-     * @var MockObject|DocumentToKeywords
+     * @var SaveImageFile|MockObject
      */
-    private $documentToKeywords;
+    private $saveImageFile;
 
     /**
-     * @var MockObject|SaveAssetKeywordsInterface
+     * @var SaveMediaGalleryAsset|MockObject
      */
-    private $saveAssetKeywords;
+    private $saveMediaGalleryAsset;
 
     /**
      * @var SaveImage
@@ -85,117 +55,108 @@ class SaveImageTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->storageSave = $this->createMock(StorageSave::class);
-        $this->storageDelete = $this->createMock(StorageDelete::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
-        $this->saveMediaAsset = $this->getMockForAbstractClass(SaveInterface::class);
-        $this->saveAdobeStockAsset = $this->getMockForAbstractClass(SaveAssetInterface::class);
-        $this->documentToMediaGalleryAsset = $this->createMock(DocumentToMediaGalleryAsset::class);
+        $this->saveAdobeStockAsset = $this->createMock(SaveAssetInterface::class);
         $this->documentToAsset = $this->createMock(DocumentToAsset::class);
-        $this->documentToKeywords = $this->createMock(DocumentToKeywords::class);
-        $this->saveAssetKeywords = $this->getMockForAbstractClass(SaveAssetKeywordsInterface::class);
-
+        $this->saveImageFile = $this->createMock(SaveImageFile::class);
+        $this->saveMediaGalleryAsset = $this->createMock(SaveMediaGalleryAsset::class);
         $this->saveImage = (new ObjectManager($this))->getObject(
             SaveImage::class,
             [
-                'storageSave' => $this->storageSave,
-                'storageDelete' => $this->storageDelete,
-                'logger' => $this->logger,
-                'saveMediaAsset' =>  $this->saveMediaAsset,
                 'saveAdobeStockAsset' =>  $this->saveAdobeStockAsset,
-                'documentToMediaGalleryAsset' =>  $this->documentToMediaGalleryAsset,
                 'documentToAsset' =>  $this->documentToAsset,
-                'documentToKeywords' => $this->documentToKeywords,
-                'saveAssetKeywords' => $this->saveAssetKeywords
+                'saveImageFile' => $this->saveImageFile,
+                'saveMediaGalleryAsset' => $this->saveMediaGalleryAsset
             ]
         );
     }
 
     /**
-     * Verify that image can be saved.
+     * Verify that image from the Adobe Stock can be saved.
      *
+     * @dataProvider imageDataProvider
      * @param Document $document
-     * @param bool $delete
-     * @throws CouldNotSaveException
-     * @dataProvider assetProvider
+     * @param string $url
+     * @param string $destinationPath
+     * @throws LocalizedException
      */
-    public function testExecute(Document $document, bool $delete): void
+    public function testExecute(Document $document, string $url, string $destinationPath): void
     {
-        if ($delete) {
-            $this->storageDelete->expects($this->once())
-                ->method('execute');
-        } else {
-            $this->storageDelete->expects($this->never())
-                ->method('execute');
-        }
+        $assetId = 42;
+        $asset = $this->createMock(AssetInterface::class);
 
-        $this->storageSave->expects($this->once())
-            ->method('execute');
-
-        $this->documentToMediaGalleryAsset->expects($this->once())
-            ->method('convert')
-            ->with($document);
-
-        $mediaGalleryAssetId = 42;
-
-        $this->saveMediaAsset->expects($this->once())
+        $this->saveImageFile->expects($this->once())
             ->method('execute')
-            ->willReturn($mediaGalleryAssetId);
+            ->with($document, $url, $destinationPath);
 
-        $this->documentToKeywords->expects($this->once())
-            ->method('convert')
-            ->with($document);
-
-        $this->saveAssetKeywords->expects($this->once())
-            ->method('execute');
+        $this->saveMediaGalleryAsset->expects($this->once())
+            ->method('execute')
+            ->with($document, $destinationPath)
+            ->willReturn($assetId);
 
         $this->documentToAsset->expects($this->once())
             ->method('convert')
-            ->with($document);
+            ->with($document, ['media_gallery_id' => $assetId])
+            ->willReturn($asset);
 
         $this->saveAdobeStockAsset->expects($this->once())
-            ->method('execute');
+            ->method('execute')
+            ->with($asset);
 
-        $this->saveImage->execute($document, 'https://as2.ftcdn.net/jpg/500_FemVonDcttCeKiOXFk.jpg', 'path');
+        $this->saveImage->execute($document, $url, $destinationPath);
     }
 
     /**
      * Data provider for testExecute
      *
-     * @return array
+     * @return array[]
      */
-    public function assetProvider(): array
+    public function imageDataProvider(): array
     {
         return [
             [
-                'document' => $this->getDocument(),
-                'delete' => false
-            ],
-            [
-                'document' => $this->getDocument('filepath.jpg'),
-                'delete' => true
-            ],
+                $this->createMock(Document::class),
+                'https://as2.ftcdn.net/jpg/500_FemVonDcttCeKiOXFk.jpg',
+                'path'
+            ]
         ];
     }
 
     /**
-     * Get document
-     *
-     * @param string|null $path
-     * @return MockObject
+     * @return array
      */
-    private function getDocument(?string $path = null): MockObject
+    public function getInvalidPathValues(): array
     {
-        $document = $this->createMock(Document::class);
-        $pathAttribute = $this->getMockForAbstractClass(AttributeInterface::class);
-        $pathAttribute->expects($this->once())
-            ->method('getValue')
-            ->willReturn($path);
-        $document->expects($this->once())
-            ->method('getCustomAttribute')
-            ->with('path')
-            ->willReturn($pathAttribute);
+        return [
+            [
+                $this->createMock(Document::class),
+                'https://as2.ftcdn.net/jpg/500_FemVonDcttCeKiOXFk.jpg',
+                '\\invalid chars\\'
+            ],
+            [
+                $this->createMock(Document::class),
+                'https://as2.ftcdn.net/jpg/500_FemVonDcttCeKiOXFk.jpg',
+                '{*invalid_path/\'chars}'
+            ],
+            [
+                $this->createMock(Document::class),
+                'https://as2.ftcdn.net/jpg/500_FemVonDcttCeKiOXFk.jpg',
+                '<img src=\"\" onerror=\"alert(0)\">'
+            ]
+        ];
+    }
 
-        return $document;
+    /**
+     * Verify that path validation works if invalid characters are passed.
+     *
+     * @dataProvider getInvalidPathValues
+     * @param Document $document
+     * @param string $url
+     * @param string $destinationPath
+     * @throws LocalizedException
+     */
+    public function testExecuteInvalidPath(Document $document, string $url, string $destinationPath): void
+    {
+        $this->expectException('Magento\Framework\Exception\LocalizedException');
+        $this->saveImage->execute($document, $url, $destinationPath);
     }
 }

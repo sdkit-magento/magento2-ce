@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Magento\AsynchronousOperations\Test\Unit\Model;
 
@@ -86,13 +87,13 @@ class BulkStatusTest extends TestCase
     {
         $this->bulkCollectionFactory = $this->createPartialMock(BulkCollectionFactory::class, ['create']);
         $this->operationCollectionFactory = $this->createPartialMock(OperationCollectionFactory::class, ['create']);
-        $this->operationMock = $this->getMockForAbstractClass(OperationInterface::class);
-        $this->bulkMock = $this->getMockForAbstractClass(BulkSummaryInterface::class);
+        $this->operationMock = $this->createMock(OperationInterface::class);
+        $this->bulkMock = $this->createMock(BulkSummaryInterface::class);
         $this->resourceConnectionMock = $this->createMock(ResourceConnection::class);
         $this->calculatedStatusSqlMock = $this->createMock(CalculatedStatusSql::class);
         $this->metadataPoolMock = $this->createMock(MetadataPool::class);
-        $this->entityMetadataMock = $this->getMockForAbstractClass(EntityMetadataInterface::class);
-        $this->connectionMock = $this->getMockForAbstractClass(AdapterInterface::class);
+        $this->entityMetadataMock = $this->createMock(EntityMetadataInterface::class);
+        $this->connectionMock = $this->createMock(AdapterInterface::class);
 
         $this->model = new BulkStatus(
             $this->bulkCollectionFactory,
@@ -106,24 +107,19 @@ class BulkStatusTest extends TestCase
     /**
      * @param int|null $failureType
      * @param array $failureCodes
+     *
      * @return void
      * @dataProvider getFailedOperationsByBulkIdDataProvider
      */
-    public function testGetFailedOperationsByBulkId($failureType, $failureCodes)
+    public function testGetFailedOperationsByBulkId(?int $failureType, array $failureCodes): void
     {
         $bulkUuid = 'bulk-1';
         $operationCollection = $this->createMock(OperationCollection::class);
         $this->operationCollectionFactory->expects($this->once())->method('create')->willReturn($operationCollection);
         $operationCollection
-            ->expects($this->at(0))
             ->method('addFieldToFilter')
-            ->with('bulk_uuid', $bulkUuid)
-            ->willReturnSelf();
-        $operationCollection
-            ->expects($this->at(1))
-            ->method('addFieldToFilter')
-            ->with('status', $failureCodes)
-            ->willReturnSelf();
+            ->withConsecutive(['bulk_uuid', $bulkUuid], ['status', $failureCodes])
+            ->willReturnOnConsecutiveCalls($operationCollection, $operationCollection);
         $operationCollection->expects($this->once())->method('getItems')->willReturn([$this->operationMock]);
         $this->assertEquals([$this->operationMock], $this->model->getFailedOperationsByBulkId($bulkUuid, $failureType));
     }
@@ -131,7 +127,7 @@ class BulkStatusTest extends TestCase
     /**
      * @return void
      */
-    public function testGetOperationsCountByBulkIdAndStatus()
+    public function testGetOperationsCountByBulkIdAndStatus(): void
     {
         $bulkUuid = 'bulk-1';
         $status = 1354;
@@ -140,15 +136,9 @@ class BulkStatusTest extends TestCase
         $operationCollection = $this->createMock(OperationCollection::class);
         $this->operationCollectionFactory->expects($this->once())->method('create')->willReturn($operationCollection);
         $operationCollection
-            ->expects($this->at(0))
             ->method('addFieldToFilter')
-            ->with('bulk_uuid', $bulkUuid)
-            ->willReturnSelf();
-        $operationCollection
-            ->expects($this->at(1))
-            ->method('addFieldToFilter')
-            ->with('status', $status)
-            ->willReturnSelf();
+            ->withConsecutive(['bulk_uuid', $bulkUuid], ['status', $status])
+            ->willReturnOnConsecutiveCalls($operationCollection, $operationCollection);
         $operationCollection
             ->expects($this->once())
             ->method('getSize')
@@ -159,7 +149,7 @@ class BulkStatusTest extends TestCase
     /**
      * @return void
      */
-    public function testGetOperationsCountByBulkIdAndOpenStatus()
+    public function testGetOperationsCountByBulkIdAndOpenStatus(): void
     {
         $bulkUuid = 'bulk-2';
         $status = OperationInterface::STATUS_TYPE_OPEN;
@@ -193,7 +183,7 @@ class BulkStatusTest extends TestCase
     /**
      * @return void
      */
-    public function testGetNotStartedOperationsCountByBulkIdAndOpenStatus()
+    public function testGetNotStartedOperationsCountByBulkIdAndOpenStatus(): void
     {
         $bulkUuid = 'bulk-3';
         $bulkOperationCount = 3;
@@ -257,7 +247,7 @@ class BulkStatusTest extends TestCase
     /**
      * @return array
      */
-    public function getFailedOperationsByBulkIdDataProvider()
+    public function getFailedOperationsByBulkIdDataProvider(): array
     {
         return [
             [1, [1]],
@@ -265,16 +255,16 @@ class BulkStatusTest extends TestCase
                 null,
                 [
                     OperationInterface::STATUS_TYPE_RETRIABLY_FAILED,
-                    OperationInterface::STATUS_TYPE_NOT_RETRIABLY_FAILED,
-                ],
-            ],
+                    OperationInterface::STATUS_TYPE_NOT_RETRIABLY_FAILED
+                ]
+            ]
         ];
     }
 
     /**
      * @return void
      */
-    public function testGetBulksByUser()
+    public function testGetBulksByUser(): void
     {
         $userId = 1;
         $selectMock = $this->createMock(Select::class);
@@ -291,7 +281,7 @@ class BulkStatusTest extends TestCase
     /**
      * @return void
      */
-    public function testGetBulksStatus()
+    public function testGetBulksStatus(): void
     {
         $bulkUuid = 'bulk-1';
         $allProcessedOperationCollection = $this->createMock(OperationCollection::class);
@@ -321,13 +311,8 @@ class BulkStatusTest extends TestCase
         $this->connectionMock->expects($this->once())->method('fetchOne')->with($selectMock)->willReturn(10);
 
         $this->operationCollectionFactory
-            ->expects($this->at(0))
             ->method('create')
-            ->willReturn($allProcessedOperationCollection);
-        $this->operationCollectionFactory
-            ->expects($this->at(1))
-            ->method('create')
-            ->willReturn($completeOperationCollection);
+            ->willReturnOnConsecutiveCalls($allProcessedOperationCollection, $completeOperationCollection);
         $allProcessedOperationCollection
             ->expects($this->once())
             ->method('addFieldToFilter')
@@ -336,16 +321,10 @@ class BulkStatusTest extends TestCase
         $allProcessedOperationCollection->expects($this->once())->method('getSize')->willReturn(5);
 
         $completeOperationCollection
-            ->expects($this->at(0))
             ->method('addFieldToFilter')
-            ->with('bulk_uuid', $bulkUuid)
-            ->willReturnSelf();
-        $completeOperationCollection
-            ->expects($this->at(1))
-            ->method('addFieldToFilter')
-            ->with('status', OperationInterface::STATUS_TYPE_COMPLETE)
-            ->willReturnSelf();
-        $completeOperationCollection->expects($this->any())->method('getSize')->willReturn(5);
+            ->withConsecutive(['bulk_uuid', $bulkUuid], ['status', OperationInterface::STATUS_TYPE_COMPLETE])
+            ->willReturnOnConsecutiveCalls($completeOperationCollection, $completeOperationCollection);
+        $completeOperationCollection->method('getSize')->willReturn(5);
         $this->assertEquals(BulkSummaryInterface::IN_PROGRESS, $this->model->getBulkStatus($bulkUuid));
     }
 }

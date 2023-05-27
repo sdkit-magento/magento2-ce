@@ -8,7 +8,7 @@ namespace Magento\Framework\View\Element;
 use Magento\Framework\ObjectManagerInterface;
 
 /**
- * Class BlockFactory
+ * Creates Blocks
  *
  * @api
  * @since 100.0.2
@@ -16,8 +16,6 @@ use Magento\Framework\ObjectManagerInterface;
 class BlockFactory
 {
     /**
-     * Object manager
-     *
      * @var ObjectManagerInterface
      */
     protected $objectManager;

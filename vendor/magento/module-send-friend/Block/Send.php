@@ -240,12 +240,10 @@ class Send extends \Magento\Framework\View\Element\Template
                     'cacheable' => false,
                     'after' => '-',
                     'form_id' => 'product_sendtofriend_form',
-                    'img_width' => 230,
-                    'img_height' => 50
+                    'image_width' => 230,
+                    'image_height' => 230
                 ]
             );
         }
-
-        return $this;
     }
 }

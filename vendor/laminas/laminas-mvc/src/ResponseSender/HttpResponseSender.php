@@ -1,11 +1,5 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-mvc for the canonical source repository
- * @copyright https://github.com/laminas/laminas-mvc/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-mvc/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Mvc\ResponseSender;
 
 use Laminas\Http\Response;
@@ -15,7 +9,6 @@ class HttpResponseSender extends AbstractResponseSender
     /**
      * Send content
      *
-     * @param  SendResponseEvent $event
      * @return HttpResponseSender
      */
     public function sendContent(SendResponseEvent $event)
@@ -38,7 +31,7 @@ class HttpResponseSender extends AbstractResponseSender
     public function __invoke(SendResponseEvent $event)
     {
         $response = $event->getResponse();
-        if (!$response instanceof Response) {
+        if (! $response instanceof Response) {
             return $this;
         }
 

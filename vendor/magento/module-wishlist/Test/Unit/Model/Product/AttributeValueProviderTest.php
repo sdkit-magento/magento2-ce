@@ -12,31 +12,33 @@ use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Wishlist\Model\Product\AttributeValueProvider;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
- * AttributeValueProviderTest
+ * Class AttributeValueProviderTest
+ *
+ * PHPUnit test case for \Magento\Wishlist\Model\Product\AttributeValueProvider
  */
 class AttributeValueProviderTest extends TestCase
 {
     /**
-     * @var AttributeValueProvider|PHPUnit\Framework\MockObject\MockObject
+     * @var AttributeValueProvider|MockObject
      */
     private $attributeValueProvider;
 
     /**
-     * @var CollectionFactory|PHPUnit\Framework\MockObject\MockObject
+     * @var CollectionFactory|MockObject
      */
     private $productCollectionFactoryMock;
 
     /**
-     * @var Product|PHPUnit\Framework\MockObject\MockObject
+     * @var Product|MockObject
      */
     private $productMock;
 
     /**
-     * @var AdapterInterface|PHPUnit\Framework\MockObject\MockObject
+     * @var AdapterInterface|MockObject
      */
     private $connectionMock;
 
@@ -119,7 +121,8 @@ class AttributeValueProviderTest extends TestCase
      */
     public function testGetAttributeTextWhenFlatIsEnabled(int $productId, string $attributeCode, string $attributeText)
     {
-        $this->connectionMock = $this->getMockBuilder(AdapterInterface::class)->getMockForAbstractClass();
+        $this->connectionMock = $this->getMockBuilder(AdapterInterface::class)
+            ->getMockForAbstractClass();
         $this->connectionMock->expects($this->any())
             ->method('fetchRow')
             ->willReturn([

@@ -30,14 +30,14 @@
 
             <createData entity="Msi_US_Customer" stepKey="customer"/>
 
-            <actionGroup ref="LoginAsAdmin" stepKey="loginAsAdmin1"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="loginAsAdmin1"/>
         </before>
         <after>
             <magentoCLI stepKey="removeDownloadableDomain" command="downloadable:domains:remove static.magento.com example.com"/>
             <deleteData createDataKey="simpleCategory1" stepKey="deleteCategory"/>
             <deleteData createDataKey="downloadableProduct1" stepKey="deleteProduct"/>
             <deleteData createDataKey="customer" stepKey="deleteCustomer"/>
-            <actionGroup ref="logout" stepKey="logoutOfAdmin1"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logoutOfAdmin1"/>
         </after>
 
         <amOnPage url="{{AdminProductIndexPage.url}}" stepKey="adminProductIndexPageAdd"/>
@@ -74,13 +74,13 @@
         <fillField userInput="{{downloadableLink.file}}" selector="{{AdminProductDownloadableSection.addLinkFileUrlInput('0')}}" stepKey="fillDownloadableLinkFileUrl2"/>
         <attachFile userInput="{{downloadableLink.sample}}" selector="{{AdminProductDownloadableSection.addLinkSampleUploadFile('0')}}" stepKey="attachDownloadableLinkUploadSample2"/>
 
-        <actionGroup ref="AdminFormSaveAndClose" stepKey="saveAndCloseProduct"/>
+        <actionGroup ref="AdminFormSaveAndCloseActionGroup" stepKey="saveAndCloseProduct"/>
 
         <actionGroup ref="LoginToStorefrontActionGroup" stepKey="loginToStorefront">
             <argument name="Customer" value="$$customer$$"/>
         </actionGroup>
 
-        <amOnPage url="{{StorefrontCategoryPage.url($$simpleCategory1.name$$)}}" stepKey="navigateToCategory"/>
+        <amOnPage url="{{StorefrontCategoryPage.url($$simpleCategory1.custom_attributes[url_key]$$)}}" stepKey="navigateToCategory"/>
         <waitForPageLoad time="30" stepKey="waitForPageLoad6"/>
         <click selector="{{StorefrontCategoryMainSection.specifiedProductItemInfo($$downloadableProduct1.product[name]$$)}}" stepKey="openProductPage"/>
         <waitForPageLoad time="30" stepKey="waitForPageLoad7"/>
@@ -92,15 +92,17 @@
 
         <conditionalClick selector="{{StorefrontMinicartSection.showCart}}" dependentSelector="{{StorefrontMinicartSection.miniCartOpened}}" visible="false" stepKey="openMiniCart"/>
         <waitForPageLoad time="30" stepKey="waitForPageLoad10"/>
-        <fillField selector=".cart-item-qty" userInput="100" stepKey="setProductQtyToFiftyInMiniCart"/>
+        <doubleClick selector="{{StorefrontMinicartSection.cartItemQty}}" stepKey="doubleClickOnQty"/>
+        <pressKey selector="{{StorefrontMinicartSection.cartItemQty}}" parameterArray="[\Facebook\WebDriver\WebDriverKeys::DELETE]" stepKey="clearQty"/>
+        <fillField selector="{{StorefrontMinicartSection.cartItemQty}}" userInput="100" stepKey="fillQty"/>
         <waitForPageLoad time="30" stepKey="waitForPageLoad11"/>
 
         <click selector=".update-cart-item" stepKey="updateQtyInMiniCart"/>
         <waitForPageLoad time="30" stepKey="waitForPageLoad12"/>
         <click selector="{{StorefrontMinicartSection.goToCheckout}}" stepKey="goToCheckout"/>
 
-        <click selector="{{CheckoutPaymentSection.placeOrder}}" stepKey="clickPlaceOrder3"/>
-        <waitForPageLoad time="30" stepKey="waitForPageLoad17"/>
+        <actionGroup ref="ClickPlaceOrderActionGroup" stepKey="clickPlaceOrder3"/>
+        <comment userInput="BIC workaround" stepKey="waitForPageLoad17"/>
         <see selector="{{CheckoutSuccessMainSection.successTitle}}" userInput="Thank you for your purchase!" stepKey="waitForLoadSuccessPage3"/>
         <grabTextFrom selector=".checkout-success .order-number strong" stepKey="grabOrderNumber"/>
 
@@ -124,7 +126,7 @@
         <waitForPageLoad stepKey="waitForPageLoad24"/>
         <see selector="{{AdminOrderDetailsInformationSection.orderStatus}}" userInput="Complete" stepKey="checkOrderStatus"/>
 
-        <amOnPage url="{{StorefrontCategoryPage.url($$simpleCategory1.name$$)}}" stepKey="navigateToCategoryPage2"/>
+        <amOnPage url="{{StorefrontCategoryPage.url($$simpleCategory1.custom_attributes[url_key]$$)}}" stepKey="navigateToCategoryPage2"/>
         <see selector=".empty" userInput="We can't find products matching the selection." stepKey="seeErrorMessage1"/>
     </test>
 </tests>

@@ -9,7 +9,7 @@ use Magento\Customer\Controller\RegistryConstants;
 use Magento\TestFramework\Helper\Bootstrap;
 
 /**
- * Class EditTest
+ * Test for \Magento\Customer\Block\Adminhtml\Edit
  *
  * @magentoAppArea adminhtml
  * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -78,7 +78,10 @@ class EditTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetCreateOrderUrl()
     {
-        $this->assertStringContainsString('sales/order_create/start/customer_id/' . self::$customerId, $this->block->getCreateOrderUrl());
+        $this->assertStringContainsString(
+            'sales/order_create/start/customer_id/' . self::$customerId,
+            $this->block->getCreateOrderUrl()
+        );
     }
 
     /**

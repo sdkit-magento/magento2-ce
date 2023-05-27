@@ -12,6 +12,8 @@ use Exception;
 use Magento\AdobeIms\Model\LogOut;
 use Magento\AdobeImsApi\Api\ConfigInterface;
 use Magento\AdobeImsApi\Api\Data\UserProfileInterface;
+use Magento\AdobeImsApi\Api\FlushUserTokensInterface;
+use Magento\AdobeImsApi\Api\GetAccessTokenInterface;
 use Magento\AdobeImsApi\Api\UserProfileRepositoryInterface;
 use Magento\Authorization\Model\UserContextInterface;
 use Magento\Framework\HTTP\Client\Curl;
@@ -21,40 +23,37 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * LogOut test.
- * Test for Logout
+ * Test the Adobe Stock log out service
  */
 class LogOutTest extends TestCase
 {
+    private const HTTP_FOUND = 302;
+    private const HTTP_ERROR = 500;
+
     /**
-     * @var CurlFactory|MockObject $curlFactoryMock
+     * @var CurlFactory|MockObject
      */
     private $curlFactoryMock;
 
     /**
-     * @var LoggerInterface|MockObject $loggerInterfaceMock
+     * @var LoggerInterface|MockObject
      */
     private $loggerInterfaceMock;
 
     /**
-     * @var UserContextInterface|MockObject $userContextInterfaceMock
-     */
-    private $userContextInterfaceMock;
-
-    /**
-     * @var ConfigInterface|MockObject $configInterfaceMock
+     * @var ConfigInterface|MockObject
      */
     private $configInterfaceMock;
 
     /**
-     * @var UserProfileRepositoryInterface|MockObject $userProfileRepositoryInterfaceMock
+     * @var GetAccessTokenInterface|MockObject
      */
-    private $userProfileRepositoryInterfaceMock;
+    private $getToken;
 
     /**
-     * @var UserProfileInterface|MockObject $userProfileInterfaceMock
+     * @var FlushUserTokensInterface|MockObject
      */
-    private $userProfileInterfaceMock;
+    private $flushTokens;
 
     /**
      * @var LogOut|MockObject $model
@@ -62,33 +61,21 @@ class LogOutTest extends TestCase
     private $model;
 
     /**
-     * Successful result code.
-     */
-    private const HTTP_FOUND = 302;
-
-    /**
-     * Error result code.
-     */
-    private const HTTP_ERROR = 500;
-
-    /**
      * @inheritdoc
      */
     protected function setUp(): void
     {
         $this->curlFactoryMock = $this->createMock(CurlFactory::class);
-        $this->userProfileInterfaceMock = $this->getMockForAbstractClass(UserProfileInterface::class);
-        $this->userProfileRepositoryInterfaceMock = $this
-            ->getMockForAbstractClass(UserProfileRepositoryInterface::class);
-        $this->userContextInterfaceMock = $this->getMockForAbstractClass(UserContextInterface::class);
-        $this->configInterfaceMock = $this->getMockForAbstractClass(ConfigInterface::class);
-        $this->loggerInterfaceMock = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->configInterfaceMock = $this->createMock(ConfigInterface::class);
+        $this->loggerInterfaceMock = $this->createMock(LoggerInterface::class);
+        $this->getToken = $this->createMock(GetAccessTokenInterface::class);
+        $this->flushTokens = $this->createMock(FlushUserTokensInterface::class);
         $this->model = new LogOut(
-            $this->userContextInterfaceMock,
-            $this->userProfileRepositoryInterfaceMock,
             $this->loggerInterfaceMock,
             $this->configInterfaceMock,
-            $this->curlFactoryMock
+            $this->curlFactoryMock,
+            $this->getToken,
+            $this->flushTokens
         );
     }
 
@@ -97,14 +84,10 @@ class LogOutTest extends TestCase
      */
     public function testExecute(): void
     {
-        $this->userContextInterfaceMock->expects($this->exactly(1))
-            ->method('getUserId')->willReturn(1);
-        $this->userProfileInterfaceMock->expects($this->once())
-            ->method('getAccessToken')
+        $this->getToken->expects($this->once())
+            ->method('execute')
             ->willReturn('token');
-        $this->userProfileRepositoryInterfaceMock->expects($this->exactly(1))
-            ->method('getByUserId')
-            ->willReturn($this->userProfileInterfaceMock);
+
         $curl = $this->createMock(Curl::class);
         $this->curlFactoryMock->expects($this->once())
             ->method('create')
@@ -113,19 +96,16 @@ class LogOutTest extends TestCase
             ->method('addHeader')
             ->willReturn(null);
         $curl->expects($this->once())
-            ->method('get')
+            ->method('post')
             ->willReturnSelf();
         $curl->expects($this->once())
             ->method('getStatus')
             ->willReturn(self::HTTP_FOUND);
-        $this->userProfileInterfaceMock->expects($this->once())
-            ->method('setAccessToken');
-        $this->userProfileInterfaceMock->expects($this->once())
-            ->method('setRefreshToken');
-        $this->userProfileRepositoryInterfaceMock->expects($this->once())
-            ->method('save')
-            ->willReturn(null);
-        $this->assertTrue($this->model->execute());
+
+        $this->flushTokens->expects($this->once())
+            ->method('execute');
+
+        $this->assertEquals(true, $this->model->execute());
     }
 
     /**
@@ -133,14 +113,10 @@ class LogOutTest extends TestCase
      */
     public function testExecuteWithError(): void
     {
-        $this->userContextInterfaceMock->expects($this->exactly(1))
-            ->method('getUserId')->willReturn(1);
-        $this->userProfileInterfaceMock->expects($this->once())
-            ->method('getAccessToken')
+        $this->getToken->expects($this->once())
+            ->method('execute')
             ->willReturn('token');
-        $this->userProfileRepositoryInterfaceMock->expects($this->exactly(1))
-            ->method('getByUserId')
-            ->willReturn($this->userProfileInterfaceMock);
+
         $curl = $this->createMock(Curl::class);
         $this->curlFactoryMock->expects($this->once())
             ->method('create')
@@ -149,14 +125,18 @@ class LogOutTest extends TestCase
             ->method('addHeader')
             ->willReturn(null);
         $curl->expects($this->once())
-            ->method('get')
+            ->method('post')
             ->willReturnSelf();
         $curl->expects($this->once())
             ->method('getStatus')
             ->willReturn(self::HTTP_ERROR);
         $this->loggerInterfaceMock->expects($this->once())
              ->method('critical');
-        $this->assertFalse($this->model->execute());
+
+        $this->flushTokens->expects($this->never())
+            ->method('execute');
+
+        $this->assertEquals(false, $this->model->execute());
     }
 
     /**
@@ -164,14 +144,10 @@ class LogOutTest extends TestCase
      */
     public function testExecuteWithException(): void
     {
-        $this->userContextInterfaceMock->expects($this->exactly(1))
-            ->method('getUserId')->willReturn(1);
-        $this->userProfileInterfaceMock->expects($this->once())
-            ->method('getAccessToken')
+        $this->getToken->expects($this->once())
+            ->method('execute')
             ->willReturn('token');
-        $this->userProfileRepositoryInterfaceMock->expects($this->exactly(1))
-            ->method('getByUserId')
-            ->willReturn($this->userProfileInterfaceMock);
+
         $curl = $this->createMock(Curl::class);
         $this->curlFactoryMock->expects($this->once())
             ->method('create')
@@ -180,20 +156,15 @@ class LogOutTest extends TestCase
             ->method('addHeader')
             ->willReturn(null);
         $curl->expects($this->once())
-            ->method('get')
+            ->method('post')
             ->willReturnSelf();
         $curl->expects($this->once())
             ->method('getStatus')
             ->willReturn(self::HTTP_FOUND);
-        $this->userProfileInterfaceMock->expects($this->once())
-            ->method('setAccessToken');
-        $this->userProfileInterfaceMock->expects($this->once())
-            ->method('setRefreshToken');
-        $this->userProfileRepositoryInterfaceMock->expects($this->once())
-            ->method('save')
-            ->willThrowException(
-                new Exception('Could not save user profile.')
-            );
+
+        $this->flushTokens->expects($this->once())
+            ->method('execute')
+            ->willThrowException(new Exception('Could not save user profile.'));
         $this->loggerInterfaceMock->expects($this->once())
             ->method('critical');
         $this->assertFalse($this->model->execute());

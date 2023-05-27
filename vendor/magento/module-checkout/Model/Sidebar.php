@@ -8,14 +8,14 @@ namespace Magento\Checkout\Model;
 use Magento\Checkout\Helper\Data as HelperData;
 use Magento\Checkout\Model\Cart;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Filter\LocalizedToNormalized;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Quote\Api\Data\CartItemInterface;
 use Magento\Quote\Model\Quote\Address\Total;
 
 /**
- * Data model for the sidebar
- *
  * @deprecated 100.1.0
+ * @see we don't recommend this approach anymore
  */
 class Sidebar
 {
@@ -129,7 +129,7 @@ class Sidebar
     protected function normalize($itemQty)
     {
         if ($itemQty) {
-            $filter = new \Zend_Filter_LocalizedToNormalized(
+            $filter = new LocalizedToNormalized(
                 ['locale' => $this->resolver->getLocale()]
             );
             return $filter->filter((string)$itemQty);

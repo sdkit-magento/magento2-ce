@@ -16,12 +16,12 @@
             <severity value="CRITICAL"/>
             <group value="msi"/>
             <group value="multi_mode"/>
-            <group value="SearchEngineElasticsearch"/>
+            <group value="SearchEngine"/>
         </annotations>
 
         <before>
             <!-- Assign Main Website to Default Stock -->
-            <actionGroup ref="LoginAsAdmin" stepKey="loginAsAdmin"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="loginAsAdmin"/>
             <amOnPage url="{{AdminManageStockPage.url}}" stepKey="navigateToStockIndexPage"/>
             <waitForPageLoad time="30" stepKey="waitForStockGridPageLoad"/>
             <actionGroup ref="SearchAdminDataGridByKeywordActionGroup" stepKey="searchDefaultStockByKeyword">
@@ -48,15 +48,19 @@
                 <requiredEntity createDataKey="additionalStock"/>
                 <requiredEntity createDataKey="additionalSource"/>
             </createData>
-            <!--Enable ElasticSearch as search engine.-->
-            <magentoCLI command="config:set {{SearchEngineElasticsearchConfigData.path}} {{SearchEngineElasticsearchConfigData.value}}" stepKey="enableElasticSearchAsSearchEngine"/>
-            <magentoCLI command="indexer:reindex" stepKey="performReindexAfterElasticSearchEnable"/>
-            <magentoCLI command="cache:flush" stepKey="cleanCacheAfterElasticSearchEnable"/>
+
+            <magentoCron groups="index" stepKey="reindexInvalidatedIndices"/>
+            <magentoCLI command="indexer:reindex" arguments="catalogsearch_fulltext" stepKey="performReindexAfterElasticSearchEnable"/>
+            <magentoCLI command="cache:clean" arguments="full_page" stepKey="cleanCacheAfterElasticSearchEnable"/>
         </before>
         <after>
             <!--Disable created test source.-->
             <actionGroup ref="DisableSourceActionGroup" stepKey="disableCreatedCustomSource">
                 <argument name="sourceCode" value="$$additionalSource.source[source_code]$$"/>
+            </actionGroup>
+            <actionGroup ref="AssignWebsiteToStockActionGroup" stepKey="assignMainWebsiteToDefaultStock">
+                <argument name="stockName" value="{{_defaultStock.name}}"/>
+                <argument name="websiteName" value="{{_defaultWebsite.name}}"/>
             </actionGroup>
             <!--Delete created products and stock.-->
             <deleteData createDataKey="additionalStock" stepKey="deleteAdditionalStock"/>
@@ -66,11 +70,11 @@
 
             <magentoCLI command="indexer:reindex" stepKey="performReindexAfterElasticSearchDisable"/>
             <magentoCLI command="cache:flush" stepKey="cleanCacheAfterElasticSearchDisable"/>
-            <actionGroup ref="logout" stepKey="logoutOfAdmin1"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logoutOfAdmin1"/>
         </after>
 
         <!--Verify products are visible on storefront page.-->
-        <amOnPage url="{{StorefrontCategoryPage.url($$simpleCategory.name$$)}}" stepKey="navigateToCategoryToVerifyProductsAreVisible"/>
+        <amOnPage url="{{StorefrontCategoryPage.url($$simpleCategory.custom_attributes[url_key]$$)}}" stepKey="navigateToCategoryToVerifyProductsAreVisible"/>
         <waitForPageLoad time="30" stepKey="waitForCategoryPageIsLoadToVerifyProductIsNotVisible"/>
         <see userInput="$$simpleProduct1.name$$" stepKey="verifyProduct1IsVisible"/>
         <see userInput="$$simpleProduct2.name$$" stepKey="verifyProduct2IsVisible"/>

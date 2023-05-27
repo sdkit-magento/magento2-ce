@@ -5,9 +5,6 @@
  */
 namespace Magento\Quote\Model\Quote\Validator\MinimumOrderAmount;
 
-/**
- * Provide validation message.
- */
 class ValidationMessage
 {
     /**
@@ -22,7 +19,8 @@ class ValidationMessage
 
     /**
      * @var \Magento\Framework\Locale\CurrencyInterface
-     * @deprecated 101.0.3
+     * @deprecated 101.0.3 since 101.0.0
+     * @see no alternatives
      */
     private $currency;
 
@@ -54,7 +52,6 @@ class ValidationMessage
      * Get validation message.
      *
      * @return \Magento\Framework\Phrase
-     * @throws \Zend_Currency_Exception
      */
     public function getMessage()
     {
@@ -63,14 +60,10 @@ class ValidationMessage
             \Magento\Store\Model\ScopeInterface::SCOPE_STORE
         );
         if (!$message) {
-            $minimumAmount = $this->priceHelper->currency(
-                $this->scopeConfig->getValue(
-                    'sales/minimum_order/amount',
-                    \Magento\Store\Model\ScopeInterface::SCOPE_STORE
-                ),
-                true,
-                false
-            );
+            $minimumAmount =  $this->priceHelper->currency($this->scopeConfig->getValue(
+                'sales/minimum_order/amount',
+                \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+            ), true, false);
 
             $message = __('Minimum order amount is %1', $minimumAmount);
         } else {

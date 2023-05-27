@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace Laminas\Captcha;
 
@@ -31,14 +31,14 @@ abstract class AbstractAdapter extends AbstractValidator implements AdapterInter
     /**
      * Captcha options
      *
-     * @var array
+     * @var array<string, mixed>
      */
     protected $options = [];
 
     /**
      * Options to skip when processing options
      *
-     * @var array
+     * @var list<string>
      */
     protected $skipOptions = [
         'options',
@@ -71,10 +71,9 @@ abstract class AbstractAdapter extends AbstractValidator implements AdapterInter
      * Set single option for the object
      *
      * @param  string $key
-     * @param  string $value
-     * @return AbstractAdapter Provides a fluent interface
+     * @return $this Provides a fluent interface
      */
-    public function setOption($key, $value)
+    public function setOption($key, mixed $value)
     {
         if (in_array(strtolower($key), $this->skipOptions)) {
             return $this;
@@ -93,13 +92,7 @@ abstract class AbstractAdapter extends AbstractValidator implements AdapterInter
         return $this;
     }
 
-    /**
-     * Set object state from options array
-     *
-     * @param  array|Traversable $options
-     * @throws Exception\InvalidArgumentException
-     * @return AbstractAdapter Provides a fluent interface
-     */
+    /** @inheritDoc */
     public function setOptions($options = [])
     {
         if (! is_array($options) && ! $options instanceof Traversable) {
@@ -112,11 +105,7 @@ abstract class AbstractAdapter extends AbstractValidator implements AdapterInter
         return $this;
     }
 
-    /**
-     * Retrieve options representing object state
-     *
-     * @return array
-     */
+    /** @inheritDoc */
     public function getOptions()
     {
         return $this->options;

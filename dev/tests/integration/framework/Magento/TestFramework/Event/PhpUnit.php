@@ -34,8 +34,6 @@ class PhpUnit implements \PHPUnit\Framework\TestListener
     }
 
     /**
-     * Constructor
-     *
      * @param \Magento\TestFramework\EventManager $eventManager
      * @throws \Magento\Framework\Exception\LocalizedException
      */
@@ -48,54 +46,57 @@ class PhpUnit implements \PHPUnit\Framework\TestListener
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      * @SuppressWarnings(PHPMD.ShortVariable)
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function addError(\PHPUnit\Framework\Test $test, \Throwable $e, float $time) : void
+    public function addError(\PHPUnit\Framework\Test $test, \Throwable $t, float $time): void
     {
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      * @SuppressWarnings(PHPMD.ShortVariable)
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function addFailure(\PHPUnit\Framework\Test $test, \PHPUnit\Framework\AssertionFailedError $e, float $time): void
+    public function addFailure(
+        \PHPUnit\Framework\Test $test,
+        \PHPUnit\Framework\AssertionFailedError $e,
+        float $time
+    ): void {
+    }
+
+    /**
+     * @inheritDoc
+     * @SuppressWarnings(PHPMD.ShortVariable)
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function addIncompleteTest(\PHPUnit\Framework\Test $test, \Throwable $t, float $time): void
     {
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      * @SuppressWarnings(PHPMD.ShortVariable)
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function addIncompleteTest(\PHPUnit\Framework\Test $test, \Throwable $e, float $time): void
+    public function addRiskyTest(\PHPUnit\Framework\Test $test, \Throwable $t, float $time): void
     {
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      * @SuppressWarnings(PHPMD.ShortVariable)
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function addRiskyTest(\PHPUnit\Framework\Test $test, \Throwable $e, float $time) : void
+    public function addSkippedTest(\PHPUnit\Framework\Test $test, \Throwable $t, float $time): void
     {
     }
 
     /**
-     * {@inheritdoc}
-     * @SuppressWarnings(PHPMD.ShortVariable)
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     * @inheritDoc
      */
-    public function addSkippedTest(\PHPUnit\Framework\Test $test, \Throwable $e, float $time): void
-    {
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function startTestSuite(\PHPUnit\Framework\TestSuite $suite) : void
+    public function startTestSuite(\PHPUnit\Framework\TestSuite $suite): void
     {
         /* PHPUnit runs tests with data provider in own test suite for each test, so just skip such test suites */
         if ($suite instanceof \PHPUnit\Framework\DataProviderTestSuite) {
@@ -105,7 +106,7 @@ class PhpUnit implements \PHPUnit\Framework\TestListener
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      */
     public function endTestSuite(\PHPUnit\Framework\TestSuite $suite): void
     {
@@ -116,7 +117,7 @@ class PhpUnit implements \PHPUnit\Framework\TestListener
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      */
     public function startTest(\PHPUnit\Framework\Test $test): void
     {
@@ -127,7 +128,7 @@ class PhpUnit implements \PHPUnit\Framework\TestListener
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function endTest(\PHPUnit\Framework\Test $test, float $time): void
@@ -139,7 +140,7 @@ class PhpUnit implements \PHPUnit\Framework\TestListener
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      */
     public function addWarning(\PHPUnit\Framework\Test $test, \PHPUnit\Framework\Warning $e, float $time): void
     {

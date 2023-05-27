@@ -16,23 +16,30 @@
         "forum": "https://discourse.laminas.dev"
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "platform": {
+            "php": "8.0.99"
+        },
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     },
     "require": {
-        "php": "^7.3 || ~8.0.0",
+        "php": "~8.0.0 || ~8.1.0 || ~8.2.0",
         "ext-dom": "*",
         "ext-soap": "*",
-        "laminas/laminas-server": "^2.9",
-        "laminas/laminas-stdlib": "^3.3",
-        "laminas/laminas-uri": "^2.8",
-        "laminas/laminas-zendframework-bridge": "^1.1.0"
+        "laminas/laminas-server": "^2.15",
+        "laminas/laminas-stdlib": "^3.16",
+        "laminas/laminas-uri": "^2.10"
     },
     "require-dev": {
-        "laminas/laminas-coding-standard": "~1.0.0",
-        "laminas/laminas-config": "^3.4",
-        "laminas/laminas-http": "^2.14",
+        "laminas/laminas-coding-standard": "^2.5",
+        "laminas/laminas-config": "^3.8",
+        "laminas/laminas-http": "^2.18",
         "phpspec/prophecy-phpunit": "^2.0.1",
-        "phpunit/phpunit": "^9.4.3"
+        "phpunit/phpunit": "^9.5.27",
+        "psalm/plugin-phpunit": "^0.18.4",
+        "vimeo/psalm": "^4.30"
     },
     "suggest": {
         "ext-curl": "Curl is required when .NET compatibility is required",
@@ -62,7 +69,8 @@
         "test": "phpunit",
         "test-coverage": "phpunit --coverage-clover clover.xml"
     },
-    "replace": {
-        "zendframework/zend-soap": "^2.8.0"
+    "conflict": {
+        "laminas/laminas-code": "<4.4",
+        "zendframework/zend-soap": "*"
     }
 }

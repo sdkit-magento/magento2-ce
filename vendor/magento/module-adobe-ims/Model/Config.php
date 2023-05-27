@@ -3,7 +3,6 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-
 declare(strict_types=1);
 
 namespace Magento\AdobeIms\Model;
@@ -23,8 +22,8 @@ class Config implements ConfigInterface
     private const XML_PATH_TOKEN_URL = 'adobe_ims/integration/token_url';
     private const XML_PATH_AUTH_URL_PATTERN = 'adobe_ims/integration/auth_url_pattern';
     private const XML_PATH_LOGOUT_URL_PATTERN = 'adobe_ims/integration/logout_url';
-    private const XML_PATH_DEFAULT_PROFILE_IMAGE = 'adobe_ims/integration/default_profile_image';
     private const XML_PATH_IMAGE_URL_PATTERN = 'adobe_ims/integration/image_url';
+    private const OAUTH_CALLBACK_URL = 'adobe_ims/oauth/callback';
 
     /**
      * @var ScopeConfigInterface
@@ -82,7 +81,7 @@ class Config implements ConfigInterface
         return str_replace(
             ['#{client_id}', '#{redirect_uri}', '#{locale}'],
             [$this->getApiKey(), $this->getCallBackUrl(), $this->getLocale()],
-            $this->scopeConfig->getValue(self::XML_PATH_AUTH_URL_PATTERN)
+            $this->scopeConfig->getValue(self::XML_PATH_AUTH_URL_PATTERN) ?? ''
         );
     }
 
@@ -91,11 +90,11 @@ class Config implements ConfigInterface
      */
     public function getCallBackUrl(): string
     {
-        return $this->url->getUrl('adobe_ims/oauth/callback');
+        return $this->url->getUrl(self::OAUTH_CALLBACK_URL);
     }
 
     /**
-     * Retrieve token URL
+     * Get locale
      *
      * @return string
      */
@@ -107,12 +106,16 @@ class Config implements ConfigInterface
     /**
      * @inheritdoc
      */
-    public function getLogoutUrl(string $accessToken, string $redirectUrl = '') : string
+    public function getLogoutUrl(string $redirectUrl = '') : string
     {
+        // there is no success response with empty redirect url
+        if ($redirectUrl === '') {
+            $redirectUrl = 'self';
+        }
         return str_replace(
-            ['#{access_token}', '#{redirect_uri}'],
-            [$accessToken, $redirectUrl],
-            $this->scopeConfig->getValue(self::XML_PATH_LOGOUT_URL_PATTERN)
+            '#{redirect_uri}',
+            $redirectUrl,
+            $this->scopeConfig->getValue(self::XML_PATH_LOGOUT_URL_PATTERN) ?? ''
         );
     }
 
@@ -124,15 +127,7 @@ class Config implements ConfigInterface
         return str_replace(
             ['#{api_key}'],
             [$this->getApiKey()],
-            $this->scopeConfig->getValue(self::XML_PATH_IMAGE_URL_PATTERN)
+            $this->scopeConfig->getValue(self::XML_PATH_IMAGE_URL_PATTERN) ?? ''
         );
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getDefaultProfileImage(): string
-    {
-        return $this->scopeConfig->getValue(self::XML_PATH_DEFAULT_PROFILE_IMAGE);
     }
 }

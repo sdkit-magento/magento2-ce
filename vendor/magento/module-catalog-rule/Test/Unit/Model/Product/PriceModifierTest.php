@@ -3,36 +3,45 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\CatalogRule\Test\Unit\Model\Product;
 
-class PriceModifierTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Model\Product;
+use Magento\CatalogRule\Model\Product\PriceModifier;
+use Magento\CatalogRule\Model\Rule;
+use Magento\CatalogRule\Model\RuleFactory;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+class PriceModifierTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogRule\Model\Product\PriceModifier
+     * @var PriceModifier
      */
     protected $priceModifier;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $ruleFactoryMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $productMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $ruleMock;
 
     protected function setUp(): void
     {
-        $this->ruleFactoryMock = $this->createPartialMock(\Magento\CatalogRule\Model\RuleFactory::class, ['create']);
-        $this->productMock = $this->createMock(\Magento\Catalog\Model\Product::class);
-        $this->ruleMock = $this->createMock(\Magento\CatalogRule\Model\Rule::class);
-        $this->priceModifier = new \Magento\CatalogRule\Model\Product\PriceModifier($this->ruleFactoryMock);
+        $this->ruleFactoryMock = $this->createPartialMock(RuleFactory::class, ['create']);
+        $this->productMock = $this->createMock(Product::class);
+        $this->ruleMock = $this->createMock(Rule::class);
+        $this->priceModifier = new PriceModifier($this->ruleFactoryMock);
     }
 
     /**

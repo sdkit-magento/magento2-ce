@@ -1,29 +1,35 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-math for the canonical source repository
- * @copyright https://github.com/laminas/laminas-math/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-math/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Math\BigInteger\Adapter;
 
 use Laminas\Math\BigInteger\Exception;
+
+use function base_convert;
+use function bcadd;
+use function bccomp;
+use function bcdiv;
+use function bcmod;
+use function bcmul;
+use function bcpow;
+use function bcpowmod;
+use function bcsqrt;
+use function bcsub;
+use function chr;
+use function ltrim;
+use function mb_strlen;
+use function ord;
+use function preg_match;
+use function str_pad;
+use function strpos;
+use function strtolower;
+
+use const STR_PAD_LEFT;
 
 /**
  * Bcmath extension adapter
  */
 class Bcmath implements AdapterInterface
 {
-    /**
-     * Constructor
-     * Sets Bcmath scale factor to zero
-     */
-    public function __construct()
-    {
-        bcscale(0);
-    }
-
     /**
      * Create string representing big integer in decimal form from arbitrary integer format
      *
@@ -33,7 +39,7 @@ class Bcmath implements AdapterInterface
      */
     public function init($operand, $base = null)
     {
-        $sign    = (strpos($operand, '-') === 0) ? '-' : '';
+        $sign    = strpos($operand, '-') === 0 ? '-' : '';
         $operand = ltrim($operand, '-+');
 
         if (null === $base) {
@@ -58,6 +64,7 @@ class Bcmath implements AdapterInterface
             }
         }
 
+        // phpcs:ignore SlevomatCodingStandard.Operators.DisallowEqualOperators.DisallowedNotEqualOperator
         if ($base != 10) {
             $operand = $this->baseConvert($operand, $base, 10);
         }
@@ -79,7 +86,7 @@ class Bcmath implements AdapterInterface
      */
     public function add($leftOperand, $rightOperand)
     {
-        return bcadd($leftOperand, $rightOperand);
+        return bcadd($leftOperand, $rightOperand, 0);
     }
 
     /**
@@ -91,7 +98,7 @@ class Bcmath implements AdapterInterface
      */
     public function sub($leftOperand, $rightOperand)
     {
-        return bcsub($leftOperand, $rightOperand);
+        return bcsub($leftOperand, $rightOperand, 0);
     }
 
     /**
@@ -103,7 +110,7 @@ class Bcmath implements AdapterInterface
      */
     public function mul($leftOperand, $rightOperand)
     {
-        return bcmul($leftOperand, $rightOperand);
+        return bcmul($leftOperand, $rightOperand, 0);
     }
 
     /**
@@ -117,15 +124,14 @@ class Bcmath implements AdapterInterface
      */
     public function div($leftOperand, $rightOperand)
     {
+        // phpcs:ignore SlevomatCodingStandard.Operators.DisallowEqualOperators.DisallowedEqualOperator
         if ($rightOperand == 0) {
             throw new Exception\DivisionByZeroException(
                 "Division by zero; divisor = {$rightOperand}"
             );
         }
 
-        $result = bcdiv($leftOperand, $rightOperand);
-
-        return $result;
+        return bcdiv($leftOperand, $rightOperand, 0);
     }
 
     /**
@@ -137,7 +143,7 @@ class Bcmath implements AdapterInterface
      */
     public function pow($operand, $exp)
     {
-        return bcpow($operand, $exp);
+        return bcpow($operand, $exp, 0);
     }
 
     /**
@@ -148,7 +154,7 @@ class Bcmath implements AdapterInterface
      */
     public function sqrt($operand)
     {
-        return bcsqrt($operand);
+        return bcsqrt($operand, 0);
     }
 
     /**
@@ -184,7 +190,7 @@ class Bcmath implements AdapterInterface
      */
     public function powmod($leftOperand, $rightOperand, $modulus)
     {
-        return bcpowmod($leftOperand, $rightOperand, $modulus);
+        return bcpowmod($leftOperand, $rightOperand, $modulus, 0);
     }
 
     /**
@@ -198,7 +204,7 @@ class Bcmath implements AdapterInterface
      */
     public function comp($leftOperand, $rightOperand)
     {
-        return bccomp($leftOperand, $rightOperand);
+        return bccomp($leftOperand, $rightOperand, 0);
     }
 
     /**
@@ -210,8 +216,8 @@ class Bcmath implements AdapterInterface
      */
     public function intToBin($operand, $twoc = false)
     {
-        $nb = chr(0);
-        $isNegative = (strpos($operand, '-') === 0);
+        $nb         = chr(0);
+        $isNegative = strpos($operand, '-') === 0;
         $operand    = ltrim($operand, '+-0');
 
         if (empty($operand)) {
@@ -226,7 +232,7 @@ class Bcmath implements AdapterInterface
         while (bccomp($operand, '0', 0) > 0) {
             $temp    = bcmod($operand, '16777216');
             $bytes   = chr($temp >> 16) . chr($temp >> 8) . chr($temp) . $bytes;
-            $operand = bcdiv($operand, '16777216');
+            $operand = bcdiv($operand, '16777216', 0);
         }
         $bytes = ltrim($bytes, $nb);
 
@@ -249,13 +255,13 @@ class Bcmath implements AdapterInterface
      */
     public function binToInt($bytes, $twoc = false)
     {
-        $isNegative = ((ord($bytes[0]) & 0x80) && $twoc);
+        $isNegative = (ord($bytes[0]) & 0x80) && $twoc;
 
         if ($isNegative) {
             $bytes = ~$bytes;
         }
 
-        $len = (strlen($bytes) + 3) & 0xfffffffc;
+        $len   = (mb_strlen($bytes, '8bit') + 3) & 0xfffffffc;
         $bytes = str_pad($bytes, $len, chr(0), STR_PAD_LEFT);
 
         $result = '0';
@@ -285,6 +291,7 @@ class Bcmath implements AdapterInterface
      */
     public function baseConvert($operand, $fromBase, $toBase = 10)
     {
+        // phpcs:ignore SlevomatCodingStandard.Operators.DisallowEqualOperators.DisallowedEqualOperator
         if ($fromBase == $toBase) {
             return $operand;
         }
@@ -300,27 +307,29 @@ class Bcmath implements AdapterInterface
             );
         }
 
-        $sign    = (strpos($operand, '-') === 0) ? '-' : '';
+        $sign    = strpos($operand, '-') === 0 ? '-' : '';
         $operand = ltrim($operand, '-+');
 
         $chars = self::BASE62_ALPHABET;
 
         // convert to decimal
+        // phpcs:ignore SlevomatCodingStandard.Operators.DisallowEqualOperators.DisallowedEqualOperator
         if ($fromBase == 10) {
             $decimal = $operand;
         } else {
             $decimal = '0';
-            for ($i = 0, $len  = strlen($operand); $i < $len; $i++) {
+            for ($i = 0, $len  = mb_strlen($operand, '8bit'); $i < $len; $i++) {
                 $decimal = bcmul($decimal, $fromBase);
 
-                $remainder = ($fromBase <= 36)
+                $remainder = $fromBase <= 36
                     ? base_convert($operand[$i], $fromBase, 10)
                     : strpos($chars, $operand[$i]);
 
-                $decimal = bcadd($decimal, $remainder);
+                $decimal = bcadd($decimal, $remainder, 0);
             }
         }
 
+        // phpcs:ignore SlevomatCodingStandard.Operators.DisallowEqualOperators.DisallowedEqualOperator
         if ($toBase == 10) {
             return $decimal;
         }
@@ -331,7 +340,7 @@ class Bcmath implements AdapterInterface
             $remainder = bcmod($decimal, $toBase);
             $decimal   = bcdiv($decimal, $toBase);
 
-            $intermediate = ($toBase <= 36)
+            $intermediate = $toBase <= 36
                 ? base_convert($remainder, 10, $toBase)
                 : $chars[$remainder];
 

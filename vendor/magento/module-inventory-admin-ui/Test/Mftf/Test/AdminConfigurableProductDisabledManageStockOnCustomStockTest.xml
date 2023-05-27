@@ -24,7 +24,7 @@
             <createData entity="_minimalSource" stepKey="customSource"/>
             <createData entity="BasicMsiStock1" stepKey="customStock"/>
 
-            <actionGroup ref="LoginAsAdmin" stepKey="loginToAdminArea"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="loginToAdminArea"/>
             <waitForPageLoad stepKey="waitForDashboardLoad"/>
 
             <comment userInput="Assign source and sales channel to stock." stepKey="assignSourceToStockComment"/>
@@ -47,7 +47,7 @@
         <after>
             <magentoCLI command="config:set {{TurnOnManageStockConfig.path}} {{TurnOnManageStockConfig.value}}" stepKey="reenableManageStock"/>
             <deleteData createDataKey="category" stepKey="deleteCategory"/>
-            <actionGroup ref="logout" stepKey="logoutFromAdminArea"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logoutFromAdminArea"/>
         </after>
 
         <comment userInput="Create Configurable product with two options 'In Stock' on 'Custom' stock" stepKey="CreateConfigurableProductComment"/>
@@ -144,8 +144,14 @@
         <seeElement selector="{{AdminProductMessagesSection.successMessage}}" stepKey="checkRedConfigurableVariationSaveMessage"/>
 
         <comment userInput="Check, configurable product is absent on category page and has 'Out of Stock' status" stepKey="checkConfigurableProductIsAbsentOnCategoryPageAndHasOutOfStockStatusOnViewPageComment"/>
+        <actionGroup ref="CliIndexerReindexActionGroup" stepKey="reindex">
+            <argument name="indices" value=""/>
+        </actionGroup>
+        <actionGroup ref="CliCacheCleanActionGroup" stepKey="cleanInvalidatedCaches">
+            <argument name="tags" value="full_page"/>
+        </actionGroup>
 
-        <amOnPage url="{{StorefrontCategoryPage.url($$category.name$$)}}" stepKey="navigateBackToConfigurableCategoryPage"/>
+        <amOnPage url="{{StorefrontCategoryPage.url($$category.custom_attributes[url_key]$$)}}" stepKey="navigateBackToConfigurableCategoryPage"/>
         <waitForPageLoad stepKey="waitForPageLoad7"/>
         <dontSee userInput="{{ConfigurableMsiProduct.name}}" stepKey="checkConfigurableProductIsAbsentOnCategoryPage"/>
 

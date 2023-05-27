@@ -37,7 +37,6 @@ class GetProductIdsBySkusTest extends TestCase
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/products_for_search.php
-     *
      */
     public function testExecuteWithNotExistedSkus()
     {

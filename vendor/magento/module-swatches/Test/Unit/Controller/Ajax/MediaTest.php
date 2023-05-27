@@ -4,6 +4,8 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Swatches\Test\Unit\Controller\Ajax;
 
 use Magento\Catalog\Model\Product;
@@ -21,11 +23,6 @@ use Magento\Swatches\Helper\Data;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Tests for @see \Magento\Swatches\Controller\Ajax\Media.
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- */
 class MediaTest extends TestCase
 {
     /** @var array */
@@ -92,7 +89,7 @@ class MediaTest extends TestCase
         $this->productMock = $this->createMock(Product::class);
         $this->contextMock = $this->createMock(Context::class);
 
-        $this->requestMock = $this->createMock(RequestInterface::class);
+        $this->requestMock = $this->getMockForAbstractClass(RequestInterface::class);
         $this->contextMock->method('getRequest')->willReturn($this->requestMock);
         $this->responseMock = $this->getMockBuilder(ResponseInterface::class)
             ->disableOriginalConstructor()
@@ -149,7 +146,7 @@ class MediaTest extends TestCase
      *
      * @return void
      */
-    public function testExecute(): void
+    public function testExecute()
     {
         $this->prepareProductMock();
         $this->productMock
@@ -170,8 +167,7 @@ class MediaTest extends TestCase
         $this->jsonMock
             ->expects($this->once())
             ->method('setData')
-            ->with($this->mediaGallery)
-            ->willReturnSelf();
+            ->with($this->mediaGallery)->willReturnSelf();
 
         $result = $this->controller->execute();
 
@@ -183,7 +179,7 @@ class MediaTest extends TestCase
      *
      * @return void
      */
-    public function testExecuteNonExistingProduct(): void
+    public function testExecuteNonExistingProduct()
     {
         $this->prepareProductMock();
         $this->productMock
@@ -206,7 +202,7 @@ class MediaTest extends TestCase
      *
      * @return void
      */
-    public function testExecuteDisabledProduct(): void
+    public function testExecuteDisabledProduct()
     {
         $this->prepareProductMock();
         $this->productMock

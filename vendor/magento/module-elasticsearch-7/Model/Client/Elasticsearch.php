@@ -7,8 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\Elasticsearch7\Model\Client;
 
-use Magento\Framework\Exception\LocalizedException;
 use Magento\AdvancedSearch\Model\Client\ClientInterface;
+use Magento\Elasticsearch\Model\Adapter\FieldsMappingPreprocessorInterface;
+use Magento\Elasticsearch7\Model\Adapter\DynamicTemplatesProvider;
+use Magento\Framework\App\ObjectManager;
+use Magento\Framework\Exception\LocalizedException;
 
 /**
  * Elasticsearch client
@@ -33,15 +36,29 @@ class Elasticsearch implements ClientInterface
     private $pingResult;
 
     /**
+     * @var FieldsMappingPreprocessorInterface[]
+     */
+    private $fieldsMappingPreprocessors;
+
+    /**
+     * @var DynamicTemplatesProvider|null
+     */
+    private $dynamicTemplatesProvider;
+
+    /**
      * Initialize Elasticsearch 7 Client
      *
      * @param array $options
      * @param \Elasticsearch\Client|null $elasticsearchClient
+     * @param array $fieldsMappingPreprocessors
+     * @param DynamicTemplatesProvider|null $dynamicTemplatesProvider
      * @throws LocalizedException
      */
     public function __construct(
         $options = [],
-        $elasticsearchClient = null
+        $elasticsearchClient = null,
+        $fieldsMappingPreprocessors = [],
+        ?DynamicTemplatesProvider $dynamicTemplatesProvider = null
     ) {
         if (empty($options['hostname'])
             || ((!empty($options['enableAuth']) && ($options['enableAuth'] == 1))
@@ -56,6 +73,9 @@ class Elasticsearch implements ClientInterface
             $this->client[getmypid()] = $elasticsearchClient;
         }
         $this->clientOptions = $options;
+        $this->fieldsMappingPreprocessors = $fieldsMappingPreprocessors;
+        $this->dynamicTemplatesProvider = $dynamicTemplatesProvider ?: ObjectManager::getInstance()
+            ->get(DynamicTemplatesProvider::class);
     }
 
     /**
@@ -171,6 +191,23 @@ class Elasticsearch implements ClientInterface
     }
 
     /**
+     * Add/update an Elasticsearch index settings.
+     *
+     * @param string $index
+     * @param array $settings
+     * @return void
+     */
+    public function putIndexSettings(string $index, array $settings): void
+    {
+        $this->getElasticsearchClient()->indices()->putSettings(
+            [
+                'index' => $index,
+                'body' => $settings,
+            ]
+        );
+    }
+
+    /**
      * Delete an Elasticsearch 7 index.
      *
      * @param string $index
@@ -209,8 +246,8 @@ class Elasticsearch implements ClientInterface
     {
         $params = [
             'body' => [
-                'actions' => []
-            ]
+                'actions' => [],
+            ],
         ];
         if ($oldIndex) {
             $params['body']['actions'][] = ['remove' => ['alias' => $alias, 'index' => $oldIndex]];
@@ -277,57 +314,13 @@ class Elasticsearch implements ClientInterface
             'include_type_name' => true,
             'body' => [
                 $entityType => [
-                    'properties' => [
-                        '_search' => [
-                            'type' => 'text',
-                        ],
-                    ],
-                    'dynamic_templates' => [
-                        [
-                            'price_mapping' => [
-                                'match' => 'price_*',
-                                'match_mapping_type' => 'string',
-                                'mapping' => [
-                                    'type' => 'double',
-                                    'store' => true,
-                                ],
-                            ],
-                        ],
-                        [
-                            'position_mapping' => [
-                                'match' => 'position_*',
-                                'match_mapping_type' => 'string',
-                                'mapping' => [
-                                    'type' => 'integer',
-                                    'index' => true,
-                                ],
-                            ],
-                        ],
-                        [
-                            'string_mapping' => [
-                                'match' => '*',
-                                'match_mapping_type' => 'string',
-                                'mapping' => [
-                                    'type' => 'text',
-                                    'index' => true,
-                                    'copy_to' => '_search',
-                                ],
-                            ],
-                        ],
-                        [
-                            'integer_mapping' => [
-                                'match_mapping_type' => 'long',
-                                'mapping' => [
-                                    'type' => 'integer',
-                                ],
-                            ],
-                        ],
-                    ],
+                    'properties' => [],
+                    'dynamic_templates' => $this->dynamicTemplatesProvider->getTemplates(),
                 ],
             ],
         ];
 
-        foreach ($fields as $field => $fieldInfo) {
+        foreach ($this->applyFieldsMappingPreprocessors($fields) as $field => $fieldInfo) {
             $params['body'][$entityType]['properties'][$field] = $fieldInfo;
         }
 
@@ -346,6 +339,17 @@ class Elasticsearch implements ClientInterface
     }
 
     /**
+     * Get mapping from Elasticsearch index.
+     *
+     * @param array $params
+     * @return array
+     */
+    public function getMapping(array $params): array
+    {
+        return $this->getElasticsearchClient()->indices()->getMapping($params);
+    }
+
+    /**
      * Delete mapping in Elasticsearch 7 index
      *
      * @param string $index
@@ -360,5 +364,19 @@ class Elasticsearch implements ClientInterface
                 'type' => $entityType,
             ]
         );
+    }
+
+    /**
+     * Apply fields mapping preprocessors
+     *
+     * @param array $properties
+     * @return array
+     */
+    private function applyFieldsMappingPreprocessors(array $properties): array
+    {
+        foreach ($this->fieldsMappingPreprocessors as $preprocessor) {
+            $properties = $preprocessor->process($properties);
+        }
+        return $properties;
     }
 }

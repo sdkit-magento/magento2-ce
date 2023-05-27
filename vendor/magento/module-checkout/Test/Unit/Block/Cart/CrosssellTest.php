@@ -78,13 +78,11 @@ class CrosssellTest extends TestCase
                 'storeManager' => $this->storeManager
             ]
         );
-        $this->checkoutSession = $this->createPartialMock(
-            Session::class,
-            [
-                'getQuote',
-                'getLastAddedProductId'
-            ]
-        );
+        $this->checkoutSession = $this->getMockBuilder(Session::class)
+            ->addMethods(['getLastAddedProductId'])
+            ->onlyMethods(['getQuote'])
+            ->disableOriginalConstructor()
+            ->getMock();
         $this->productRepository = $this->createMock(
             ProductRepositoryInterface::class
         );
@@ -163,7 +161,7 @@ class CrosssellTest extends TestCase
                     return $this->createProductCollection();
                 }
             );
-        $store = $this->getMockForAbstractClass(StoreInterface::class);
+        $store = $this->createMock(StoreInterface::class);
         $this->storeManager->method('getStore')
             ->willReturn($store);
         $actual = array_map(
@@ -340,7 +338,7 @@ class CrosssellTest extends TestCase
     private function createProductCollection(): MockObject
     {
         $productCollection = $this->createMock(\Magento\Catalog\Model\ResourceModel\Product\Collection::class);
-        $entityMetadataInterface =$this->getMockForAbstractClass(EntityMetadataInterface::class);
+        $entityMetadataInterface =$this->createMock(EntityMetadataInterface::class);
         $entityMetadataInterface->method('getLinkField')
             ->willReturn('entity_id');
         $productCollection->method('getProductEntityMetadata')

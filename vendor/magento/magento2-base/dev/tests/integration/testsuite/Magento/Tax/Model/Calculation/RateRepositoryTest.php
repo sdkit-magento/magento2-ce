@@ -178,14 +178,14 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($taxRateServiceData->getId());
 
         $titles = $taxRateServiceData->getTitles();
-        $this->assertEquals(1, count($titles));
+        $this->assertCount(1, $titles);
         $this->assertEquals($store->getId(), $titles[0]->getStoreId());
         $this->assertEquals($taxData['titles'][0]['value'], $titles[0]->getValue());
 
         $taxRateServiceData = $this->rateRepository->get($taxRateServiceData->getId());
 
         $titles = $taxRateServiceData->getTitles();
-        $this->assertEquals(1, count($titles));
+        $this->assertCount(1, $titles);
         $this->assertEquals($store->getId(), $titles[0]->getStoreId());
         $this->assertEquals($taxData['titles'][0]['value'], $titles[0]->getValue());
     }
@@ -195,8 +195,9 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveThrowsExceptionIfTargetTaxRateDoesNotExist()
     {
-        $this->expectExceptionMessage("No such entity with taxRateId = 9999");
         $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectExceptionMessage('No such entity with taxRateId = 9999');
+
         $invalidTaxData = [
             'id' => 9999,
             'tax_country_id' => 'US',
@@ -221,8 +222,9 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveThrowsExceptionIfTaxRateWithCorrespondingCodeAlreadyExists()
     {
-        $this->expectExceptionMessage("Code already exists.");
         $this->expectException(\Magento\Framework\Exception\AlreadyExistsException::class);
+        $this->expectExceptionMessage('Code already exists.');
+
         $invalidTaxData = [
             'tax_country_id' => 'US',
             'tax_region_id' => '8',
@@ -258,12 +260,12 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
      * @throws \Magento\Framework\Exception\InputException
      *
      * @dataProvider createDataProvider
-     *
      * @magentoDbIsolation enabled
      */
     public function testSaveThrowsExceptionIfGivenDataIsInvalid($dataArray, $errorMessages)
     {
         $this->expectException(\Magento\Framework\Exception\InputException::class);
+
         $taxRate = $this->taxRateFactory->create();
         $this->dataObjectHelper->populateWithArray($taxRate, $dataArray, \Magento\Tax\Api\Data\TaxRateInterface::class);
         try {
@@ -429,10 +431,13 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
         $this->assertNull($taxRate->getZipFrom());
     }
 
+    /**
+     */
     public function testGetThrowsExceptionIfTargetTaxRateDoesNotExist()
     {
-        $this->expectExceptionMessage("No such entity with taxRateId = 9999");
         $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectExceptionMessage('No such entity with taxRateId = 9999');
+
         $this->rateRepository->get(9999);
     }
 
@@ -468,12 +473,12 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @magentoDbIsolation enabled
-     *
      */
     public function testSaveThrowsExceptionIfTargetTaxRateExistsButProvidedDataIsInvalid()
     {
-        $this->expectExceptionMessage("postcode");
         $this->expectException(\Magento\Framework\Exception\InputException::class);
+        $this->expectExceptionMessage('postcode');
+
         $taxRate = $this->taxRateFactory->create();
         $taxRate->setTaxCountryId('US')
             ->setTaxRegionId(42)

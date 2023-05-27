@@ -22,6 +22,7 @@
     <preference for="Magento\Customer\Api\Data\AttributeMetadataInterface"
                 type="Magento\Customer\Model\Data\AttributeMetadata" />
     <preference for="Magento\Customer\Api\Data\GroupInterface" type="Magento\Customer\Model\Data\Group" />
+    <preference for="Magento\Customer\Api\Data\GroupExcludedWebsiteInterface" type="Magento\Customer\Model\Data\GroupExcludedWebsite" />
     <preference for="Magento\Customer\Api\Data\OptionInterface" type="Magento\Customer\Model\Data\Option" />
     <preference for="Magento\Customer\Api\Data\ValidationRuleInterface"
                 type="Magento\Customer\Model\Data\ValidationRule" />
@@ -62,6 +63,8 @@
     <preference for="Magento\Customer\Model\Group\RetrieverInterface"
                 type="Magento\Customer\Model\Group\Retriever"/>
     <preference for="Magento\Customer\Api\SessionCleanerInterface" type="Magento\Customer\Model\Session\SessionCleaner"/>
+    <preference for="Magento\Customer\Api\GroupExcludedWebsiteRepositoryInterface"
+                type="Magento\Customer\Model\ResourceModel\GroupExcludedWebsiteRepository" />
     <virtualType name="SessionValidator" type="Magento\Framework\Session\CompositeValidator">
         <arguments>
             <argument name="validators" xsi:type="array">
@@ -363,10 +366,7 @@
     <type name="Magento\Customer\Api\CustomerRepositoryInterface">
         <plugin name="transactionWrapper" type="Magento\Customer\Model\Plugin\CustomerRepository\TransactionWrapper" sortOrder="-1"/>
     </type>
-    <type name="Magento\Directory\Model\AllowedCountries">
-        <plugin name="customerAllowedCountries" type="Magento\Customer\Model\Plugin\AllowedCountries"/>
-    </type>
-    <type name="Magento\Framework\App\Action\AbstractAction">
+    <type name="Magento\Framework\App\ActionInterface">
         <plugin name="customerNotification" type="Magento\Customer\Model\Plugin\CustomerNotification"/>
     </type>
     <type name="Magento\Customer\Model\Authorization\CustomerSessionUserContext">
@@ -376,15 +376,6 @@
     </type>
     <type name="Magento\PageCache\Observer\FlushFormKey">
         <plugin name="customerFlushFormKey" type="Magento\Customer\Model\Plugin\CustomerFlushFormKey"/>
-    </type>
-    <type name="Magento\Customer\Model\Customer\Attribute\CompositeValidator">
-        <arguments>
-            <argument name="validators" xsi:type="array">
-                <item name="file" xsi:type="object">
-                    Magento\Customer\Model\Customer\Attribute\Validator\File
-                </item>
-            </argument>
-        </arguments>
     </type>
     <type name="Magento\Customer\Model\Customer\NotificationStorage">
         <arguments>
@@ -559,6 +550,37 @@
                     <item name="vat_request_date" xsi:type="string">customer_address</item>
                     <item name="vat_request_id" xsi:type="string">customer_address</item>
                     <item name="vat_request_success" xsi:type="string">customer_address</item>
+                </item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Magento\Customer\Api\GroupRepositoryInterface">
+        <plugin name="saveCustomerGroupExcludedWebsite" type="Magento\Customer\Model\Plugin\SaveCustomerGroupExcludedWebsite"/>
+        <plugin name="deleteCustomerGroupExcludedWebsite" type="Magento\Customer\Model\Plugin\DeleteCustomerGroupExcludedWebsite"/>
+        <plugin name="getByIdCustomerGroupExcludedWebsite" type="Magento\Customer\Model\Plugin\GetByIdCustomerGroupExcludedWebsite"/>
+        <plugin name="getListCustomerGroupExcludedWebsite" type="Magento\Customer\Model\Plugin\GetListCustomerGroupExcludedWebsite"/>
+    </type>
+    <type name="Magento\Customer\Ui\Component\Listing\Columns">
+        <arguments>
+            <argument name="filterConfigProviders" xsi:type="array">
+                <item name="text" xsi:type="object">Magento\Customer\Ui\Component\Listing\Filter\TextFilterConfigProvider</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Magento\Customer\Model\EmailNotificationInterface">
+        <plugin name="saveWishlistDataAndAddReferenceKeyToBackUrl" type="Magento\Wishlist\Plugin\SaveWishlistDataAndAddReferenceKeyToBackUrl"/>
+    </type>
+    <type name="Magento\Eav\Model\Validator\Attribute\Data">
+        <arguments>
+            <argument name="ignoredAttributesByTypesList" xsi:type="array">
+                <item name="customer" xsi:type="array">
+                    <item name="website_id" xsi:type="string">website_id</item>
+                    <item name="store_id" xsi:type="string">store_id</item>
+                    <item name="group_id" xsi:type="string">group_id</item>
+                    <item name="dob" xsi:type="string">dob</item>
+                </item>
+                <item name="customer_address" xsi:type="array">
+                    <item name="country_id" xsi:type="string">country_id</item>
                 </item>
             </argument>
         </arguments>

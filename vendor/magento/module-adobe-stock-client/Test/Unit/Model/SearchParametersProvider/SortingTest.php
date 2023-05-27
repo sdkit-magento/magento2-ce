@@ -45,7 +45,7 @@ class SortingTest extends TestCase
     public function testApplyWithFoundedField(): void
     {
         /** @var SearchCriteriaInterface|MockObject $searchCriteriaMock */
-        $searchCriteriaMock = $this->getMockForAbstractClass(SearchCriteriaInterface::class);
+        $searchCriteriaMock = $this->createMock(SearchCriteriaInterface::class);
         /** @var SearchParameters|MockObject $searchParameters */
         $searchParameters = $this->createMock(SearchParameters::class);
         $sortOrderMock = $this->createMock(SortOrder::class);
@@ -68,7 +68,7 @@ class SortingTest extends TestCase
     public function testApplyWithoutFoundedField(): void
     {
         /** @var SearchCriteriaInterface|MockObject $searchCriteriaMock */
-        $searchCriteriaMock = $this->getMockForAbstractClass(SearchCriteriaInterface::class);
+        $searchCriteriaMock = $this->createMock(SearchCriteriaInterface::class);
         /** @var SearchParameters|MockObject $searchParameters */
         $searchParameters = $this->createMock(SearchParameters::class);
         $sortOrderMock = $this->createMock(SortOrder::class);

@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\TestFramework\Catalog\Model\Product\Option\Type\File;
 
 use Magento\Catalog\Model\Product\Option\Type\File\ValidatorFile;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -19,7 +20,7 @@ class ValidatorFileMock extends TestCase
      * Returns mock.
      *
      * @param array|null $fileData
-     * @return ValidatorFile|\PHPUnit_Framework_MockObject_MockObject
+     * @return ValidatorFile|MockObject
      */
     public function getInstance($fileData = null)
     {

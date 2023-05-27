@@ -7,7 +7,7 @@
 namespace Magento\Review\Block\Product;
 
 /**
- * Class ReviewRendererTest
+ * Test for \Magento\Review\Block\Product\ReviewRenderer
  */
 class ReviewRendererTest extends \PHPUnit\Framework\TestCase
 {

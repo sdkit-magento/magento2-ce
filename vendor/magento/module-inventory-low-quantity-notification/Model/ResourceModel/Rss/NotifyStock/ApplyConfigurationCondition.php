@@ -11,9 +11,6 @@ use Magento\CatalogInventory\Api\StockConfigurationInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Select;
 
-/**
- * Add configuration condition to select
- */
 class ApplyConfigurationCondition
 {
     /**

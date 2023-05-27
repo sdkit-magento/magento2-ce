@@ -5,7 +5,6 @@
  */
 namespace Magento\Backend\Controller\Adminhtml\System;
 
-use Magento\Framework\App\Request\Http;
 use Magento\TestFramework\Bootstrap;
 
 /**
@@ -13,11 +12,6 @@ use Magento\TestFramework\Bootstrap;
  */
 class AccountTest extends \Magento\TestFramework\TestCase\AbstractBackendController
 {
-    /**
-     * @inheirtDoc
-     */
-    protected $httpMethod = Http::METHOD_POST;
-
     /**
      * @dataProvider saveDataProvider
      * @magentoDbIsolation enabled
@@ -34,7 +28,6 @@ class AccountTest extends \Magento\TestFramework\TestCase\AbstractBackendControl
         $oldPassword = $user->getPassword();
 
         $request = $this->getRequest();
-        $request->setMethod(Http::METHOD_POST);
         $request->setParam(
             'username',
             $user->getUsername()

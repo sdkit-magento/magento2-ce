@@ -10,9 +10,11 @@ namespace Magento\InventoryConfigurableProduct\Plugin\CatalogInventory\Helper\St
 use Magento\Catalog\Model\Product;
 use Magento\CatalogInventory\Helper\Stock;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\InventorySalesApi\Api\AreProductsSalableInterface;
 use Magento\InventorySalesApi\Api\Data\SalesChannelInterface;
-use Magento\InventorySalesApi\Api\IsProductSalableInterface;
 use Magento\InventorySalesApi\Api\StockResolverInterface;
+use Magento\InventorySalesApi\Model\GetStockItemDataInterface;
 use Magento\Store\Model\StoreManagerInterface;
 
 /**
@@ -26,9 +28,9 @@ class AdaptAssignStatusToProductPlugin
     private $configurable;
 
     /**
-     * @var IsProductSalableInterface
+     * @var AreProductsSalableInterface
      */
-    private $isProductSalable;
+    private $areProductsSalable;
 
     /**
      * @var StoreManagerInterface
@@ -41,21 +43,29 @@ class AdaptAssignStatusToProductPlugin
     private $stockResolver;
 
     /**
+     * @var GetStockItemDataInterface
+     */
+    private $getStockItemData;
+
+    /**
      * @param Configurable $configurable
-     * @param IsProductSalableInterface $isProductSalable
+     * @param AreProductsSalableInterface $areProductsSalable
      * @param StoreManagerInterface $storeManager
      * @param StockResolverInterface $stockResolver
+     * @param GetStockItemDataInterface $getStockItemData
      */
     public function __construct(
         Configurable $configurable,
-        IsProductSalableInterface $isProductSalable,
+        AreProductsSalableInterface $areProductsSalable,
         StoreManagerInterface $storeManager,
-        StockResolverInterface $stockResolver
+        StockResolverInterface $stockResolver,
+        GetStockItemDataInterface $getStockItemData
     ) {
         $this->configurable = $configurable;
-        $this->isProductSalable = $isProductSalable;
+        $this->areProductsSalable = $areProductsSalable;
         $this->storeManager = $storeManager;
         $this->stockResolver = $stockResolver;
+        $this->getStockItemData = $getStockItemData;
     }
 
     /**
@@ -76,14 +86,29 @@ class AdaptAssignStatusToProductPlugin
         if ($product->getTypeId() === Configurable::TYPE_CODE) {
             $website = $this->storeManager->getWebsite();
             $stock = $this->stockResolver->execute(SalesChannelInterface::TYPE_WEBSITE, $website->getCode());
+            $stockId = $stock->getStockId();
+            try {
+                $stockItemData = $this->getStockItemData->execute($product->getSku(), $stockId);
+            } catch (NoSuchEntityException $exception) {
+                $stockItemData = null;
+            }
+            if (null !== $stockItemData) {
+                if (!((bool) $stockItemData[GetStockItemDataInterface::IS_SALABLE])) {
+                    return [$product, $status];
+                }
+            }
             $options = $this->configurable->getConfigurableOptions($product);
             $status = 0;
+            $skus = [[]];
             foreach ($options as $attribute) {
-                foreach ($attribute as $option) {
-                    if ($this->isProductSalable->execute($option['sku'], $stock->getStockId())) {
-                        $status = 1;
-                        break;
-                    }
+                $skus[] = array_column($attribute, 'sku');
+            }
+            $skus = array_merge(...$skus);
+            $results = $this->areProductsSalable->execute($skus, $stock->getStockId());
+            foreach ($results as $result) {
+                if ($result->isSalable()) {
+                    $status = 1;
+                    break;
                 }
             }
         }

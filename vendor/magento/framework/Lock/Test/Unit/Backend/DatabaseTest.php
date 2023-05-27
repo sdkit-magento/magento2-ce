@@ -8,26 +8,30 @@ declare(strict_types=1);
 namespace Magento\Framework\Lock\Test\Unit\Backend;
 
 use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\Lock\Backend\Database;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @inheritdoc
  */
-class DatabaseTest extends \PHPUnit\Framework\TestCase
+class DatabaseTest extends TestCase
 {
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|\Magento\Framework\App\ResourceConnection
+     * @var MockObject|ResourceConnection
      */
     private $resource;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|\Magento\Framework\DB\Adapter\AdapterInterface
+     * @var MockObject|AdapterInterface
      */
     private $connection;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|\Zend_Db_Statement_Interface
+     * @var MockObject|\Zend_Db_Statement_Interface
      */
     private $statement;
 
@@ -42,7 +46,7 @@ class DatabaseTest extends \PHPUnit\Framework\TestCase
     private $database;
 
     /**
-     * @var DeploymentConfig|\PHPUnit\Framework\MockObject\MockObject
+     * @var DeploymentConfig|MockObject
      */
     private $deploymentConfig;
 
@@ -51,10 +55,10 @@ class DatabaseTest extends \PHPUnit\Framework\TestCase
      */
     protected function setUp(): void
     {
-        $this->connection = $this->getMockBuilder(\Magento\Framework\DB\Adapter\AdapterInterface::class)
+        $this->connection = $this->getMockBuilder(AdapterInterface::class)
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
-        $this->resource = $this->getMockBuilder(\Magento\Framework\App\ResourceConnection::class)
+        $this->resource = $this->getMockBuilder(ResourceConnection::class)
             ->disableOriginalConstructor()
             ->getMock();
         $this->statement = $this->getMockBuilder(\Zend_Db_Statement_Interface::class)
@@ -85,7 +89,6 @@ class DatabaseTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @throws \Magento\Framework\Exception\AlreadyExistsException
      * @throws \Zend_Db_Statement_Exception
      */
     public function testLock()
@@ -102,7 +105,6 @@ class DatabaseTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @throws \Magento\Framework\Exception\AlreadyExistsException
      * @throws \Zend_Db_Statement_Exception
      */
     public function testlockWithTooLongName()
@@ -111,7 +113,7 @@ class DatabaseTest extends \PHPUnit\Framework\TestCase
             ->method('isDbAvailable')
             ->with()
             ->willReturn(true);
-            $this->statement->expects($this->once())
+        $this->statement->expects($this->once())
             ->method('fetchColumn')
             ->willReturn(true);
 
@@ -119,13 +121,10 @@ class DatabaseTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @throws \Magento\Framework\Exception\AlreadyExistsException
      * @throws \Zend_Db_Statement_Exception
      */
     public function testlockWithAlreadyAcquiredLockInSameSession()
     {
-        $this->expectException(\Magento\Framework\Exception\AlreadyExistsException::class);
-
         $this->deploymentConfig
             ->method('isDbAvailable')
             ->with()
@@ -134,12 +133,11 @@ class DatabaseTest extends \PHPUnit\Framework\TestCase
             ->method('fetchColumn')
             ->willReturn(true);
 
-        $this->database->lock('testLock');
-        $this->database->lock('differentLock');
+        $this->assertTrue($this->database->lock('testLock'));
+        $this->assertTrue($this->database->lock('differentLock'));
     }
 
     /**
-     * @throws \Magento\Framework\Exception\AlreadyExistsException
      * @throws \Zend_Db_Statement_Exception
      */
     public function testLockWithUnavailableDeploymentConfig()

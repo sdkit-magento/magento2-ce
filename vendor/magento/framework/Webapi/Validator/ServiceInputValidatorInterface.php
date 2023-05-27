@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace Magento\Framework\Webapi\Validator;
 
-use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\InvalidArgumentException;
 
 /**
  * Interface for processing service inputs
@@ -21,7 +21,7 @@ interface ServiceInputValidatorInterface
      * @param string $className
      * @param array $items
      * @return void
-     * @throws LocalizedException
+     * @throws InvalidArgumentException
      */
     public function validateComplexArrayType(string $className, array $items): void;
 
@@ -31,7 +31,7 @@ interface ServiceInputValidatorInterface
      * @param object $entity
      * @param string $propertyName
      * @param mixed $value
-     * @throws LocalizedException
+     * @throws InvalidArgumentException
      */
     public function validateEntityValue(object $entity, string $propertyName, $value): void;
 }

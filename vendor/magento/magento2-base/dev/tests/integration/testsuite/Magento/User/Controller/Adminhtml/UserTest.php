@@ -214,6 +214,7 @@ class UserTest extends \Magento\TestFramework\TestCase\AbstractBackendController
             ];
             $data[] = [$postData, $passwordPair['is_correct']];
         }
+
         return $data;
     }
 
@@ -327,6 +328,9 @@ class UserTest extends \Magento\TestFramework\TestCase\AbstractBackendController
         $body = $this->getResponse()->getBody();
 
         $this->assertStringContainsString('{"error":1,"html_message":', $body);
-        $this->assertStringContainsString("'-domain.cim' is not a valid hostname for email address 'example@-domain.cim", $body);
+        $this->assertStringContainsString(
+            "'-domain.cim' is not a valid hostname for email address 'example@-domain.cim",
+            $body
+        );
     }
 }

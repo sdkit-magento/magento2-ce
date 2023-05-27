@@ -17,10 +17,11 @@
             <severity value="CRITICAL"/>
             <group value="msi"/>
             <group value="sort_order_test"/>
+            <group value="pr_exclude"/>
         </annotations>
 
         <before>
-            <actionGroup ref="LoginAsAdmin" stepKey="loginAsAdmin"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="loginAsAdmin"/>
 
             <createData entity="BasicMsiStock1" stepKey="createCustomStock1"/>
             <createData entity="BasicMsiStock2" stepKey="createCustomStock2"/>
@@ -28,7 +29,7 @@
             <createData entity="BasicMsiStock4" stepKey="createCustomStock4"/>
         </before>
         <after>
-            <actionGroup ref="logout" stepKey="logoutOfAdmin"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logoutOfAdmin"/>
 
             <deleteData createDataKey="createCustomStock1" stepKey="deleteStock1"/>
             <deleteData createDataKey="createCustomStock2" stepKey="deleteStock2"/>

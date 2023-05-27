@@ -3,171 +3,218 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Authorization\Test\Unit\Model\Acl\Loader;
 
-class RoleTest extends \PHPUnit\Framework\TestCase
+use Magento\Authorization\Model\Acl\Loader\Role;
+use Magento\Authorization\Model\Acl\Role\GroupFactory;
+use Magento\Authorization\Model\Acl\Role\UserFactory;
+use Magento\Framework\Acl;
+use Magento\Framework\Acl\Data\CacheInterface;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\Pdo\Mysql;
+use Magento\Framework\DB\Select;
+use Magento\Framework\Serialize\Serializer\Json;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * @covers \Magento\Authorization\Model\Acl\Loader\Role
+ */
+class RoleTest extends TestCase
 {
     /**
-     * @var \Magento\Authorization\Model\Acl\Loader\Role
+     * @var Role
      */
-    protected $_model;
+    private $model;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var GroupFactory|MockObject
      */
-    protected $_resourceMock;
+    private $groupFactoryMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var UserFactory|MockObject
      */
-    protected $_adapterMock;
+    private $roleFactoryMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var ResourceConnection|MockObject
      */
-    protected $_roleFactoryMock;
+    private $resourceMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
-     */
-    protected $_groupFactoryMock;
-
-    /**
-     * @var \Magento\Framework\Acl\Data\CacheInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var CacheInterface|MockObject
      */
     private $aclDataCacheMock;
 
     /**
-     * @var \Magento\Framework\Serialize\Serializer\Json|\PHPUnit\Framework\MockObject\MockObject
+     * @var Json|MockObject
      */
     private $serializerMock;
 
     /**
-     * @var \Magento\Framework\DB\Select|\PHPUnit\Framework\MockObject\MockObject
+     * @var Select|MockObject
      */
     private $selectMock;
 
+    /**
+     * @var Mysql|MockObject
+     */
+    private $adapterMock;
+
+    /**
+     * @inheritDoc
+     */
     protected function setUp(): void
     {
-        $this->_resourceMock = $this->createMock(\Magento\Framework\App\ResourceConnection::class);
-        $this->_groupFactoryMock = $this->getMockBuilder(\Magento\Authorization\Model\Acl\Role\GroupFactory::class)
-            ->setMethods(['create', 'getModelInstance'])
+        $this->groupFactoryMock = $this->getMockBuilder(GroupFactory::class)
+            ->onlyMethods(['create'])
+            ->addMethods(['getModelInstance'])
             ->disableOriginalConstructor()
             ->getMock();
-        $this->_roleFactoryMock = $this->getMockBuilder(\Magento\Authorization\Model\Acl\Role\UserFactory::class)
-            ->setMethods(['create', 'getModelInstance'])
+        $this->roleFactoryMock = $this->getMockBuilder(UserFactory::class)
+            ->onlyMethods(['create'])
+            ->addMethods(['getModelInstance'])
             ->disableOriginalConstructor()
             ->getMock();
-
-        $this->selectMock = $this->createMock(\Magento\Framework\DB\Select::class);
-        $this->selectMock->expects($this->any())
-            ->method('from')
-            ->willReturn($this->selectMock);
-
-        $this->_adapterMock = $this->createMock(\Magento\Framework\DB\Adapter\Pdo\Mysql::class);
-
+        $this->resourceMock = $this->createMock(ResourceConnection::class);
+        $this->aclDataCacheMock = $this->getMockForAbstractClass(CacheInterface::class);
         $this->serializerMock = $this->createPartialMock(
-            \Magento\Framework\Serialize\Serializer\Json::class,
+            Json::class,
             ['serialize', 'unserialize']
         );
-        $this->serializerMock->expects($this->any())
-            ->method('serialize')
+
+        $this->serializerMock->method('serialize')
             ->willReturnCallback(
-                function ($value) {
+                static function ($value) {
                     return json_encode($value);
                 }
             );
 
-        $this->serializerMock->expects($this->any())
-            ->method('unserialize')
+        $this->serializerMock->method('unserialize')
             ->willReturnCallback(
-                function ($value) {
+                static function ($value) {
                     return json_decode($value, true);
                 }
             );
 
-        $this->aclDataCacheMock = $this->createMock(\Magento\Framework\Acl\Data\CacheInterface::class);
+        $this->selectMock = $this->createMock(Select::class);
+        $this->selectMock->method('from')
+            ->willReturn($this->selectMock);
 
-        $this->_model = new \Magento\Authorization\Model\Acl\Loader\Role(
-            $this->_groupFactoryMock,
-            $this->_roleFactoryMock,
-            $this->_resourceMock,
-            $this->aclDataCacheMock,
-            $this->serializerMock
+        $this->adapterMock = $this->createMock(Mysql::class);
+
+        $objectManager = new ObjectManager($this);
+        $this->model = $objectManager->getObject(
+            Role::class,
+            [
+                'groupFactory' => $this->groupFactoryMock,
+                'roleFactory' => $this->roleFactoryMock,
+                'resource' => $this->resourceMock,
+                'aclDataCache' => $this->aclDataCacheMock,
+                'serializer' => $this->serializerMock
+            ]
         );
     }
 
-    public function testPopulateAclAddsRolesAndTheirChildren()
+    /**
+     * Test populating acl roles with children.
+     *
+     * @return void
+     */
+    public function testPopulateAclAddsRolesAndTheirChildren(): void
     {
-        $this->_resourceMock->expects($this->once())
+        $this->resourceMock->expects($this->once())
             ->method('getTableName')
-            ->with($this->equalTo('authorization_role'))
+            ->with('authorization_role')
             ->willReturnArgument(1);
 
-        $this->_adapterMock->expects($this->once())
+        $this->adapterMock->expects($this->once())
             ->method('select')
             ->willReturn($this->selectMock);
 
-        $this->_resourceMock->expects($this->once())
+        $this->resourceMock->expects($this->once())
             ->method('getConnection')
-            ->willReturn($this->_adapterMock);
+            ->willReturn($this->adapterMock);
 
-        $this->_adapterMock->expects($this->once())
+        $this->adapterMock->expects($this->once())
             ->method('fetchAll')
             ->willReturn(
                 [
                     ['role_id' => 1, 'role_type' => 'G', 'parent_id' => null],
-                    ['role_id' => 2, 'role_type' => 'U', 'parent_id' => 1, 'user_id' => 1],
+                    ['role_id' => 2, 'role_type' => 'U', 'parent_id' => 1, 'user_id' => 1]
                 ]
             );
 
-        $this->_groupFactoryMock->expects($this->once())->method('create')->with(['roleId' => '1']);
-        $this->_roleFactoryMock->expects($this->once())->method('create')->with(['roleId' => '2']);
+        $this->groupFactoryMock->expects($this->once())->method('create')->with(['roleId' => '1']);
+        $this->roleFactoryMock->expects($this->once())->method('create')->with(['roleId' => '2']);
 
-        $aclMock = $this->createMock(\Magento\Framework\Acl::class);
-        $aclMock->expects($this->at(0))->method('addRole')->with($this->anything(), null);
-        $aclMock->expects($this->at(2))->method('addRole')->with($this->anything(), '1');
+        $aclMock = $this->createMock(Acl::class);
+        $aclMock
+            ->method('addRole')
+            ->withConsecutive(
+                [$this->anything(), null],
+                [$this->anything(), '1']
+            );
 
-        $this->_model->populateAcl($aclMock);
+        $this->model->populateAcl($aclMock);
     }
 
-    public function testPopulateAclAddsMultipleParents()
+    /**
+     * Test populating acl role with multiple parents.
+     *
+     * @return void
+     */
+    public function testPopulateAclAddsMultipleParents(): void
     {
-        $this->_resourceMock->expects($this->once())
+        $this->resourceMock->expects($this->once())
             ->method('getTableName')
-            ->with($this->equalTo('authorization_role'))
+            ->with('authorization_role')
             ->willReturnArgument(1);
 
-        $this->_adapterMock->expects($this->once())
+        $this->adapterMock->expects($this->once())
             ->method('select')
             ->willReturn($this->selectMock);
 
-        $this->_resourceMock->expects($this->once())
+        $this->resourceMock->expects($this->once())
             ->method('getConnection')
-            ->willReturn($this->_adapterMock);
+            ->willReturn($this->adapterMock);
 
-        $this->_adapterMock->expects($this->once())
+        $this->adapterMock->expects($this->once())
             ->method('fetchAll')
             ->willReturn([['role_id' => 1, 'role_type' => 'U', 'parent_id' => 2, 'user_id' => 3]]);
 
-        $this->_roleFactoryMock->expects($this->never())->method('getModelInstance');
-        $this->_groupFactoryMock->expects($this->never())->method('getModelInstance');
+        $this->roleFactoryMock->expects($this->never())->method('getModelInstance');
+        $this->groupFactoryMock->expects($this->never())->method('getModelInstance');
 
-        $aclMock = $this->createMock(\Magento\Framework\Acl::class);
-        $aclMock->expects($this->at(0))->method('hasRole')->with('1')->willReturn(true);
-        $aclMock->expects($this->at(1))->method('addRoleParent')->with('1', '2');
+        $aclMock = $this->createMock(Acl::class);
+        $aclMock
+            ->method('hasRole')
+            ->with('1')
+            ->willReturn(true);
+        $aclMock
+            ->method('addRoleParent')
+            ->with('1', '2');
 
-        $this->_model->populateAcl($aclMock);
+        $this->model->populateAcl($aclMock);
     }
 
-    public function testPopulateAclFromCache()
+    /**
+     * Test populating acl role from cache.
+     *
+     * @return void
+     */
+    public function testPopulateAclFromCache(): void
     {
-        $this->_resourceMock->expects($this->never())->method('getConnection');
-        $this->_resourceMock->expects($this->never())->method('getTableName');
-        $this->_adapterMock->expects($this->never())->method('fetchAll');
+        $this->resourceMock->expects($this->never())->method('getConnection');
+        $this->resourceMock->expects($this->never())->method('getTableName');
+        $this->adapterMock->expects($this->never())->method('fetchAll');
         $this->aclDataCacheMock->expects($this->once())
             ->method('load')
-            ->with(\Magento\Authorization\Model\Acl\Loader\Role::ACL_ROLES_CACHE_KEY)
+            ->with(Role::ACL_ROLES_CACHE_KEY)
             ->willReturn(
                 json_encode(
                     [
@@ -181,13 +228,18 @@ class RoleTest extends \PHPUnit\Framework\TestCase
                 )
             );
 
-        $this->_roleFactoryMock->expects($this->never())->method('getModelInstance');
-        $this->_groupFactoryMock->expects($this->never())->method('getModelInstance');
+        $this->roleFactoryMock->expects($this->never())->method('getModelInstance');
+        $this->groupFactoryMock->expects($this->never())->method('getModelInstance');
 
-        $aclMock = $this->createMock(\Magento\Framework\Acl::class);
-        $aclMock->expects($this->at(0))->method('hasRole')->with('1')->willReturn(true);
-        $aclMock->expects($this->at(1))->method('addRoleParent')->with('1', '2');
+        $aclMock = $this->createMock(Acl::class);
+        $aclMock
+            ->method('hasRole')
+            ->with('1')
+            ->willReturn(true);
+        $aclMock
+            ->method('addRoleParent')
+            ->with('1', '2');
 
-        $this->_model->populateAcl($aclMock);
+        $this->model->populateAcl($aclMock);
     }
 }

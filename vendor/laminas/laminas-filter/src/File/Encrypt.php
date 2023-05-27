@@ -1,18 +1,26 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter\File;
 
 use Laminas\Filter;
 use Laminas\Filter\Exception;
 
+use function file_exists;
+use function file_get_contents;
+use function file_put_contents;
+use function is_array;
+use function is_scalar;
+use function is_writable;
+
 /**
  * Encrypts a given file and stores the encrypted file content
+ *
+ * @deprecated Since 2.24.0. This filter will be removed in 3.0. You are encouraged to use an alternative encryption
+ *             library and write your own filter.
+ *
+ * @psalm-suppress DeprecatedInterface
  */
 class Encrypt extends Filter\Encrypt
 {
@@ -69,8 +77,8 @@ class Encrypt extends Filter\Encrypt
             }
 
             $isFileUpload = true;
-            $uploadData = $value;
-            $value      = $value['tmp_name'];
+            $uploadData   = $value;
+            $value        = $value['tmp_name'];
         }
 
         if (! file_exists($value)) {

@@ -7,19 +7,20 @@ declare(strict_types=1);
 
 namespace Magento\AdobeStockImage\Test\Unit\Model;
 
+use Magento\AdobeStockImage\Model\GetRelatedImages;
+use Magento\AdobeStockImage\Model\SerializeImage;
+use Magento\AdobeStockImageApi\Api\GetImageListInterface;
+use Magento\Framework\Api\AttributeValue;
 use Magento\Framework\Api\Filter;
+use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\Search\Document;
 use Magento\Framework\Api\Search\SearchCriteria;
+use Magento\Framework\Api\Search\SearchCriteriaBuilder;
 use Magento\Framework\Api\Search\SearchResultInterface;
-use Magento\Framework\Exception\IntegrationException;
+use Magento\Framework\Exception\LocalizedException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Magento\AdobeStockImageApi\Api\GetImageListInterface;
-use Magento\Framework\Api\Search\SearchCriteriaBuilder;
-use Magento\Framework\Api\FilterBuilder;
 use Psr\Log\LoggerInterface;
-use Magento\AdobeStockImage\Model\GetRelatedImages;
-use Magento\Framework\Api\AttributeValue;
 
 /**
  * Test for GetRelatedImages Model
@@ -43,6 +44,11 @@ class GetRelatedImagesTest extends TestCase
     private $filterBuilder;
 
     /**
+     * @var SerializeImage|MockObject
+     */
+    private $serializeImage;
+
+    /**
      * @var LoggerInterface|MockObject
      */
     private $logger;
@@ -63,14 +69,16 @@ class GetRelatedImagesTest extends TestCase
     protected function setUp(): void
     {
         $this->filterBuilder = $this->createMock(FilterBuilder::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->searchCriteriaBuilder = $this->createMock(SearchCriteriaBuilder::class);
-        $this->getImageListInterface = $this->getMockForAbstractClass(GetImageListInterface::class);
+        $this->getImageListInterface = $this->createMock(GetImageListInterface::class);
+        $this->serializeImage = $this->createMock(SerializeImage::class);
         $this->fields = ['same_series' => 'serie_id', 'same_model' => 'model_id'];
         $this->getRelatedSeries = new GetRelatedImages(
             $this->getImageListInterface,
             $this->searchCriteriaBuilder,
             $this->filterBuilder,
+            $this->serializeImage,
             $this->logger,
             $this->fields
         );
@@ -81,7 +89,6 @@ class GetRelatedImagesTest extends TestCase
      *
      * @param array $relatedImagesProvider
      * @param array $expectedResult
-     * @throws IntegrationException
      * @dataProvider relatedImagesDataProvider
      */
     public function testExecute(array $relatedImagesProvider, array $expectedResult): void
@@ -108,13 +115,17 @@ class GetRelatedImagesTest extends TestCase
             ->willReturn(
                 $this->createMock(SearchCriteria::class)
             );
-        $searchCriteriaMock = $this->getMockForAbstractClass(SearchResultInterface::class);
+        $searchCriteriaMock = $this->createMock(SearchResultInterface::class);
         $this->getImageListInterface->expects($this->any())
             ->method('execute')
             ->willReturn($searchCriteriaMock);
         $searchCriteriaMock->expects($this->any())
             ->method('getItems')
             ->willReturn($relatedImagesProvider);
+
+        $this->serializeImage->expects($this->any())
+            ->method('execute')
+            ->willReturn($expectedResult['same_model'][0]);
 
         $this->assertEquals($expectedResult, $this->getRelatedSeries->execute(12345678, 30));
     }
@@ -146,7 +157,7 @@ class GetRelatedImagesTest extends TestCase
             ->willReturn(
                 $this->createMock(SearchCriteria::class)
             );
-        $searchCriteriaMock = $this->getMockForAbstractClass(SearchResultInterface::class);
+        $searchCriteriaMock = $this->createMock(SearchResultInterface::class);
         $this->getImageListInterface->expects($this->any())
             ->method('execute')
             ->willReturn($searchCriteriaMock);
@@ -157,15 +168,16 @@ class GetRelatedImagesTest extends TestCase
         $this->logger->expects($this->any())
             ->method('critical')
             ->willReturnSelf();
-        $this->expectException(IntegrationException::class);
+        $this->expectException(LocalizedException::class);
 
         $this->getRelatedSeries->execute(12345678, 30);
     }
 
     /**
      * Series Data provider.
-     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+     *
      * @return array
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
     public function relatedImagesDataProvider(): array
     {

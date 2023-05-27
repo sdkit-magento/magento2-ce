@@ -3,37 +3,51 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\CatalogUrlRewrite\Test\Unit\Model\Map;
 
-use Magento\Framework\DB\Select;
-use Magento\CatalogUrlRewrite\Model\Map\HashMapPool;
-use Magento\CatalogUrlRewrite\Model\Map\DataProductHashMap;
 use Magento\CatalogUrlRewrite\Model\Map\DataCategoryHashMap;
 use Magento\CatalogUrlRewrite\Model\Map\DataCategoryUsedInProductsHashMap;
-use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
-use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\CatalogUrlRewrite\Model\Map\DataProductHashMap;
+use Magento\CatalogUrlRewrite\Model\Map\HashMapPool;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\DB\Select;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-/**
- * Class DataCategoryUsedInProductsHashMapTest
- */
-class DataCategoryUsedInProductsHashMapTest extends \PHPUnit\Framework\TestCase
+class DataCategoryUsedInProductsHashMapTest extends TestCase
 {
-    /** @var HashMapPool|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var HashMapPool|MockObject
+     */
     private $hashMapPoolMock;
 
-    /** @var DataCategoryHashMap|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var DataCategoryHashMap|MockObject
+     */
     private $dataCategoryMapMock;
 
-    /** @var DataProductHashMap|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var DataProductHashMap|MockObject
+     */
     private $dataProductMapMock;
 
-    /** @var ResourceConnection|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var ResourceConnection|MockObject
+     */
     private $connectionMock;
 
-    /** @var DataCategoryUsedInProductsHashMap|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var DataCategoryUsedInProductsHashMap|MockObject
+     */
     private $model;
 
+    /**
+     * @inheritDoc
+     */
     protected function setUp(): void
     {
         $this->hashMapPoolMock = $this->createMock(HashMapPool::class);
@@ -62,9 +76,11 @@ class DataCategoryUsedInProductsHashMapTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Tests getAllData, getData and resetData functionality
+     * Tests getAllData, getData and resetData functionality.
+     *
+     * @return void
      */
-    public function testGetAllData()
+    public function testGetAllData(): void
     {
         $categoryIds = ['1' => [1, 2, 3], '2' => [2, 3], '3' => 3];
         $categoryIdsOther = ['2' => [2, 3, 4]];
@@ -90,12 +106,9 @@ class DataCategoryUsedInProductsHashMapTest extends \PHPUnit\Framework\TestCase
         $selectMock->expects($this->any())
             ->method('where')
             ->willReturnSelf();
-        $this->hashMapPoolMock->expects($this->at(4))
+        $this->hashMapPoolMock
             ->method('resetMap')
-            ->with(DataProductHashMap::class, 1);
-        $this->hashMapPoolMock->expects($this->at(5))
-            ->method('resetMap')
-            ->with(DataCategoryHashMap::class, 1);
+            ->withConsecutive([DataProductHashMap::class, 1], [DataCategoryHashMap::class, 1]);
 
         $this->assertEquals($categoryIds, $this->model->getAllData(1));
         $this->assertEquals($categoryIds[2], $this->model->getData(1, 2));

@@ -1,13 +1,18 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
+/**
+ * @psalm-type Options = array{
+ *     null_on_empty?: bool,
+ *     null_on_all_empty?: bool,
+ *     ...
+ * }
+ * @template TOptions of Options
+ * @template-extends AbstractDateDropdown<TOptions>
+ */
 class DateSelect extends AbstractDateDropdown
 {
     /**
@@ -17,8 +22,6 @@ class DateSelect extends AbstractDateDropdown
      */
     protected $format = '%3$s-%2$s-%1$s';
 
-    /**
-     * @var int
-     */
+    /** @var int */
     protected $expectedInputs = 3;
 }

@@ -167,6 +167,23 @@ class Elasticsearch implements ClientInterface
     }
 
     /**
+     * Add/update an Elasticsearch index settings.
+     *
+     * @param string $index
+     * @param array $settings
+     * @return void
+     */
+    public function putIndexSettings(string $index, array $settings): void
+    {
+        $this->getClient()->indices()->putSettings(
+            [
+                'index' => $index,
+                'body' => $settings,
+            ]
+        );
+    }
+
+    /**
      * Delete an Elasticsearch index.
      *
      * @param string $index
@@ -334,7 +351,6 @@ class Elasticsearch implements ClientInterface
      */
     private function prepareFieldInfo($fieldInfo)
     {
-
         if (strcmp($this->getServerVersion(), '5') < 0) {
             if ($fieldInfo['type'] == 'keyword') {
                 $fieldInfo['type'] = 'string';
@@ -347,6 +363,17 @@ class Elasticsearch implements ClientInterface
         }
 
         return $fieldInfo;
+    }
+
+    /**
+     * Get mapping from Elasticsearch index.
+     *
+     * @param array $params
+     * @return array
+     */
+    public function getMapping(array $params): array
+    {
+        return $this->getClient()->indices()->getMapping($params);
     }
 
     /**

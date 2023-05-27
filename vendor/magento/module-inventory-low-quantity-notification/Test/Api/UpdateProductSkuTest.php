@@ -8,8 +8,9 @@ declare(strict_types=1);
 namespace Magento\InventoryLowQuantityNotification\Test\Api;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Framework\App\Cron;
 use Magento\Framework\MessageQueue\ConsumerFactory;
+use Magento\Framework\MessageQueue\DefaultValueProvider;
+use Magento\Framework\MessageQueue\QueueFactoryInterface;
 use Magento\Framework\Webapi\Rest\Request;
 use Magento\InventoryLowQuantityNotification\Model\ResourceModel\SourceItemConfiguration\GetBySku;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -35,9 +36,9 @@ class UpdateProductSkuTest extends WebapiAbstract
     private $productRepository;
 
     /**
-     * @var ConsumerFactory
+     * @var DefaultValueProvider
      */
-    private $consumerFactory;
+    private $defaultValueProvider;
 
     /**
      * @inheritDoc
@@ -46,7 +47,8 @@ class UpdateProductSkuTest extends WebapiAbstract
     {
         $this->getBySku = Bootstrap::getObjectManager()->get(GetBySku::class);
         $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-        $this->consumerFactory = Bootstrap::getObjectManager()->get(ConsumerFactory::class);
+        $this->defaultValueProvider = Bootstrap::getObjectManager()->get(DefaultValueProvider::class);
+        $this->rejectMessages();
     }
 
     /**
@@ -79,13 +81,7 @@ class UpdateProductSkuTest extends WebapiAbstract
             $serviceInfo,
             ['product' => ['id' => $product->getId(), 'sku' => 'SKU-1_updated']]
         );
-        $cronObserver = Bootstrap::getObjectManager()->create(
-            Cron::class,
-            ['parameters' => ['group' => null, 'standaloneProcessStarted' => 0]]
-        );
-        $cronObserver->launch();
-        /*Wait till source items configurations will be removed asynchronously.*/
-        sleep(10);
+        $this->runConsumers();
         $sourceItemConfigurationsOldSku = $this->getBySku->execute('SKU-1');
         $sourceItemConfigurationsNewSku = $this->getBySku->execute('SKU-1_updated');
         self::assertEmpty($sourceItemConfigurationsOldSku);
@@ -100,5 +96,36 @@ class UpdateProductSkuTest extends WebapiAbstract
         $product = $this->productRepository->get('SKU-1_updated');
         $product->setSku('SKU-1');
         $this->productRepository->save($product);
+    }
+
+    /**
+     * Run consumers to remove redundant inventory source items.
+     *
+     * @return void
+     */
+    private function runConsumers(): void
+    {
+        $consumerFactory = Bootstrap::getObjectManager()->get(ConsumerFactory::class);
+        $consumer = $consumerFactory->get('inventory.source.items.cleanup');
+        $consumer->process(1);
+        /*Wait till source items will be removed asynchronously.*/
+        sleep(20);
+    }
+
+    /**
+     * Reject all previously created messages.
+     *
+     * @return void
+     */
+    private function rejectMessages()
+    {
+        $queueFactory = Bootstrap::getObjectManager()->get(QueueFactoryInterface::class);
+        $queue = $queueFactory->create(
+            'inventory.source.items.cleanup',
+            $this->defaultValueProvider->getConnection()
+        );
+        while ($envelope = $queue->dequeue()) {
+            $queue->reject($envelope, false);
+        }
     }
 }

@@ -1,19 +1,26 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-i18n for the canonical source repository
- * @copyright https://github.com/laminas/laminas-i18n/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-i18n/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\I18n;
 
+use Laminas\ModuleManager\ModuleManager;
+use Laminas\ServiceManager\ConfigInterface;
+
+/**
+ * @see ConfigInterface
+ *
+ * @psalm-import-type ServiceManagerConfigurationType from ConfigInterface
+ */
 class Module
 {
     /**
      * Return laminas-i18n configuration for laminas-mvc application.
      *
-     * @return array
+     * @return array{
+     *     filters: ServiceManagerConfigurationType,
+     *     service_manager: ServiceManagerConfigurationType,
+     *     validators: ServiceManagerConfigurationType,
+     *     view_helpers: ServiceManagerConfigurationType,
+     * }
      */
     public function getConfig()
     {
@@ -29,13 +36,13 @@ class Module
     /**
      * Register a specification for the TranslatorPluginManager with the ServiceListener.
      *
-     * @param \Laminas\ModuleManager\ModuleManager $moduleManager
+     * @param ModuleManager $moduleManager
      * @return void
      */
     public function init($moduleManager)
     {
-        $event = $moduleManager->getEvent();
-        $container = $event->getParam('ServiceManager');
+        $event           = $moduleManager->getEvent();
+        $container       = $event->getParam('ServiceManager');
         $serviceListener = $container->get('ServiceListener');
 
         $serviceListener->addServiceManager(

@@ -3,40 +3,43 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Framework\Module\Test\Unit;
 
-use \Magento\Framework\Module\DependencyChecker;
+use Magento\Framework\Module\DependencyChecker;
+use Magento\Framework\Module\ModuleList;
+use Magento\Framework\Module\ModuleList\Loader;
+use Magento\Framework\Module\PackageInfo;
+use Magento\Framework\Module\PackageInfoFactory;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class DependencyCheckerTest extends \PHPUnit\Framework\TestCase
+class DependencyCheckerTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Module\DependencyChecker|\PHPUnit\Framework\MockObject\MockObject
+     * @var DependencyChecker|MockObject
      */
     private $checker;
 
     /**
-     * @var \Magento\Framework\Module\PackageInfo|\PHPUnit\Framework\MockObject\MockObject
+     * @var PackageInfo|MockObject
      */
     private $packageInfoMock;
 
     /**
-     * @var \Magento\Framework\Module\PackageInfoFactory|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private $packageInfoFactoryMock;
-
-    /**
-     * @var \Magento\Framework\Module\ModuleList|\PHPUnit\Framework\MockObject\MockObject
+     * @var ModuleList|MockObject
      */
     private $listMock;
 
     /**
-     * @var \Magento\Framework\Module\ModuleList\Loader|\PHPUnit\Framework\MockObject\MockObject
+     * @var Loader|MockObject
      */
     private $loaderMock;
 
     protected function setUp(): void
     {
-        $this->packageInfoMock = $this->createMock(\Magento\Framework\Module\PackageInfo::class);
+        $this->packageInfoMock = $this->createMock(PackageInfo::class);
         $requireMap = [
             ['A', ['B']],
             ['B', ['D', 'E']],
@@ -48,11 +51,6 @@ class DependencyCheckerTest extends \PHPUnit\Framework\TestCase
             ->expects($this->any())
             ->method('getRequire')
             ->willReturnMap($requireMap);
-
-        $this->packageInfoFactoryMock = $this->createMock(\Magento\Framework\Module\PackageInfoFactory::class);
-        $this->packageInfoFactoryMock->expects($this->once())
-            ->method('create')
-            ->willReturn($this->packageInfoMock);
 
         $this->listMock = $this->createMock(\Magento\Framework\Module\ModuleList::class);
         $this->loaderMock = $this->createMock(\Magento\Framework\Module\ModuleList\Loader::class);
@@ -70,7 +68,7 @@ class DependencyCheckerTest extends \PHPUnit\Framework\TestCase
         $this->packageInfoMock->expects($this->atLeastOnce())
             ->method('getNonExistingDependencies')
             ->willReturn([]);
-        $this->checker = new DependencyChecker($this->listMock, $this->loaderMock, $this->packageInfoFactoryMock);
+        $this->checker = new DependencyChecker($this->listMock, $this->loaderMock, $this->packageInfoMock);
 
         $actual = $this->checker->checkDependenciesWhenDisableModules(['B', 'D']);
         $expected = ['B' => ['A' => ['A', 'B']], 'D' => ['A' => ['A', 'B', 'D']]];
@@ -82,7 +80,7 @@ class DependencyCheckerTest extends \PHPUnit\Framework\TestCase
         $this->packageInfoMock->expects($this->atLeastOnce())
             ->method('getNonExistingDependencies')
             ->willReturn([]);
-        $this->checker = new DependencyChecker($this->listMock, $this->loaderMock, $this->packageInfoFactoryMock);
+        $this->checker = new DependencyChecker($this->listMock, $this->loaderMock, $this->packageInfoMock);
 
         $actual = $this->checker->checkDependenciesWhenDisableModules(['B', 'D'], ['C', 'D', 'E']);
         $expected = ['B' => [], 'D' => []];
@@ -97,7 +95,7 @@ class DependencyCheckerTest extends \PHPUnit\Framework\TestCase
         $this->packageInfoMock->expects($this->atLeastOnce())
             ->method('getNonExistingDependencies')
             ->willReturn([]);
-        $this->checker = new DependencyChecker($this->listMock, $this->loaderMock, $this->packageInfoFactoryMock);
+        $this->checker = new DependencyChecker($this->listMock, $this->loaderMock, $this->packageInfoMock);
         $actual = $this->checker->checkDependenciesWhenEnableModules(['B', 'D']);
         $expected = [
             'B' => ['A' => ['B', 'D', 'A'], 'E' => ['B', 'E']],
@@ -111,7 +109,7 @@ class DependencyCheckerTest extends \PHPUnit\Framework\TestCase
         $this->packageInfoMock->expects($this->atLeastOnce())
             ->method('getNonExistingDependencies')
             ->willReturn([]);
-        $this->checker = new DependencyChecker($this->listMock, $this->loaderMock, $this->packageInfoFactoryMock);
+        $this->checker = new DependencyChecker($this->listMock, $this->loaderMock, $this->packageInfoMock);
         $actual = $this->checker->checkDependenciesWhenEnableModules(['B', 'D'], ['C']);
         $expected = [
             'B' => ['A' => ['B', 'D', 'A'], 'E' => ['B', 'E']],

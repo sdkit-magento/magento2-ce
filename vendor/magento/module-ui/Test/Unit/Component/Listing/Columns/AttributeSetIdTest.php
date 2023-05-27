@@ -38,7 +38,7 @@ class AttributeSetIdTest extends ColumnTest
             ->with('attribute_set_name asc');
 
         $this->dataProviderMock = $this->getMockBuilder(DataProviderInterface::class)
-            ->setMethods(['getCollection', 'getSelect'])
+            ->addMethods(['getCollection', 'getSelect'])
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
 

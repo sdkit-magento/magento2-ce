@@ -3,26 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Store\Test\Unit\Model;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Api\Data\GroupInterface;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Api\Data\WebsiteInterface;
 use Magento\Store\Api\GroupRepositoryInterface;
 use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\Store\Api\WebsiteRepositoryInterface;
-use Magento\Store\Model\Group;
-use Magento\Store\Model\ScopeTreeProvider;
-use Magento\Store\Model\Store;
-use Magento\Store\Model\StoreManagerInterface;
 use Magento\Store\Model\ScopeInterface;
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Store\Model\Website;
+use Magento\Store\Model\ScopeTreeProvider;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \Magento\Store\Model\ScopeTreeProvider
  */
-class ScopeTreeProviderTest extends \PHPUnit\Framework\TestCase
+class ScopeTreeProviderTest extends TestCase
 {
     /**
      * @var ScopeTreeProvider
@@ -30,17 +30,17 @@ class ScopeTreeProviderTest extends \PHPUnit\Framework\TestCase
     private $model;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|WebsiteRepositoryInterface
+     * @var MockObject|WebsiteRepositoryInterface
      */
     private $websiteRepositoryMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|GroupRepositoryInterface
+     * @var MockObject|GroupRepositoryInterface
      */
     private $groupRepositoryMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|StoreRepositoryInterface
+     * @var MockObject|StoreRepositoryInterface
      */
     private $storeRepositoryMock;
 

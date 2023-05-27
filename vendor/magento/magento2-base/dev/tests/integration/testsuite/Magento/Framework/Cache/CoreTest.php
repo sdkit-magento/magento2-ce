@@ -32,9 +32,12 @@ class CoreTest extends \PHPUnit\Framework\TestCase
         );
     }
 
+    /**
+     */
     public function testSetBackendException()
     {
         $this->expectException(\Zend_Cache_Exception::class);
+
         $mockBackend = $this->createMock(\Zend_Cache_Backend_File::class);
         $config = ['backend_decorators' => ['test_decorator' => ['class' => 'Zend_Cache_Backend']]];
 

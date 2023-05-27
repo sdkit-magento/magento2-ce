@@ -10,6 +10,7 @@ namespace Magento\AdobeStockImageAdminUi\Test\Unit\Model\Listing;
 
 use Magento\AdobeStockImageAdminUi\Model\Listing\DataProvider;
 use Magento\AdobeStockImageApi\Api\GetImageListInterface;
+use Magento\Framework\Api\AttributeInterface;
 use Magento\Framework\Api\Search\Document;
 use Magento\Framework\Api\Search\SearchCriteria;
 use Magento\Framework\Api\Search\SearchCriteriaBuilder;
@@ -18,7 +19,6 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Magento\Framework\Api\AttributeInterface;
 
 /**
  * Test data image provider.
@@ -45,7 +45,7 @@ class DataProviderTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->getImageListMock = $this->getMockForAbstractClass(GetImageListInterface::class);
+        $this->getImageListMock = $this->createMock(GetImageListInterface::class);
         $this->searchCriteriaBuilder = $this->createMock(SearchCriteriaBuilder::class);
         $this->dataProvider = (new ObjectManager($this))->getObject(
             DataProvider::class,
@@ -74,7 +74,7 @@ class DataProviderTest extends TestCase
             ->willReturn($searchCriteria);
 
         /** @var SearchResultInterface|MockObject $searchResult */
-        $searchResult = $this->getMockForAbstractClass(SearchResultInterface::class);
+        $searchResult = $this->createMock(SearchResultInterface::class);
 
         $this->getImageListMock->expects($this->once())
             ->method('execute')
@@ -153,7 +153,7 @@ class DataProviderTest extends TestCase
             $item = $this->createMock(Document::class);
             $attributes = [];
             foreach ($itemData as $key => $value) {
-                $attribute = $this->getMockForAbstractClass(AttributeInterface::class);
+                $attribute = $this->createMock(AttributeInterface::class);
                 $attribute->expects($this->once())
                     ->method('getAttributeCode')
                     ->willReturn($key);
@@ -168,7 +168,7 @@ class DataProviderTest extends TestCase
             $items[] = $item;
         }
         /** @var SearchResultInterface|MockObject $searchResult */
-        $searchResult = $this->getMockForAbstractClass(SearchResultInterface::class);
+        $searchResult = $this->createMock(SearchResultInterface::class);
         $searchResult->expects($this->once())
             ->method('getItems')
             ->willReturn($items);

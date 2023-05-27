@@ -24,8 +24,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * DownloadTest
- * Test for Download class
+ * Test for controller downloading Adobe Stock asset preview version
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class DownloadTest extends TestCase
@@ -80,13 +79,13 @@ class DownloadTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->saveImage = $this->getMockForAbstractClass(SaveImageInterface::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->saveImage = $this->createMock(SaveImageInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->context = $this->createMock(ActionContext::class);
-        $this->getAssetById = $this->getMockForAbstractClass(GetAssetByIdInterface::class);
+        $this->getAssetById = $this->createMock(GetAssetByIdInterface::class);
         $this->document = $this->createMock(Document::class);
 
-        $attribute = $this->getMockForAbstractClass(AttributeInterface::class);
+        $attribute = $this->createMock(AttributeInterface::class);
         $attribute->expects($this->once())
             ->method('getValue')
             ->willReturn('https://url');
@@ -95,7 +94,7 @@ class DownloadTest extends TestCase
             ->method('getCustomAttribute')
             ->willReturn($attribute);
 
-        $this->request = $this->getMockForAbstractClass(RequestInterface::class);
+        $this->request = $this->createMock(RequestInterface::class);
         $this->request->expects($this->once())
             ->method('getParams')
             ->willReturn(
@@ -103,7 +102,7 @@ class DownloadTest extends TestCase
                     'isAjax' => 'true',
                     'media_id' => 283415387,
                     'destination_path' => '',
-                    'form_key' => 'PyXOATf2fL9Y8iZf'
+                    'form_key' => 'PyXOATf2fL9Y8iZf',
                 ]
             );
         $this->getAssetById->expects($this->once())
@@ -116,7 +115,7 @@ class DownloadTest extends TestCase
         $this->context->expects($this->once())
             ->method('getResultFactory')
             ->willReturn($this->resultFactory);
-        $this->saveImage->expects($this->once())->method('execute')->willReturn(null);
+        $this->saveImage->expects($this->once())->method('execute');
         $this->jsonObject = $this->createMock(Json::class);
         $this->resultFactory->expects($this->once())->method('create')->with('json')->willReturn($this->jsonObject);
 

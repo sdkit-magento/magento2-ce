@@ -201,10 +201,10 @@ class AddOptionToAttributeTest extends TestCase
             ]
         );
         $updatedOptions = $this->getAttributeOptions();
+        $this->assertEquals(count($updatedOptions), count($optionsBefore) - 1);
         foreach ($updatedOptions as $option) {
             $this->assertContainsEquals($option, $optionsBefore);
         }
-        $this->assertEquals(count($updatedOptions), count($optionsBefore) - 1);
     }
 
     /**
@@ -224,5 +224,20 @@ class AddOptionToAttributeTest extends TestCase
         $optionsAfter = $this->getAttributeOptions();
         $this->assertEquals($optionsAfter[0], 'updatedValue');
         $this->assertSame(array_slice($optionsBefore, 1), array_slice($optionsAfter, 1));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        $reflection = new \ReflectionObject($this);
+        foreach ($reflection->getProperties() as $property) {
+            if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
+                $property->setAccessible(true);
+                $property->setValue($this, null);
+            }
+        }
     }
 }

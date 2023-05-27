@@ -7,24 +7,48 @@ declare(strict_types=1);
 
 namespace Magento\Ups\Model;
 
+use Laminas\Http\Client;
+use Magento\CatalogInventory\Api\StockRegistryInterface;
+use Magento\Directory\Helper\Data;
+use Magento\Directory\Model\CountryFactory;
+use Magento\Directory\Model\CurrencyFactory;
+use Magento\Directory\Model\RegionFactory;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Async\CallbackDeferred;
 use Magento\Framework\DataObject;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\HTTP\AsyncClient\HttpException;
 use Magento\Framework\HTTP\AsyncClient\HttpResponseDeferredInterface;
 use Magento\Framework\HTTP\AsyncClient\Request;
 use Magento\Framework\HTTP\AsyncClientInterface;
 use Magento\Framework\HTTP\ClientFactory;
+use Magento\Framework\Locale\FormatInterface;
+use Magento\Framework\Measure\Length;
+use Magento\Framework\Measure\Weight;
 use Magento\Framework\Xml\Security;
 use Magento\Quote\Model\Quote\Address\RateRequest;
 use Magento\Quote\Model\Quote\Address\RateResult\Error;
+use Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory as RateErrorFactory;
+use Magento\Quote\Model\Quote\Address\RateResult\MethodFactory as RateMethodFactory;
+use Magento\Sales\Model\Order\Shipment as OrderShipment;
+use Magento\Shipping\Model\Carrier\AbstractCarrier;
 use Magento\Shipping\Model\Carrier\AbstractCarrierOnline;
 use Magento\Shipping\Model\Carrier\CarrierInterface;
 use Magento\Shipping\Model\Rate\Result;
 use Magento\Shipping\Model\Rate\Result\ProxyDeferredFactory;
-use Magento\Shipping\Model\Simplexml\Element;
-use Magento\Ups\Helper\Config;
+use Magento\Shipping\Model\Rate\ResultFactory as RateFactory;
 use Magento\Shipping\Model\Shipment\Request as Shipment;
+use Magento\Shipping\Model\Simplexml\Element;
+use Magento\Shipping\Model\Simplexml\ElementFactory;
+use Magento\Shipping\Model\Tracking\Result\ErrorFactory as TrackErrorFactory;
+use Magento\Shipping\Model\Tracking\Result\StatusFactory as TrackStatusFactory;
+use Magento\Shipping\Model\Tracking\ResultFactory as TrackFactory;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Ups\Helper\Config;
+use Psr\Log\LoggerInterface;
+use RuntimeException;
+use Throwable;
 
 /**
  * UPS shipping implementation.
@@ -39,14 +63,14 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
      *
      * @var string
      */
-    const CODE = 'ups';
+    public const CODE = 'ups';
 
     /**
      * Delivery Confirmation level based on origin/destination
      */
-    const DELIVERY_CONFIRMATION_SHIPMENT = 1;
+    public const DELIVERY_CONFIRMATION_SHIPMENT = 1;
 
-    const DELIVERY_CONFIRMATION_PACKAGE = 2;
+    public const DELIVERY_CONFIRMATION_PACKAGE = 2;
 
     /**
      * Code of the carrier
@@ -70,22 +94,16 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
     protected $_result;
 
     /**
-     * Base currency rate
-     *
      * @var float
      */
     protected $_baseCurrencyRate;
 
     /**
-     * Xml access request
-     *
      * @var string
      */
     protected $_xmlAccessRequest;
 
     /**
-     * Default cgi gateway url
-     *
      * @var string
      */
     protected $_defaultCgiGatewayUrl = 'https://www.ups.com/using/services/rave/qcostcgi.cgi';
@@ -118,12 +136,12 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
     protected $_customizableContainerTypes = ['CP', 'CSP'];
 
     /**
-     * @var \Magento\Framework\Locale\FormatInterface
+     * @var FormatInterface
      */
     protected $_localeFormat;
 
     /**
-     * @var \Psr\Log\LoggerInterface
+     * @var LoggerInterface
      */
     protected $_logger;
 
@@ -133,7 +151,7 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
     protected $configHelper;
 
     /**
-     * @inheritdoc
+     * @var string[]
      */
     protected $_debugReplacePrivateDataKeys = [
         'UserId',
@@ -152,22 +170,22 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
     private $deferredProxyFactory;
 
     /**
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
-     * @param \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory $rateErrorFactory
-     * @param \Psr\Log\LoggerInterface $logger
+     * @param ScopeConfigInterface $scopeConfig
+     * @param RateErrorFactory $rateErrorFactory
+     * @param LoggerInterface $logger
      * @param Security $xmlSecurity
-     * @param \Magento\Shipping\Model\Simplexml\ElementFactory $xmlElFactory
-     * @param \Magento\Shipping\Model\Rate\ResultFactory $rateFactory
-     * @param \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory
-     * @param \Magento\Shipping\Model\Tracking\ResultFactory $trackFactory
-     * @param \Magento\Shipping\Model\Tracking\Result\ErrorFactory $trackErrorFactory
-     * @param \Magento\Shipping\Model\Tracking\Result\StatusFactory $trackStatusFactory
-     * @param \Magento\Directory\Model\RegionFactory $regionFactory
-     * @param \Magento\Directory\Model\CountryFactory $countryFactory
-     * @param \Magento\Directory\Model\CurrencyFactory $currencyFactory
-     * @param \Magento\Directory\Helper\Data $directoryData
-     * @param \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry
-     * @param \Magento\Framework\Locale\FormatInterface $localeFormat
+     * @param ElementFactory $xmlElFactory
+     * @param RateFactory $rateFactory
+     * @param RateMethodFactory $rateMethodFactory
+     * @param TrackFactory $trackFactory
+     * @param TrackErrorFactory $trackErrorFactory
+     * @param TrackStatusFactory $trackStatusFactory
+     * @param RegionFactory $regionFactory
+     * @param CountryFactory $countryFactory
+     * @param CurrencyFactory $currencyFactory
+     * @param Data $directoryData
+     * @param StockRegistryInterface $stockRegistry
+     * @param FormatInterface $localeFormat
      * @param Config $configHelper
      * @param ClientFactory $httpClientFactory
      * @param array $data
@@ -178,27 +196,27 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function __construct(
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory $rateErrorFactory,
-        \Psr\Log\LoggerInterface $logger,
+        ScopeConfigInterface $scopeConfig,
+        RateErrorFactory $rateErrorFactory,
+        LoggerInterface $logger,
         Security $xmlSecurity,
-        \Magento\Shipping\Model\Simplexml\ElementFactory $xmlElFactory,
-        \Magento\Shipping\Model\Rate\ResultFactory $rateFactory,
-        \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory,
-        \Magento\Shipping\Model\Tracking\ResultFactory $trackFactory,
-        \Magento\Shipping\Model\Tracking\Result\ErrorFactory $trackErrorFactory,
-        \Magento\Shipping\Model\Tracking\Result\StatusFactory $trackStatusFactory,
-        \Magento\Directory\Model\RegionFactory $regionFactory,
-        \Magento\Directory\Model\CountryFactory $countryFactory,
-        \Magento\Directory\Model\CurrencyFactory $currencyFactory,
-        \Magento\Directory\Helper\Data $directoryData,
-        \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry,
-        \Magento\Framework\Locale\FormatInterface $localeFormat,
+        ElementFactory $xmlElFactory,
+        RateFactory $rateFactory,
+        RateMethodFactory $rateMethodFactory,
+        TrackFactory $trackFactory,
+        TrackErrorFactory $trackErrorFactory,
+        TrackStatusFactory $trackStatusFactory,
+        RegionFactory $regionFactory,
+        CountryFactory $countryFactory,
+        CurrencyFactory $currencyFactory,
+        Data $directoryData,
+        StockRegistryInterface $stockRegistry,
+        FormatInterface $localeFormat,
         Config $configHelper,
         ClientFactory $httpClientFactory,
         array $data = [],
         ?AsyncClientInterface $asyncHttpClient = null,
-        ?ProxyDeferredFactory $proxyDeferredFactory
+        ?ProxyDeferredFactory $proxyDeferredFactory = null
     ) {
         parent::__construct(
             $scopeConfig,
@@ -233,7 +251,6 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
      */
     public function collectRates(RateRequest $request)
     {
-        $this->setRequest($request);
         if (!$this->canCollectRates()) {
             return $this->getErrorMessage();
         }
@@ -268,7 +285,7 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
     {
         $this->_request = $request;
 
-        $rowRequest = new \Magento\Framework\DataObject();
+        $rowRequest = new DataObject();
 
         if ($request->getLimitMethod()) {
             $rowRequest->setAction($this->configHelper->getCode('action', 'single'));
@@ -303,8 +320,8 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
             $origCountry = $request->getOrigCountry();
         } else {
             $origCountry = $this->_scopeConfig->getValue(
-                \Magento\Sales\Model\Order\Shipment::XML_PATH_STORE_COUNTRY_ID,
-                \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+                OrderShipment::XML_PATH_STORE_COUNTRY_ID,
+                ScopeInterface::SCOPE_STORE,
                 $request->getStoreId()
             );
         }
@@ -315,8 +332,8 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
             $origRegionCode = $request->getOrigRegionCode();
         } else {
             $origRegionCode = $this->_scopeConfig->getValue(
-                \Magento\Sales\Model\Order\Shipment::XML_PATH_STORE_REGION_ID,
-                \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+                OrderShipment::XML_PATH_STORE_REGION_ID,
+                ScopeInterface::SCOPE_STORE,
                 $request->getStoreId()
             );
         }
@@ -330,8 +347,8 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
         } else {
             $rowRequest->setOrigPostal(
                 $this->_scopeConfig->getValue(
-                    \Magento\Sales\Model\Order\Shipment::XML_PATH_STORE_ZIP,
-                    \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+                    OrderShipment::XML_PATH_STORE_ZIP,
+                    ScopeInterface::SCOPE_STORE,
                     $request->getStoreId()
                 )
             );
@@ -342,8 +359,8 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
         } else {
             $rowRequest->setOrigCity(
                 $this->_scopeConfig->getValue(
-                    \Magento\Sales\Model\Order\Shipment::XML_PATH_STORE_CITY,
-                    \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+                    OrderShipment::XML_PATH_STORE_CITY,
+                    ScopeInterface::SCOPE_STORE,
                     $request->getStoreId()
                 )
             );
@@ -355,27 +372,6 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
             $destCountry = self::USA_COUNTRY_ID;
         }
 
-        //for UPS, puerto rico state for US will assume as puerto rico country
-        if ($destCountry == self::USA_COUNTRY_ID
-            && ($request->getDestPostcode() == '00912'
-                || $request->getDestRegionCode() == self::PUERTORICO_COUNTRY_ID)
-        ) {
-            $destCountry = self::PUERTORICO_COUNTRY_ID;
-        }
-
-        // For UPS, Guam state of the USA will be represented by Guam country
-        if ($destCountry == self::USA_COUNTRY_ID && $request->getDestRegionCode() == self::GUAM_REGION_CODE) {
-            $destCountry = self::GUAM_COUNTRY_ID;
-        }
-
-        // For UPS, Las Palmas and Santa Cruz de Tenerife will be represented by Canary Islands country
-        if ($destCountry === 'ES' &&
-            ($request->getDestRegionCode() === 'Las Palmas'
-                || $request->getDestRegionCode() === 'Santa Cruz de Tenerife')
-        ) {
-            $destCountry = 'IC';
-        }
-
         $country = $this->_countryFactory->create()->load($destCountry);
         $rowRequest->setDestCountry($country->getData('iso2_code') ?: $destCountry);
 
@@ -385,15 +381,33 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
             $rowRequest->setDestPostal($request->getDestPostcode());
         }
 
-        $weight = $this->getTotalNumOfBoxes($request->getPackageWeight());
+        $rowRequest->setOrigCountry(
+            $this->getNormalizedCountryCode(
+                $rowRequest->getOrigCountry(),
+                $rowRequest->getOrigRegionCode(),
+                $rowRequest->getOrigPostal()
+            )
+        );
 
-        $weight = $this->_getCorrectWeight($weight);
+        $rowRequest->setDestCountry(
+            $this->getNormalizedCountryCode(
+                $rowRequest->getDestCountry(),
+                $rowRequest->getDestRegionCode(),
+                $rowRequest->getDestPostal()
+            )
+        );
 
-        $rowRequest->setWeight($weight);
         if ($request->getFreeMethodWeight() != $request->getPackageWeight()) {
             $rowRequest->setFreeMethodWeight($request->getFreeMethodWeight());
         }
 
+        $rowRequest->setPackages(
+            $this->createPackages(
+                (float) $request->getPackageWeight(),
+                (array) $request->getPackages()
+            )
+        );
+        $rowRequest->setWeight($this->_getCorrectWeight($request->getPackageWeight()));
         $rowRequest->setValue($request->getPackageValue());
         $rowRequest->setValueWithDiscount($request->getPackageValueWithDiscount());
 
@@ -409,6 +423,40 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
         $this->_rawRequest = $rowRequest;
 
         return $this;
+    }
+
+    /**
+     * Return country code according to UPS
+     *
+     * @param string $countryCode
+     * @param string $regionCode
+     * @param string $postCode
+     * @return string
+     */
+    private function getNormalizedCountryCode($countryCode, $regionCode, $postCode)
+    {
+        //for UPS, puerto rico state for US will assume as puerto rico country
+        if ($countryCode == self::USA_COUNTRY_ID
+            && ($postCode == '00912'
+                || $regionCode == self::PUERTORICO_COUNTRY_ID)
+        ) {
+            $countryCode = self::PUERTORICO_COUNTRY_ID;
+        }
+
+        // For UPS, Guam state of the USA will be represented by Guam country
+        if ($countryCode == self::USA_COUNTRY_ID && $regionCode == self::GUAM_REGION_CODE) {
+            $countryCode = self::GUAM_COUNTRY_ID;
+        }
+
+        // For UPS, Las Palmas and Santa Cruz de Tenerife will be represented by Canary Islands country
+        if ($countryCode === 'ES' &&
+            ($regionCode === 'Las Palmas'
+                || $regionCode === 'Santa Cruz de Tenerife')
+        ) {
+            $countryCode = 'IC';
+        }
+
+        return $countryCode;
     }
 
     /**
@@ -477,6 +525,9 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
         $weight = $this->getTotalNumOfBoxes($r->getFreeMethodWeight());
         $weight = $this->_getCorrectWeight($weight);
         $r->setWeight($weight);
+        $r->setPackages(
+            $this->createPackages((float)$r->getFreeMethodWeight(), [])
+        );
         $r->setAction($this->configHelper->getCode('action', 'single'));
         $r->setProduct($freeMethod);
     }
@@ -490,7 +541,7 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
     {
         $rowRequest = $this->_rawRequest;
         if (self::USA_COUNTRY_ID == $rowRequest->getDestCountry()) {
-            $destPostal = substr((string)$rowRequest->getDestPostal(), 0, 5);
+            $destPostal = substr((string) $rowRequest->getDestPostal(), 0, 5);
         } else {
             $destPostal = $rowRequest->getDestPostal();
         }
@@ -520,16 +571,16 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
                 if (!$url) {
                     $url = $this->_defaultCgiGatewayUrl;
                 }
-                $client = new \Zend_Http_Client();
+                $client = new Client();
                 $client->setUri($url);
-                $client->setConfig(['maxredirects' => 0, 'timeout' => 30]);
+                $client->setOptions(['maxredirects' => 0, 'timeout' => 30]);
                 $client->setParameterGet($params);
-                $response = $client->request();
+                $response = $client->send();
                 $responseBody = $response->getBody();
 
                 $debugData['result'] = $responseBody;
                 $this->_setCachedQuotes($params, $responseBody);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $debugData['result'] = ['error' => $e->getMessage(), 'code' => $e->getCode()];
                 $responseBody = '';
             }
@@ -570,7 +621,7 @@ class Carrier extends AbstractCarrierOnline implements CarrierInterface
     {
         $costArr = [];
         $priceArr = [];
-        if (strlen(trim($response)) > 0) {
+        if ($response !== null && strlen(trim($response)) > 0) {
             $rRows = explode("\n", $response);
             $allowedMethods = explode(",", (string)$this->getConfigData('allowed_methods'));
             foreach ($rRows as $rRow) {
@@ -755,7 +806,10 @@ XMLRequest;
           <StateProvinceCode>{$params['origRegionCode']}</StateProvinceCode>
       </Address>
     </ShipFrom>
+XMLRequest;
 
+        foreach ($rowRequest->getPackages() as $package) {
+            $xmlParams .= <<<XMLRequest
     <Package>
       <PackagingType>
         <Code>{$params['48_container']}</Code>
@@ -764,10 +818,11 @@ XMLRequest;
         <UnitOfMeasurement>
           <Code>{$rowRequest->getUnitMeasure()}</Code>
         </UnitOfMeasurement>
-        <Weight>{$params['23_weight']}</Weight>
+        <Weight>{$this->_getCorrectWeight($package['weight'])}</Weight>
       </PackageWeight>
     </Package>
 XMLRequest;
+        }
 
         if ($this->getConfigFlag('negotiated_active')) {
             $xmlParams .= "<RateInformation><NegotiatedRatesIndicator/></RateInformation>";
@@ -782,25 +837,27 @@ XMLRequest;
 XMLRequest;
 
         $xmlRequest .= $xmlParams;
-        $debugData = ['request' => $xmlParams];
+
         $httpResponse = $this->asyncHttpClient->request(
             new Request($url, Request::METHOD_POST, ['Content-Type' => 'application/xml'], $xmlRequest)
         );
-
+        $debugData['request'] = $xmlParams;
         return $this->deferredProxyFactory->create(
             [
                 'deferred' => new CallbackDeferred(
                     function () use ($httpResponse, $debugData) {
-                        if ($httpResponse->get()->getStatusCode() >= 400) {
-                            $xmlResponse = '';
-                            $debugData['result'] = [
-                                'error' => $httpResponse->get()->getBody(),
-                                'code' => $httpResponse->get()->getStatusCode()
-                            ];
-                        } else {
-                            $xmlResponse = $httpResponse->get()->getBody();
-                            $debugData['result'] = $xmlResponse;
+                        $responseResult = null;
+                        $xmlResponse = '';
+                        try {
+                            $responseResult = $httpResponse->get();
+                        } catch (HttpException $e) {
+                            $debugData['result'] = ['error' => $e->getMessage(), 'code' => $e->getCode()];
+                            $this->_logger->critical($e);
                         }
+                        if ($responseResult) {
+                            $xmlResponse = $responseResult->getStatusCode() >= 400 ? '' : $responseResult->getBody();
+                        }
+                        $debugData['result'] = $xmlResponse;
                         $this->_debug($debugData);
 
                         return $this->_parseXmlResponse($xmlResponse);
@@ -842,7 +899,7 @@ XMLRequest;
             'CNH' => 'CNY'
         ];
 
-        return isset($currencyMapping[$code]) ? $currencyMapping[$code] : $code;
+        return $currencyMapping[$code] ?? $code;
     }
 
     /**
@@ -858,14 +915,14 @@ XMLRequest;
     {
         $costArr = [];
         $priceArr = [];
-        if (strlen(trim($xmlResponse)) > 0) {
+        if ($xmlResponse !== null && strlen(trim($xmlResponse)) > 0) {
             $xml = new \Magento\Framework\Simplexml\Config();
             $xml->loadString($xmlResponse);
             $arr = $xml->getXpath("//RatingServiceSelectionResponse/Response/ResponseStatusCode/text()");
             $success = (int)$arr[0];
             if ($success === 1) {
                 $arr = $xml->getXpath("//RatingServiceSelectionResponse/RatedShipment");
-                $allowedMethods = explode(",", $this->getConfigData('allowed_methods'));
+                $allowedMethods = explode(",", $this->getConfigData('allowed_methods') ?? '');
 
                 // Negotiated rates
                 $negotiatedArr = $xml->getXpath("//RatingServiceSelectionResponse/RatedShipment/NegotiatedRates");
@@ -1020,6 +1077,40 @@ XMLRequest;
     }
 
     /**
+     * Get final price for shipping method with handling fee per package
+     *
+     * @param float $cost
+     * @param string $handlingType
+     * @param float $handlingFee
+     * @return float
+     */
+    protected function _getPerpackagePrice($cost, $handlingType, $handlingFee)
+    {
+        if ($handlingType == AbstractCarrier::HANDLING_TYPE_PERCENT) {
+            return $cost + $cost * $this->_numBoxes * $handlingFee / 100;
+        }
+
+        return $cost + $this->_numBoxes * $handlingFee;
+    }
+
+    /**
+     * Get final price for shipping method with handling fee per order
+     *
+     * @param float $cost
+     * @param string $handlingType
+     * @param float $handlingFee
+     * @return float
+     */
+    protected function _getPerorderPrice($cost, $handlingType, $handlingFee)
+    {
+        if ($handlingType == self::HANDLING_TYPE_PERCENT) {
+            return $cost + $cost * $handlingFee / 100;
+        }
+
+        return $cost + $handlingFee;
+    }
+
+    /**
      * Get tracking
      *
      * @param string|string[] $trackings
@@ -1066,7 +1157,7 @@ XMLAuth;
      * Get cgi tracking
      *
      * @param string[] $trackings
-     * @return \Magento\Shipping\Model\Tracking\ResultFactory
+     * @return TrackFactory
      */
     protected function _getCgiTracking($trackings)
     {
@@ -1104,7 +1195,8 @@ XMLAuth;
 
         /** @var HttpResponseDeferredInterface[] $trackingResponses */
         $trackingResponses = [];
-        $debugTrackingData = [];
+        $tracking = '';
+        $debugData = [];
         foreach ($trackings as $tracking) {
             /**
              * RequestOption==>'1' to request all activities
@@ -1121,9 +1213,8 @@ XMLAuth;
     <IncludeFreight>01</IncludeFreight>
 </TrackRequest>
 XMLAuth;
-
-            $debugTrackingData[] = ['request' => $this->filterDebugData($this->_xmlAccessRequest) . $xmlRequest];
-            $trackingResponses[] = $this->asyncHttpClient->request(
+            $debugData[$tracking] = ['request' => $this->filterDebugData($this->_xmlAccessRequest) . $xmlRequest];
+            $trackingResponses[$tracking] = $this->asyncHttpClient->request(
                 new Request(
                     $url,
                     Request::METHOD_POST,
@@ -1132,20 +1223,12 @@ XMLAuth;
                 )
             );
         }
-        foreach ($trackingResponses as $i => $response) {
+        foreach ($trackingResponses as $tracking => $response) {
             $httpResponse = $response->get();
-            if ($httpResponse->getStatusCode() >= 400) {
-                $xmlResponse = '';
-                $debugTrackingData[$i]['result'] = [
-                    'error' => $httpResponse->getBody(),
-                    'code' => $httpResponse->getStatusCode()
-                ];
-            } else {
-                $xmlResponse = $httpResponse->getBody();
-                $debugTrackingData[$i]['result'] = $httpResponse->getBody();
-            }
+            $xmlResponse = $httpResponse->getStatusCode() >= 400 ? '' : $httpResponse->getBody();
 
-            $this->_debug($debugTrackingData[$i]);
+            $debugData[$tracking]['result'] = $xmlResponse;
+            $this->_debug($debugData);
             $this->_parseXmlTrackingResponse($tracking, $xmlResponse);
         }
 
@@ -1312,11 +1395,8 @@ XMLAuth;
                 }
             }
         }
-        if (empty($statuses)) {
-            $statuses = __('Empty response');
-        }
 
-        return $statuses;
+        return $statuses ?: __('Empty response');
     }
 
     /**
@@ -1347,19 +1427,20 @@ XMLAuth;
     /**
      * Form XML for shipment request
      *
-     * @param \Magento\Framework\DataObject $request
+     * @param DataObject $request
      * @return string
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
-    protected function _formShipmentRequest(\Magento\Framework\DataObject $request)
+    protected function _formShipmentRequest(DataObject $request)
     {
         $packages = $request->getPackages();
+        $shipmentItems = [];
         foreach ($packages as $package) {
             $shipmentItems[] = $package['items'];
         }
-        $shipmentItems = array_merge(...$shipmentItems);
+        $shipmentItems = array_merge([], ...$shipmentItems);
 
         $xmlRequest = $this->_xmlElFactory->create(
             ['data' => '<?xml version = "1.0" ?><ShipmentConfirmRequest xml:lang="en-US"/>']
@@ -1385,7 +1466,7 @@ XMLAuth;
             $shipperPart->addChild('PhoneNumber', $request->getRecipientContactPhoneNumber());
 
             $addressPart = $shipperPart->addChild('Address');
-            $addressPart->addChild('AddressLine1', $request->getRecipientAddressStreet());
+            $addressPart->addChild('AddressLine1', $request->getRecipientAddressStreet1());
             $addressPart->addChild('AddressLine2', $request->getRecipientAddressStreet2());
             $addressPart->addChild('City', $request->getRecipientAddressCity());
             $addressPart->addChild('CountryCode', $request->getRecipientAddressCountryCode());
@@ -1482,8 +1563,8 @@ XMLAuth;
             $width = $packageParams->getWidth();
             $length = $packageParams->getLength();
             $weight = $packageParams->getWeight();
-            $weightUnits = $packageParams->getWeightUnits() == \Zend_Measure_Weight::POUND ? 'LBS' : 'KGS';
-            $dimensionsUnits = $packageParams->getDimensionUnits() == \Zend_Measure_Length::INCH ? 'IN' : 'CM';
+            $weightUnits = $packageParams->getWeightUnits() == Weight::POUND ? 'LBS' : 'KGS';
+            $dimensionsUnits = $packageParams->getDimensionUnits() == Length::INCH ? 'IN' : 'CM';
             $deliveryConfirmation = $packageParams->getDeliveryConfirmation();
             $customsTotal += $packageParams->getCustomsValue();
 
@@ -1522,24 +1603,18 @@ XMLAuth;
             }
 
             if ($deliveryConfirmation && $deliveryConfirmationLevel === self::DELIVERY_CONFIRMATION_PACKAGE) {
-                    $serviceOptionsNode = $packagePart[$packageId]->addChild('PackageServiceOptions');
-                    $serviceOptionsNode->addChild(
-                        'DeliveryConfirmation'
-                    )->addChild(
-                        'DCISType',
-                        $deliveryConfirmation
-                    );
+                $serviceOptionsNode = $packagePart[$packageId]->addChild('PackageServiceOptions');
+                $serviceOptionsNode
+                    ->addChild('DeliveryConfirmation')
+                    ->addChild('DCISType', $deliveryConfirmation);
             }
         }
 
-        if (isset($deliveryConfirmation) && $deliveryConfirmationLevel === self::DELIVERY_CONFIRMATION_SHIPMENT) {
+        if (!empty($deliveryConfirmation) && $deliveryConfirmationLevel === self::DELIVERY_CONFIRMATION_SHIPMENT) {
             $serviceOptionsNode = $shipmentPart->addChild('ShipmentServiceOptions');
-            $serviceOptionsNode->addChild(
-                'DeliveryConfirmation'
-            )->addChild(
-                'DCISType',
-                $deliveryConfirmation
-            );
+            $serviceOptionsNode
+                ->addChild('DeliveryConfirmation')
+                ->addChild('DCISType', $deliveryConfirmation);
         }
 
         $shipmentPart->addChild('PaymentInformation')
@@ -1587,7 +1662,7 @@ XMLAuth;
      * Send and process shipment accept request
      *
      * @param Element $shipmentConfirmResponse
-     * @return \Magento\Framework\DataObject
+     * @return DataObject
      * @deprecated 100.3.3 New asynchronous methods introduced.
      * @see requestToShipment
      */
@@ -1613,18 +1688,20 @@ XMLAuth;
             $xmlResponse = $deferredResponse->get()->getBody();
             $debugData['result'] = $xmlResponse;
             $this->_setCachedQuotes($xmlRequest, $xmlResponse);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $debugData['result'] = ['error' => $e->getMessage(), 'code' => $e->getCode()];
             $xmlResponse = '';
         }
 
+        $response = '';
         try {
             $response = $this->_xmlElFactory->create(['data' => $xmlResponse]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
+            $response = $this->_xmlElFactory->create(['data' => '']);
             $debugData['result'] = ['error' => $e->getMessage(), 'code' => $e->getCode()];
         }
 
-        $result = new \Magento\Framework\DataObject();
+        $result = new DataObject();
         if (isset($response->Error)) {
             $result->setErrors((string)$response->Error->ErrorDescription);
         } else {
@@ -1663,10 +1740,26 @@ XMLAuth;
      * @param DataObject $request
      * @return string[] Quote IDs.
      * @throws LocalizedException
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     private function requestQuotes(DataObject $request): array
     {
+        $request->setShipperAddressCountryCode(
+            $this->getNormalizedCountryCode(
+                $request->getShipperAddressCountryCode(),
+                $request->getShipperAddressStateOrProvinceCode(),
+                $request->getShipperAddressPostalCode(),
+            )
+        );
+
+        $request->setRecipientAddressCountryCode(
+            $this->getNormalizedCountryCode(
+                $request->getRecipientAddressCountryCode(),
+                $request->getRecipientAddressStateOrProvinceCode(),
+                $request->getRecipientAddressPostalCode(),
+            )
+        );
+
         /** @var HttpResponseDeferredInterface[] $quotesRequests */
         //Getting quotes
         $this->_prepareShipmentRequest($request);
@@ -1694,13 +1787,13 @@ XMLAuth;
                 /** @var Element $response */
                 $response = $this->_xmlElFactory->create(['data' => $httpResponse->getBody()]);
                 $this->_debug(['response_quote' => $response]);
-            } catch (\Throwable $e) {
-                throw new \RuntimeException($e->getMessage());
+            } catch (Throwable $e) {
+                throw new RuntimeException($e->getMessage());
             }
             if (isset($response->Response->Error)
                 && in_array($response->Response->Error->ErrorSeverity, ['Hard', 'Transient'])
             ) {
-                throw new \RuntimeException((string)$response->Response->Error->ErrorDescription);
+                throw new RuntimeException((string)$response->Response->Error->ErrorDescription);
             }
 
             $ids[] = $response->ShipmentDigest;
@@ -1715,7 +1808,7 @@ XMLAuth;
      * @param string[] $quoteIds
      * @return DataObject[]
      * @throws LocalizedException
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     private function requestShipments(array $quoteIds): array
     {
@@ -1757,11 +1850,11 @@ XMLAuth;
                 /** @var Element $response */
                 $response = $this->_xmlElFactory->create(['data' => $httpResponse->getBody()]);
                 $this->_debug(['response_shipment' => $response]);
-            } catch (\Throwable $e) {
-                throw new \RuntimeException($e->getMessage());
+            } catch (Throwable $e) {
+                throw new RuntimeException($e->getMessage());
             }
             if (isset($response->Error)) {
-                throw new \RuntimeException((string)$response->Error->ErrorDescription);
+                throw new RuntimeException((string)$response->Error->ErrorDescription);
             }
 
             foreach ($response->ShipmentResults->PackageResults as $packageResult) {
@@ -1789,11 +1882,12 @@ XMLAuth;
     protected function _doShipmentRequest(DataObject $request)
     {
         $this->_prepareShipmentRequest($request);
-        $result = new \Magento\Framework\DataObject();
+        $result = new DataObject();
         $rawXmlRequest = $this->_formShipmentRequest($request);
         $this->setXMLAccessRequest();
         $xmlRequest = $this->_xmlAccessRequest . $rawXmlRequest;
         $xmlResponse = $this->_getCachedQuotes($xmlRequest);
+        $debugData = [];
 
         if ($xmlResponse === null) {
             $debugData['request'] = $this->filterDebugData($this->_xmlAccessRequest) . $rawXmlRequest;
@@ -1810,14 +1904,14 @@ XMLAuth;
                 $xmlResponse = $deferredResponse->get()->getBody();
                 $debugData['result'] = $xmlResponse;
                 $this->_setCachedQuotes($xmlRequest, $xmlResponse);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $debugData['result'] = ['code' => $e->getCode(), 'error' => $e->getMessage()];
             }
         }
 
         try {
             $response = $this->_xmlElFactory->create(['data' => $xmlResponse]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $debugData['result'] = ['error' => $e->getMessage(), 'code' => $e->getCode()];
             $result->setErrors($e->getMessage());
         }
@@ -1880,7 +1974,7 @@ XMLAuth;
         } catch (LocalizedException $exception) {
             $this->_logger->critical($exception);
             return new DataObject(['errors' => [$exception->getMessage()]]);
-        } catch (\RuntimeException $exception) {
+        } catch (RuntimeException $exception) {
             $this->_logger->critical($exception);
             return new DataObject(['errors' => __('Failed to send items')]);
         }
@@ -1902,11 +1996,11 @@ XMLAuth;
     /**
      * Return container types of carrier
      *
-     * @param \Magento\Framework\DataObject|null $params
+     * @param DataObject|null $params
      * @return array|bool
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
-    public function getContainerTypes(\Magento\Framework\DataObject $params = null)
+    public function getContainerTypes(DataObject $params = null)
     {
         if ($params === null) {
             return $this->_getAllowedContainers($params);
@@ -1984,10 +2078,10 @@ XMLAuth;
     /**
      * Return delivery confirmation types of carrier
      *
-     * @param \Magento\Framework\DataObject|null $params
+     * @param DataObject|null $params
      * @return array|bool
      */
-    public function getDeliveryConfirmationTypes(\Magento\Framework\DataObject $params = null)
+    public function getDeliveryConfirmationTypes(DataObject $params = null)
     {
         $countryRecipient = $params != null ? $params->getCountryRecipient() : null;
         $deliveryConfirmationTypes = [];
@@ -2045,5 +2139,25 @@ XMLAuth;
         }
 
         return self::DELIVERY_CONFIRMATION_SHIPMENT;
+    }
+
+    /**
+     * Creates packages for rate request.
+     *
+     * @param float $totalWeight
+     * @param array $packages
+     * @return array
+     */
+    private function createPackages(float $totalWeight, array $packages): array
+    {
+        if (empty($packages)) {
+            $dividedWeight = $this->getTotalNumOfBoxes($totalWeight);
+            for ($i=0; $i < $this->_numBoxes; $i++) {
+                $packages[$i]['weight'] = $this->_getCorrectWeight($dividedWeight);
+            }
+        }
+        $this->_numBoxes = count($packages);
+
+        return $packages;
     }
 }

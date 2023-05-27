@@ -8,7 +8,8 @@ namespace Magento\Sales\Service\V1;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
- * Class OrderListTest for Magento sales webapi
+ * Class OrderListTest
+ * @package Magento\Sales\Service\V1
  */
 class OrderListTest extends WebapiAbstract
 {

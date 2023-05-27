@@ -17,6 +17,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @see \Magento\Persistent\Helper\Session
  * @magentoDbIsolation enabled
+ * @magentoAppArea frontend
  */
 class SessionTest extends TestCase
 {
@@ -32,7 +33,7 @@ class SessionTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp(): void
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -49,8 +50,7 @@ class SessionTest extends TestCase
      */
     public function testPersistentEnabled(): void
     {
-        $session = $this->sessionFactory->create()->loadByCustomerId(1);
-        $this->helper->setSession($session);
+        $this->helper->setSession($this->sessionFactory->create()->loadByCustomerId(1));
         $this->assertTrue($this->helper->isPersistent());
     }
 
@@ -62,8 +62,7 @@ class SessionTest extends TestCase
      */
     public function testPersistentDisabled(): void
     {
-        $session = $this->sessionFactory->create()->loadByCustomerId(1);
-        $this->helper->setSession($session);
+        $this->helper->setSession($this->sessionFactory->create()->loadByCustomerId(1));
         $this->assertFalse($this->helper->isPersistent());
     }
 
@@ -75,8 +74,7 @@ class SessionTest extends TestCase
      */
     public function testCustomerWithoutPersistent(): void
     {
-        $session = $this->sessionFactory->create()->loadByCustomerId(1);
-        $this->helper->setSession($session);
+        $this->helper->setSession($this->sessionFactory->create()->loadByCustomerId(1));
         $this->assertFalse($this->helper->isPersistent());
     }
 }

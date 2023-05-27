@@ -1,34 +1,30 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-servicemanager for the canonical source repository
- * @copyright https://github.com/laminas/laminas-servicemanager/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-servicemanager/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\ServiceManager;
 
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
 
 /**
- * Service locator interface
+ * Interface for service locator
  */
 interface ServiceLocatorInterface extends ContainerInterface
 {
     /**
-     * Retrieve a registered instance
+     * Build a service by its name, using optional options (such services are NEVER cached).
      *
-     * @param  string  $name
-     * @throws Exception\ServiceNotFoundException
-     * @return object|array
+     * @template T of object
+     * @param  string|class-string<T> $name
+     * @param  null|array<mixed>  $options
+     * @return mixed
+     * @psalm-return ($name is class-string<T> ? T : mixed)
+     * @throws Exception\ServiceNotFoundException If no factory/abstract
+     *     factory could be found to create the instance.
+     * @throws Exception\ServiceNotCreatedException If factory/delegator fails
+     *     to create the instance.
+     * @throws ContainerExceptionInterface If any other error occurs.
      */
-    public function get($name);
-
-    /**
-     * Check for a registered instance
-     *
-     * @param  string|array  $name
-     * @return bool
-     */
-    public function has($name);
+    public function build($name, ?array $options = null);
 }

@@ -3,47 +3,78 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Magento\Payment\Test\Unit\Model;
 
-use Magento\Payment\Model\Method;
+use Magento\Framework\Encryption\EncryptorInterface;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Model\Context;
+use Magento\Framework\Registry;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
+use Magento\Payment\Helper\Data;
+use Magento\Payment\Model\Info;
+use Magento\Payment\Model\InfoInterface;
+use Magento\Payment\Model\Method\Substitution;
+use Magento\Payment\Model\MethodInterface;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class InfoTest extends \PHPUnit\Framework\TestCase
+/**
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ */
+class InfoTest extends TestCase
 {
-    /** @var \Magento\Payment\Model\InfoInterface */
+    /**
+     * @var InfoInterface
+     */
     protected $info;
 
-    /** @var ObjectManagerHelper */
+    /**
+     * @var ObjectManagerHelper
+     */
     protected $objectManagerHelper;
 
-    /** @var \Magento\Framework\Model\Context|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var Context|MockObject
+     */
     protected $contextMock;
 
-    /** @var \Magento\Framework\Registry|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var Registry|MockObject
+     */
     protected $registryMock;
 
-    /** @var \Magento\Payment\Helper\Data|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var Data|MockObject
+     */
     protected $paymentHelperMock;
 
-    /** @var \Magento\Framework\Encryption\EncryptorInterface|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var EncryptorInterface|MockObject
+     */
     protected $encryptorInterfaceMock;
 
-    /** @var \Magento\Payment\Helper\Data|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var Data|MockObject
+     */
     protected $methodInstanceMock;
 
+    /**
+     * @inheritdoc
+     */
     protected function setUp(): void
     {
-        $this->contextMock = $this->createMock(\Magento\Framework\Model\Context::class);
-        $this->registryMock = $this->createMock(\Magento\Framework\Registry::class);
-        $this->paymentHelperMock = $this->createPartialMock(\Magento\Payment\Helper\Data::class, ['getMethodInstance']);
-        $this->encryptorInterfaceMock = $this->createMock(\Magento\Framework\Encryption\EncryptorInterface::class);
-        $this->methodInstanceMock = $this->getMockBuilder(\Magento\Payment\Model\MethodInterface::class)
+        $this->contextMock = $this->createMock(Context::class);
+        $this->registryMock = $this->createMock(Registry::class);
+        $this->paymentHelperMock = $this->createPartialMock(Data::class, ['getMethodInstance']);
+        $this->encryptorInterfaceMock = $this->getMockForAbstractClass(EncryptorInterface::class);
+        $this->methodInstanceMock = $this->getMockBuilder(MethodInterface::class)
             ->getMockForAbstractClass();
 
         $this->objectManagerHelper = new ObjectManagerHelper($this);
         $this->info = $this->objectManagerHelper->getObject(
-            \Magento\Payment\Model\Info::class,
+            Info::class,
             [
                 'context' => $this->contextMock,
                 'registry' => $this->registryMock,
@@ -57,8 +88,10 @@ class InfoTest extends \PHPUnit\Framework\TestCase
      * @dataProvider ccKeysDataProvider
      * @param string $keyCc
      * @param string $keyCcEnc
+     *
+     * @return void
      */
-    public function testGetDataCcNumber($keyCc, $keyCcEnc)
+    public function testGetDataCcNumber(string $keyCc, string $keyCcEnc): void
     {
         // no data was set
         $this->assertNull($this->info->getData($keyCc));
@@ -76,7 +109,7 @@ class InfoTest extends \PHPUnit\Framework\TestCase
      *
      * @return array
      */
-    public function ccKeysDataProvider()
+    public function ccKeysDataProvider(): array
     {
         return [
             ['cc_number', 'cc_number_enc'],
@@ -84,7 +117,10 @@ class InfoTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    public function testGetMethodInstanceWithRealMethod()
+    /**
+     * @return void
+     */
+    public function testGetMethodInstanceWithRealMethod(): void
     {
         $method = 'real_method';
         $this->info->setData('method', $method);
@@ -101,40 +137,41 @@ class InfoTest extends \PHPUnit\Framework\TestCase
         $this->info->getMethodInstance();
     }
 
-    public function testGetMethodInstanceWithUnrealMethod()
+    /**
+     * @return void
+     */
+    public function testGetMethodInstanceWithUnrealMethod(): void
     {
         $method = 'unreal_method';
         $this->info->setData('method', $method);
-
-        $this->paymentHelperMock->expects($this->at(0))
-            ->method('getMethodInstance')
-            ->with($method)
-            ->willThrowException(new \UnexpectedValueException());
 
         $this->methodInstanceMock->expects($this->once())
             ->method('setInfoInstance')
             ->with($this->info);
 
-        $this->paymentHelperMock->expects($this->at(1))
+        $this->paymentHelperMock
             ->method('getMethodInstance')
-            ->with(Method\Substitution::CODE)
+            ->withConsecutive([$method], [Substitution::CODE])
             ->willReturn($this->methodInstanceMock);
 
         $this->info->getMethodInstance();
     }
 
     /**
+     * @return void
      */
-    public function testGetMethodInstanceWithNoMethod()
+    public function testGetMethodInstanceWithNoMethod(): void
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('The payment method you requested is not available.');
-
         $this->info->setData('method', false);
         $this->info->getMethodInstance();
     }
 
-    public function testGetMethodInstanceRequestedMethod()
+    /**
+     * @return void
+     */
+    public function testGetMethodInstanceRequestedMethod(): void
     {
         $code = 'real_method';
         $this->info->setData('method', $code);
@@ -150,7 +187,10 @@ class InfoTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($this->methodInstanceMock, $this->info->getMethodInstance());
     }
 
-    public function testEncrypt()
+    /**
+     * @return void
+     */
+    public function testEncrypt(): void
     {
         $data = 'data';
         $encryptedData = 'd1a2t3a4';
@@ -161,7 +201,10 @@ class InfoTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($encryptedData, $this->info->encrypt($data));
     }
 
-    public function testDecrypt()
+    /**
+     * @return void
+     */
+    public function testDecrypt(): void
     {
         $data = 'data';
         $encryptedData = 'd1a2t3a4';
@@ -173,11 +216,11 @@ class InfoTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @return void
      */
-    public function testSetAdditionalInformationException()
+    public function testSetAdditionalInformationException(): void
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
-
+        $this->expectException(LocalizedException::class);
         $this->info->setAdditionalInformation('object', new \StdClass());
     }
 
@@ -185,8 +228,10 @@ class InfoTest extends \PHPUnit\Framework\TestCase
      * @dataProvider additionalInformationDataProvider
      * @param mixed $key
      * @param mixed $value
+     *
+     * @return void
      */
-    public function testSetAdditionalInformationMultipleTypes($key, $value = null)
+    public function testSetAdditionalInformationMultipleTypes($key, $value = null): void
     {
         $this->info->setAdditionalInformation($key, $value);
         $this->assertEquals($value ? [$key => $value] : $key, $this->info->getAdditionalInformation());
@@ -197,7 +242,7 @@ class InfoTest extends \PHPUnit\Framework\TestCase
      *
      * @return array
      */
-    public function additionalInformationDataProvider()
+    public function additionalInformationDataProvider(): array
     {
         return [
             [['key1' => 'data1', 'key2' => 'data2'], null],
@@ -205,7 +250,10 @@ class InfoTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    public function testGetAdditionalInformationByKey()
+    /**
+     * @return void
+     */
+    public function testGetAdditionalInformationByKey(): void
     {
         $key = 'key';
         $value = 'value';
@@ -213,7 +261,10 @@ class InfoTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($value, $this->info->getAdditionalInformation($key));
     }
 
-    public function testUnsAdditionalInformation()
+    /**
+     * @return void
+     */
+    public function testUnsAdditionalInformation(): void
     {
         // set array to additional
         $data = ['key1' => 'data1', 'key2' => 'data2'];
@@ -229,7 +280,10 @@ class InfoTest extends \PHPUnit\Framework\TestCase
         $this->assertEmpty($this->info->unsAdditionalInformation()->getAdditionalInformation());
     }
 
-    public function testHasAdditionalInformation()
+    /**
+     * @return void
+     */
+    public function testHasAdditionalInformation(): void
     {
         $this->assertFalse($this->info->hasAdditionalInformation());
 
@@ -241,7 +295,10 @@ class InfoTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($this->info->hasAdditionalInformation());
     }
 
-    public function testInitAdditionalInformationWithUnserialize()
+    /**
+     * @return void
+     */
+    public function testInitAdditionalInformationWithUnserialize(): void
     {
         $data = ['key1' => 'data1', 'key2' => 'data2'];
         $this->info->setData('additional_information', $data);

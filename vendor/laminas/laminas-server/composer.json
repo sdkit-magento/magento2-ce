@@ -16,21 +16,28 @@
         "forum": "https://discourse.laminas.dev"
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "platform": {
+            "php": "8.0.99"
+        },
+        "allow-plugins": {
+            "composer/package-versions-deprecated": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     },
     "extra": {
     },
     "require": {
-        "php": "^7.3 || ~8.0.0",
-        "laminas/laminas-code": "^2.5 || ^3.0",
-        "laminas/laminas-stdlib": "^2.5 || ^3.0",
-        "laminas/laminas-zendframework-bridge": "^1.0"
+        "php": "~8.0.0 || ~8.1.0 || ~8.2.0",
+        "laminas/laminas-code": "^4.7.1",
+        "laminas/laminas-stdlib": "^3.3.1",
+        "laminas/laminas-zendframework-bridge": "^1.2.0"
     },
     "require-dev": {
-        "laminas/laminas-coding-standard": "~1.0.0",
-        "phpunit/phpunit": "^9.3",
-        "psalm/plugin-phpunit": "^0.13.0",
-        "vimeo/psalm": "^4.2"
+        "laminas/laminas-coding-standard": "~2.4.0",
+        "phpunit/phpunit": "^9.5.5",
+        "psalm/plugin-phpunit": "^0.15.1",
+        "vimeo/psalm": "^4.6.4"
     },
     "autoload": {
         "psr-4": {
@@ -42,6 +49,7 @@
             "LaminasTest\\Server\\": "test/"
         },
         "files": [
+            "test/Reflection/TestAsset/functions.php",
             "test/TestAsset/reflectionTestFunction.php"
         ]
     },

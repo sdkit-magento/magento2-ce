@@ -24,12 +24,16 @@ use Magento\Framework\Serialize\Serializer\JsonHexTag;
  */
 class SignIn extends Template
 {
-    private const DATA_ARGUMENT_KEY_CONFIG_PROVIDERS = 'configProviders';
-    private const RESPONSE_REGEXP_PATTERN = 'auth\\[code=(success|error);message=(.+)\\]';
-    private const RESPONSE_CODE_INDEX = 1;
-    private const RESPONSE_MESSAGE_INDEX = 2;
-    private const RESPONSE_SUCCESS_CODE = 'success';
-    private const RESPONSE_ERROR_CODE = 'error';
+    public const DATA_ARGUMENT_KEY_CONFIG_PROVIDERS = 'configProviders';
+    public const RESPONSE_REGEXP_PATTERN = 'auth\\[code=(success|error);message=(.+)\\]';
+    public const RESPONSE_CODE_INDEX = 1;
+    public const RESPONSE_MESSAGE_INDEX = 2;
+    public const RESPONSE_SUCCESS_CODE = 'success';
+    public const RESPONSE_ERROR_CODE = 'error';
+    public const ADOBE_IMS_JS_SIGNIN = 'Magento_AdobeIms/js/signIn';
+    public const ADOBE_IMS_SIGNIN = 'Magento_AdobeIms/signIn';
+    public const ADOBE_IMS_USER_PROFILE = 'adobe_ims/user/profile';
+    public const ADOBE_IMS_USER_LOGOUT = 'adobe_ims/user/logout';
 
     /**
      * @var ConfigInterface
@@ -109,11 +113,12 @@ class SignIn extends Template
     private function getDefaultComponentConfig(): array
     {
         return [
-            'component' => 'Magento_AdobeIms/js/signIn',
-            'template' => 'Magento_AdobeIms/signIn',
-            'profileUrl' => $this->getUrl('adobe_ims/user/profile'),
-            'logoutUrl' => $this->getUrl('adobe_ims/user/logout'),
+            'component' => self::ADOBE_IMS_JS_SIGNIN,
+            'template' => self::ADOBE_IMS_SIGNIN,
+            'profileUrl' => $this->getUrl(self::ADOBE_IMS_USER_PROFILE),
+            'logoutUrl' => $this->getUrl(self::ADOBE_IMS_USER_LOGOUT),
             'user' => $this->getUserData(),
+            'isGlobalSignInEnabled' => false,
             'loginConfig' => [
                 'url' => $this->config->getAuthUrl(),
                 'callbackParsingParams' => [
@@ -184,7 +189,7 @@ class SignIn extends Template
             'isAuthorized' => false,
             'name' => '',
             'email' => '',
-            'image' => $this->config->getDefaultProfileImage(),
+            'image' => '',
         ];
     }
 }

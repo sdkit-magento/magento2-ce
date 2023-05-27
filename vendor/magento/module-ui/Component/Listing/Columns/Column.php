@@ -11,24 +11,22 @@ use Magento\Framework\View\Element\UiComponentInterface;
 use Magento\Ui\Component\AbstractComponent;
 
 /**
- * Column class for UI components
- *
  * @api
  * @since 100.0.2
  */
 class Column extends AbstractComponent implements ColumnInterface
 {
-    const NAME = 'column';
+    public const NAME = 'column';
 
     /**
-     * Wrapped component
+     * UI component
      *
      * @var UiComponentInterface
      */
     protected $wrappedComponent;
 
     /**
-     * UI component factory
+     * Factory for UI Component
      *
      * @var UiComponentFactory
      */
@@ -89,7 +87,8 @@ class Column extends AbstractComponent implements ColumnInterface
                 'config',
                 array_replace_recursive(
                     (array)$this->wrappedComponent->getData('config'),
-                    (array)$this->getData('config')
+                    (array)$this->getData('config'),
+                    ['__disableTmpl' => ['label' => true]]
                 )
             );
         }

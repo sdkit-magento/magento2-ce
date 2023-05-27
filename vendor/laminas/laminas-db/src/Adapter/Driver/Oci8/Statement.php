@@ -9,7 +9,22 @@ use Laminas\Db\Adapter\Profiler;
 
 use function is_array;
 use function is_string;
+use function oci_bind_by_name;
+use function oci_error;
+use function oci_execute;
+use function oci_new_descriptor;
+use function oci_parse;
+use function oci_statement_type;
 use function sprintf;
+
+use const OCI_B_CLOB;
+use const OCI_COMMIT_ON_SUCCESS;
+use const OCI_DTYPE_LOB;
+use const OCI_NO_AUTO_COMMIT;
+use const OCI_TEMP_CLOB;
+use const SQLT_BIN;
+use const SQLT_CHR;
+use const SQLT_INT;
 
 class Statement implements StatementInterface, Profiler\ProfilerAwareInterface
 {
@@ -36,6 +51,14 @@ class Statement implements StatementInterface, Profiler\ProfilerAwareInterface
     protected $resource;
 
     /**
+     * @internal
+     * @deprecated
+     *
+     * @var bool
+     */
+    public $parametersBound;
+
+    /**
      * Is prepared
      *
      * @var bool
@@ -49,7 +72,7 @@ class Statement implements StatementInterface, Profiler\ProfilerAwareInterface
      * Set driver
      *
      * @param  Oci8 $driver
-     * @return self Provides a fluent interface
+     * @return $this Provides a fluent interface
      */
     public function setDriver($driver)
     {
@@ -58,7 +81,7 @@ class Statement implements StatementInterface, Profiler\ProfilerAwareInterface
     }
 
     /**
-     * @return self Provides a fluent interface
+     * @return $this Provides a fluent interface
      */
     public function setProfiler(Profiler\ProfilerInterface $profiler)
     {
@@ -78,7 +101,7 @@ class Statement implements StatementInterface, Profiler\ProfilerAwareInterface
      * Initialize
      *
      * @param  resource $oci8
-     * @return self Provides a fluent interface
+     * @return $this Provides a fluent interface
      */
     public function initialize($oci8)
     {
@@ -90,7 +113,7 @@ class Statement implements StatementInterface, Profiler\ProfilerAwareInterface
      * Set sql
      *
      * @param  string $sql
-     * @return self Provides a fluent interface
+     * @return $this Provides a fluent interface
      */
     public function setSql($sql)
     {
@@ -101,7 +124,7 @@ class Statement implements StatementInterface, Profiler\ProfilerAwareInterface
     /**
      * Set Parameter container
      *
-     * @return self Provides a fluent interface
+     * @return $this Provides a fluent interface
      */
     public function setParameterContainer(ParameterContainer $parameterContainer)
     {
@@ -123,7 +146,7 @@ class Statement implements StatementInterface, Profiler\ProfilerAwareInterface
      * Set resource
      *
      * @param  resource $oci8Statement
-     * @return self Provides a fluent interface
+     * @return $this Provides a fluent interface
      */
     public function setResource($oci8Statement)
     {
@@ -167,7 +190,7 @@ class Statement implements StatementInterface, Profiler\ProfilerAwareInterface
 
     /**
      * @param string $sql
-     * @return self Provides a fluent interface
+     * @return $this Provides a fluent interface
      */
     public function prepare($sql = null)
     {

@@ -30,7 +30,7 @@ class IsAdobeStockIntegrationEnabledTest extends TestCase
     protected function setUp(): void
     {
         $objectManager = new ObjectManager($this);
-        $scopeConfigMock = $this->getMockForAbstractClass(ScopeConfigInterface::class);
+        $scopeConfigMock = $this->createMock(ScopeConfigInterface::class);
         $this->isAdobeStockIntegrationEnabled = $objectManager->getObject(
             IsAdobeStockIntegrationEnabled::class,
             [
@@ -49,6 +49,6 @@ class IsAdobeStockIntegrationEnabledTest extends TestCase
      */
     public function testExecute(): void
     {
-        $this->assertTrue($this->isAdobeStockIntegrationEnabled->execute());
+        $this->assertEquals(true, $this->isAdobeStockIntegrationEnabled->execute());
     }
 }

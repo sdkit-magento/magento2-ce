@@ -13,14 +13,14 @@ use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Math\Random;
 
 /**
- * Implementation of \Zend\Captcha\Image
+ * Implementation of \Laminas\Captcha\Image
  *
  * @SuppressWarnings(PHPMD.CookieAndSessionMisuse)
  *
  * @api
  * @since 100.0.2
  */
-class DefaultModel extends \Zend\Captcha\Image implements \Magento\Captcha\Model\CaptchaInterface
+class DefaultModel extends \Laminas\Captcha\Image implements \Magento\Captcha\Model\CaptchaInterface
 {
     /**
      * Key in session for captcha code
@@ -53,7 +53,7 @@ class DefaultModel extends \Zend\Captcha\Image implements \Magento\Captcha\Model
     /**
      * Override default value to prevent a captcha cut off
      * @var int
-     * @see \Zend\Captcha\Image::$fsize
+     * @see \Laminas\Captcha\Image::$fsize
      * @since 100.2.0
      */
     protected $fsize = 22;
@@ -105,9 +105,9 @@ class DefaultModel extends \Zend\Captcha\Image implements \Magento\Captcha\Model
      * @param \Magento\Captcha\Helper\Data $captchaData
      * @param ResourceModel\LogFactory $resLogFactory
      * @param string $formId
-     * @param Random|null $randomMath
+     * @param Random $randomMath
      * @param UserContextInterface|null $userContext
-     * @throws \Zend\Captcha\Exception\ExtensionNotLoadedException
+     * @throws \Laminas\Captcha\Exception\ExtensionNotLoadedException
      */
     public function __construct(
         \Magento\Framework\Session\SessionManagerInterface $session,
@@ -507,7 +507,7 @@ class DefaultModel extends \Zend\Captcha\Image implements \Magento\Captcha\Model
     /**
      * Get captcha words
      *
-     * @return string|null
+     * @return string
      */
     private function getWords()
     {
@@ -553,7 +553,7 @@ class DefaultModel extends \Zend\Captcha\Image implements \Magento\Captcha\Model
     /**
      * Override function to generate less curly captcha that will not cut off
      *
-     * @see \Zend\Captcha\Image::_randomSize()
+     * @see \Laminas\Captcha\Image::_randomSize()
      * @return int
      * @throws \Magento\Framework\Exception\LocalizedException
      * @since 100.2.0

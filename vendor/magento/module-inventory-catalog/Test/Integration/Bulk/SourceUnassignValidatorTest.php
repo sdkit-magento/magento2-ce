@@ -18,14 +18,14 @@ class SourceUnassignValidatorTest extends TestCase
      */
     private $massUnassignValidator;
 
-    protected function setUp(): void
+    public function setUp(): void
     {
         parent::setUp();
         $this->massUnassignValidator = Bootstrap::getObjectManager()->get(BulkSourceUnassignValidatorInterface::class);
     }
 
     /**
-     * @magentoDataFixture ../../../../app/code/Magento/InventoryApi/Test/_files/sources.php
+     * @magentoDataFixture Magento_InventoryApi::Test/_files/sources.php
      */
     public function testSourceValidator()
     {

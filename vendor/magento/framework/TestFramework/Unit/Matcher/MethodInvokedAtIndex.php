@@ -8,7 +8,6 @@ namespace Magento\Framework\TestFramework\Unit\Matcher;
 
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\MockObject\Invocation as BaseInvocation;
-use PHPUnit\Framework\MockObject\Rule\InvocationOrder;
 
 /**
  * Class MethodInvokedAtIndex
@@ -22,7 +21,7 @@ use PHPUnit\Framework\MockObject\Rule\InvocationOrder;
  *
  * @package Magento\TestFramework\Matcher
  */
-class MethodInvokedAtIndex extends InvocationOrder
+class MethodInvokedAtIndex extends \PHPUnit\Framework\MockObject\Rule\InvocationOrder
 {
     /**
      * @var int
@@ -95,6 +94,5 @@ class MethodInvokedAtIndex extends InvocationOrder
 
     protected function invokedDo(BaseInvocation $invocation)
     {
-        // TODO: Implement invokedDo() method.
     }
 }

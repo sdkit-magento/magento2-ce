@@ -1,40 +1,39 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-i18n for the canonical source repository
- * @copyright https://github.com/laminas/laminas-i18n/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-i18n/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\I18n\Translator;
 
 use ArrayObject;
 use Laminas\I18n\Exception;
 use Laminas\I18n\Translator\Plural\Rule as PluralRule;
 
+use function array_replace;
+
 /**
  * Text domain.
+ *
+ * @template TKey
+ * @template TValue
+ * @extends ArrayObject<TKey, TValue>
  */
 class TextDomain extends ArrayObject
 {
     /**
      * Plural rule.
      *
-     * @var PluralRule
+     * @var PluralRule|null
      */
     protected $pluralRule;
 
     /**
      * Default plural rule shared between instances.
      *
-     * @var PluralRule
+     * @var PluralRule|null
      */
     protected static $defaultPluralRule;
 
     /**
      * Set the plural rule
      *
-     * @param  PluralRule $rule
      * @return $this
      */
     public function setPluralRule(PluralRule $rule)
@@ -65,7 +64,7 @@ class TextDomain extends ArrayObject
      */
     public function hasPluralRule()
     {
-        return ($this->pluralRule !== null);
+        return $this->pluralRule !== null;
     }
 
     /**
@@ -89,9 +88,12 @@ class TextDomain extends ArrayObject
      * merge. We are only validating the number of plural forms though, as the
      * same rule could be made up with different expression.
      *
-     * @param  TextDomain $textDomain
      * @return $this
      * @throws Exception\RuntimeException
+     * @template TNewKey
+     * @template TNewValue
+     * @param self<TNewKey, TNewValue> $textDomain
+     * @psalm-self-out self<TKey|TNewKey, TValue|TNewValue>
      */
     public function merge(TextDomain $textDomain)
     {

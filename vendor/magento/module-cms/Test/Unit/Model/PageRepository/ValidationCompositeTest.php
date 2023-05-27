@@ -39,12 +39,11 @@ class ValidationCompositeTest extends TestCase
      */
     public function testConstructorValidation($validators)
     {
-        $this->expectException(\InvalidArgumentException::class);
-
+        $this->expectException('InvalidArgumentException');
         new ValidationComposite($this->subject, $validators);
     }
 
-    public function testSaveInvokesValidatorsWithSucess()
+    public function testSaveInvokesValidatorsWithSuccess()
     {
         $validator1 = $this->getMockForAbstractClass(ValidatorInterface::class);
         $validator2 = $this->getMockForAbstractClass(ValidatorInterface::class);
@@ -73,13 +72,10 @@ class ValidationCompositeTest extends TestCase
         self::assertSame('foo', $result);
     }
 
-    /**
-     */
     public function testSaveInvokesValidatorsWithErrors()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException('Magento\Framework\Exception\LocalizedException');
         $this->expectExceptionMessage('Oh no. That isn\'t right.');
-
         $validator1 = $this->getMockForAbstractClass(ValidatorInterface::class);
         $validator2 = $this->getMockForAbstractClass(ValidatorInterface::class);
         $page = $this->getMockForAbstractClass(PageInterface::class);

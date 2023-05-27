@@ -153,27 +153,38 @@ class StaticResource implements \Magento\Framework\AppInterface
             )
         ) {
             $this->response->setHttpResponseCode(404);
-        } else {
-            $path = $this->request->get('resource');
-            $params = $this->parsePath($path);
-            if (!($this->isThemeAllowed($params['area'] . DIRECTORY_SEPARATOR . $params['theme'])
-                && $this->localeValidator->isValid($params['locale']))
-            ) {
-                if ($appMode == \Magento\Framework\App\State::MODE_PRODUCTION) {
-                    $this->response->setHttpResponseCode(404);
-                    return $this->response;
-                }
-                throw new \InvalidArgumentException('Requested path ' . $path . ' is wrong.');
-            }
-
-            $this->state->setAreaCode($params['area']);
-            $this->objectManager->configure($this->configLoader->load($params['area']));
-            $file = $params['file'];
-            unset($params['file']);
-            $asset = $this->assetRepo->createAsset($file, $params);
-            $this->response->setFilePath($asset->getSourceFile());
-            $this->publisher->publish($asset);
+            return $this->response;
         }
+
+        $path = $this->request->get('resource');
+        try {
+            $params = $this->parsePath($path);
+        } catch (\InvalidArgumentException $e) {
+            if ($appMode == \Magento\Framework\App\State::MODE_PRODUCTION) {
+                $this->response->setHttpResponseCode(404);
+                return $this->response;
+            }
+            throw $e;
+        }
+
+        if (!($this->isThemeAllowed($params['area'] . DIRECTORY_SEPARATOR . $params['theme'])
+            && $this->localeValidator->isValid($params['locale']))
+        ) {
+            if ($appMode == \Magento\Framework\App\State::MODE_PRODUCTION) {
+                $this->response->setHttpResponseCode(404);
+                return $this->response;
+            }
+            throw new \InvalidArgumentException('Requested path ' . $path . ' is wrong.');
+        }
+
+        $this->state->setAreaCode($params['area']);
+        $this->objectManager->configure($this->configLoader->load($params['area']));
+        $file = $params['file'];
+        unset($params['file']);
+        $asset = $this->assetRepo->createAsset($file, $params);
+        $this->response->setFilePath($asset->getSourceFile());
+        $this->publisher->publish($asset);
+
         return $this->response;
     }
 
@@ -211,7 +222,8 @@ class StaticResource implements \Magento\Framework\AppInterface
      */
     protected function parsePath($path)
     {
-        $safePath = $this->driver->getRealPathSafety(ltrim($path, '/'));
+        $path = $path !== null ? ltrim($path, '/') : '';
+        $safePath = $this->driver->getRealPathSafety($path);
         $parts = explode('/', $safePath, 6);
         if (count($parts) < 5) {
             //Checking that path contains all required parts and is not above static folder.
@@ -266,7 +278,7 @@ class StaticResource implements \Magento\Framework\AppInterface
     }
 
     /**
-     * Check that theme is available.
+     * Method to check if theme allowed.
      *
      * @param string $theme
      * @return bool

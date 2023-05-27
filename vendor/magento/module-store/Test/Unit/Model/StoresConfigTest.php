@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Test class for \Magento\Store\Model\Store\StoresConfig
  *
@@ -8,67 +8,74 @@
 
 namespace Magento\Store\Test\Unit\Model;
 
-class StoresConfigTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\Store\Model\StoresConfig;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+class StoresConfigTest extends TestCase
 {
     /**
-     * @var \Magento\Store\Model\StoresConfig
+     * @var StoresConfig
      */
     protected $_model;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $_storeManager;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $_storeOne;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $_storeTwo;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $_config;
 
+    /**
+     * @inheritdoc
+     */
     protected function setUp(): void
     {
-        $this->_storeOne = $this->createMock(\Magento\Store\Model\Store::class);
-        $this->_storeTwo = $this->createMock(\Magento\Store\Model\Store::class);
-        $this->_storeManager = $this->createMock(\Magento\Store\Model\StoreManagerInterface::class);
-        $this->_config = $this->createMock(\Magento\Framework\App\Config\ScopeConfigInterface::class);
+        $this->_storeOne = $this->createMock(Store::class);
+        $this->_storeTwo = $this->createMock(Store::class);
+        $this->_storeManager = $this->getMockForAbstractClass(StoreManagerInterface::class);
+        $this->_config = $this->getMockForAbstractClass(ScopeConfigInterface::class);
 
-        $this->_model = new \Magento\Store\Model\StoresConfig(
+        $this->_model = new StoresConfig(
             $this->_storeManager,
             $this->_config
         );
     }
 
-    public function testGetStoresConfigByPath()
+    /**
+     * @return void
+     */
+    public function testGetStoresConfigByPath(): void
     {
         $path = 'config/path';
 
         $this->_storeOne
-            ->expects($this->at(0))
             ->method('getCode')
             ->willReturn('code_0');
-
         $this->_storeOne
-            ->expects($this->at(1))
             ->method('getId')
             ->willReturn(0);
 
         $this->_storeTwo
-            ->expects($this->at(0))
             ->method('getCode')
             ->willReturn('code_1');
-
         $this->_storeTwo
-            ->expects($this->at(1))
             ->method('getId')
             ->willReturn(1);
 
@@ -79,16 +86,9 @@ class StoresConfigTest extends \PHPUnit\Framework\TestCase
             ->willReturn([0 => $this->_storeOne, 1 => $this->_storeTwo]);
 
         $this->_config
-            ->expects($this->at(0))
             ->method('getValue')
-            ->with($path, 'store', 'code_0')
-            ->willReturn(0);
-
-        $this->_config
-            ->expects($this->at(1))
-            ->method('getValue')
-            ->with($path, 'store', 'code_1')
-            ->willReturn(1);
+            ->withConsecutive([$path, 'store', 'code_0'], [$path, 'store', 'code_1'])
+            ->willReturnOnConsecutiveCalls(0, 1);
 
         $this->assertEquals([0 => 0, 1 => 1], $this->_model->getStoresConfigByPath($path));
     }

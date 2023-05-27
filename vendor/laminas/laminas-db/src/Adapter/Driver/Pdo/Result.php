@@ -88,7 +88,7 @@ class Result implements Iterator, ResultInterface
      *
      * @param  mixed        $generatedValue
      * @param  int          $rowCount
-     * @return self Provides a fluent interface
+     * @return $this Provides a fluent interface
      */
     public function initialize(PDOStatement $resource, $generatedValue, $rowCount = null)
     {
@@ -201,9 +201,11 @@ class Result implements Iterator, ResultInterface
                 'This result is a forward only result set, calling rewind() after moving forward is not supported'
             );
         }
-        $this->currentData     = $this->resource->fetch($this->fetchMode);
-        $this->currentComplete = true;
-        $this->position        = 0;
+        if (! $this->currentComplete) {
+            $this->currentData     = $this->resource->fetch($this->fetchMode);
+            $this->currentComplete = true;
+        }
+        $this->position = 0;
     }
 
     /**

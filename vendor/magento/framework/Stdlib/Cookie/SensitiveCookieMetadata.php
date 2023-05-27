@@ -9,7 +9,7 @@ namespace Magento\Framework\Stdlib\Cookie;
 use Magento\Framework\App\RequestInterface;
 
 /**
- * Class SensitiveCookieMetadata
+ * Sensitive Cookie Attributes
  *
  * The class has only methods extended from CookieMetadata
  * as path and domain are only data to be exposed by SensitiveCookieMetadata

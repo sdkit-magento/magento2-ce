@@ -84,6 +84,7 @@ class SessionCleaner implements SessionCleanerInterface
         $this->saveHandler = $saveHandler;
         $this->customerResourceModel = $customerResourceModel
             ?: ObjectManager::getInstance()->get(CustomerResourceModel::class);
+
         $this->visitorResourceModel = $visitorResourceModel
             ?: ObjectManager::getInstance()->get(VisitorResourceModel::class);
     }
@@ -102,3 +103,4 @@ class SessionCleaner implements SessionCleanerInterface
         }
     }
 }
+

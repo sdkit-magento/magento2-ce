@@ -17,9 +17,9 @@ use Magento\Cms\Model\PageRepository;
 class CustomLayoutValidator
 {
     /**
-     * @var PageRepository
+     * @var PageFactory
      */
-    private $pageRepository;
+    private $pageFactory;
 
     /**
      * @var ManagerInterface
@@ -28,14 +28,14 @@ class CustomLayoutValidator
 
     /**
      * CustomLayoutValidator constructor.
-     * @param PageRepository $pageRepository
+     * @param PageRepository $pageFactory
      * @param ManagerInterface $messageManager
      */
     public function __construct(
-        PageRepository $pageRepository,
+        PageRepository $pageFactory,
         ManagerInterface $messageManager
     ) {
-        $this->pageRepository = $pageRepository;
+        $this->pageFactory = $pageFactory;
         $this->messageManager = $messageManager;
     }
 
@@ -77,7 +77,7 @@ class CustomLayoutValidator
         $oldLayoutUpdate = null;
         $oldCustomLayoutUpdate = null;
         if (isset($data['page_id'])) {
-            $page = $this->pageRepository->getById($data['page_id']);
+            $page = $this->pageFactory->getById($data['page_id']);
             $oldLayoutUpdate = $page->getId() ? $page->getLayoutUpdateXml() : null;
             $oldCustomLayoutUpdate = $page->getId() ? $page->getCustomLayoutUpdateXml() : null;
         }

@@ -3,13 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
 
 /**
  * Tests for resource setup model needed for migration process between Magento versions
  */
 namespace Magento\Framework\Module\Test\Unit\Setup;
 
-class MigrationTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\DB\Adapter\Pdo\Mysql;
+use Magento\Framework\DB\Select;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Json\Helper\Data;
+use Magento\Framework\Module\Setup\Migration;
+use Magento\Framework\Module\Setup\MigrationData;
+use Magento\Framework\Serialize\Serializer\Json;
+use Magento\Framework\Setup\ModuleDataSetupInterface;
+use PHPUnit\Framework\Exception;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+class MigrationTest extends TestCase
 {
     /**
      * Result of update class aliases to compare with expected.
@@ -28,7 +41,7 @@ class MigrationTest extends \PHPUnit\Framework\TestCase
     protected $_actualWhere;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|\Magento\Framework\DB\Select
+     * @var MockObject|Select
      */
     protected $_selectMock;
 
@@ -50,7 +63,7 @@ class MigrationTest extends \PHPUnit\Framework\TestCase
      */
     protected function _getModelDependencies($tableRowsCount = 0, $tableData = [], $aliasesMap = [])
     {
-        $this->_selectMock = $this->createMock(\Magento\Framework\DB\Select::class);
+        $this->_selectMock = $this->createMock(Select::class);
         $this->_selectMock->expects($this->any())->method('from')->willReturnSelf();
         $this->_selectMock->expects(
             $this->any()
@@ -61,7 +74,7 @@ class MigrationTest extends \PHPUnit\Framework\TestCase
         );
 
         $connectionMock = $this->createPartialMock(
-            \Magento\Framework\DB\Adapter\Pdo\Mysql::class,
+            Mysql::class,
             ['select', 'update', 'fetchAll', 'fetchOne']
         );
         $connectionMock->expects($this->any())->method('select')->willReturn($this->_selectMock);
@@ -82,7 +95,7 @@ class MigrationTest extends \PHPUnit\Framework\TestCase
             'base_dir' => 'not_used',
             'path_to_map_file' => 'not_used',
             'connection' => $connectionMock,
-            'core_helper' => $this->createMock(\Magento\Framework\Json\Helper\Data::class),
+            'core_helper' => $this->createMock(Data::class),
             'aliases_map' => $aliasesMap
         ];
     }
@@ -111,7 +124,7 @@ class MigrationTest extends \PHPUnit\Framework\TestCase
      * Callback for \Magento\Framework\DB\Select::where
      *
      * @param string $condition
-     * @return \PHPUnit\Framework\MockObject\MockObject|\Magento\Framework\DB\Select
+     * @return MockObject|Select
      */
     public function whereCallback($condition)
     {
@@ -133,17 +146,16 @@ class MigrationTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @covers \Magento\Framework\Module\Setup\Migration::appendClassAliasReplace
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
      */
     public function testAppendClassAliasReplace()
     {
         $this->markTestSkipped('Skipped in #27500 due to testing protected/private methods and properties');
 
-        $setupMock = $this->getMockForAbstractClass(\Magento\Framework\Setup\ModuleDataSetupInterface::class);
-        $filesystemMock = $this->createMock(\Magento\Framework\Filesystem::class);
-        $migrationData = $this->createMock(\Magento\Framework\Module\Setup\MigrationData::class);
+        $setupMock = $this->getMockForAbstractClass(ModuleDataSetupInterface::class);
+        $filesystemMock = $this->createMock(Filesystem::class);
+        $migrationData = $this->createMock(MigrationData::class);
 
-        $setupModel = new \Magento\Framework\Module\Setup\Migration(
+        $setupModel = new Migration(
             $setupMock,
             $filesystemMock,
             $migrationData,
@@ -172,7 +184,7 @@ class MigrationTest extends \PHPUnit\Framework\TestCase
             ],
         ];
 
-        //$this->assertAttributeEquals($expectedRulesList, '_replaceRules', $setupModel);
+        $this->assertAttributeEquals($expectedRulesList, '_replaceRules', $setupModel);
 
         // Check that replace for the same field is not set twice
         $setupModel->appendClassAliasReplace(
@@ -183,7 +195,7 @@ class MigrationTest extends \PHPUnit\Framework\TestCase
             ['new_pk_field1', 'new_pk_field2'],
             'newAdditionalWhere'
         );
-        //$this->assertAttributeEquals($expectedRulesList, '_replaceRules', $setupModel);
+        $this->assertAttributeEquals($expectedRulesList, '_replaceRules', $setupModel);
     }
 
     /**
@@ -191,16 +203,16 @@ class MigrationTest extends \PHPUnit\Framework\TestCase
      */
     public function testDoUpdateClassAliases($replaceRules, $tableData, $expected, $aliasesMap = [])
     {
-        $this->markTestIncomplete('Requires refactoring of class that is tested, covers to many methods');
+        $this->markTestSkipped('Requires refactoring of class that is tested, covers to many methods');
 
         $this->_actualUpdateResult = [];
         $tableRowsCount = count($tableData);
 
-        $setupMock = $this->getMockForAbstractClass(\Magento\Framework\Setup\ModuleDataSetupInterface::class);
-        $filesystemMock = $this->createMock(\Magento\Framework\Filesystem::class);
-        $migrationData = $this->createMock(\Magento\Framework\Module\Setup\MigrationData::class);
+        $setupMock = $this->getMockForAbstractClass(ModuleDataSetupInterface::class);
+        $filesystemMock = $this->createMock(Filesystem::class);
+        $migrationData = $this->createMock(MigrationData::class);
 
-        $setupModel = new \Magento\Framework\Module\Setup\Migration(
+        $setupModel = new Migration(
             $setupMock,
             $filesystemMock,
             $migrationData,
@@ -219,6 +231,10 @@ class MigrationTest extends \PHPUnit\Framework\TestCase
 
         if (isset($expected['where'])) {
             $this->assertEquals($expected['where'], $this->_actualWhere);
+        }
+
+        if (isset($expected['aliases_map'])) {
+            $this->assertAttributeEquals($expected['aliases_map'], '_aliasesMap', $setupModel);
         }
     }
 
@@ -240,21 +256,23 @@ class MigrationTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return \PHPUnit\Framework\MockObject\MockObject|\Magento\Framework\Filesystem
+     * @return MockObject|Filesystem
      */
     protected function _getFilesystemMock()
     {
-        $mock = $this->getMockBuilder(\Magento\Framework\Filesystem::class)->disableOriginalConstructor()->getMock();
+        $mock = $this->getMockBuilder(Filesystem::class)
+            ->disableOriginalConstructor()
+            ->getMock();
         return $mock;
     }
 
     /**
-     * @return \PHPUnit\Framework\MockObject\MockObject|\Magento\Framework\Serialize\Serializer\Json
-     * @throws \PHPUnit\Framework\Exception
+     * @return MockObject|Json
+     * @throws Exception
      */
     private function getSerializerMock()
     {
-        $serializerMock = $this->getMockBuilder(\Magento\Framework\Serialize\Serializer\Json::class)
+        $serializerMock = $this->getMockBuilder(Json::class)
             ->getMock();
 
         $serializerMock->expects($this->any())

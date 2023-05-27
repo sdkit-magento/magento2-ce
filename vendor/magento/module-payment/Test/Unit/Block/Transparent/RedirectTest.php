@@ -9,15 +9,16 @@ namespace Magento\Payment\Test\Unit\Block\Transparent;
 
 use Magento\Payment\Block\Transparent\Redirect;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\MockObject\MockObject;
 
 class RedirectTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\View\Element\Context|\PHPUnit\Framework\MockObject\MockObject
+     * @var \Magento\Framework\View\Element\Context|MockObject
      */
     private $context;
     /**
-     * @var \Magento\Framework\UrlInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var \Magento\Framework\UrlInterface|MockObject
      */
     private $url;
     /**
@@ -25,7 +26,7 @@ class RedirectTest extends TestCase
      */
     private $model;
     /**
-     * @var \Magento\Framework\App\RequestInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var \Magento\Framework\App\RequestInterface|MockObject
      */
     private $request;
 

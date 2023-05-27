@@ -10,7 +10,7 @@ use Magento\Framework\Escaper;
 use Magento\TestFramework\Helper\Bootstrap;
 
 /**
- * Class OrdersTest
+ * Test for \Magento\Customer\Block\Adminhtml\Edit\Tab\Orders
  *
  * @magentoAppArea adminhtml
  */
@@ -88,6 +88,9 @@ class OrdersTest extends \PHPUnit\Framework\TestCase
      */
     public function testToHtml()
     {
-        $this->assertStringContainsString($this->escaper->escapeHtml("We couldn't find any records."), $this->block->toHtml());
+        $this->assertStringContainsString(
+            $this->escaper->escapeHtml("We couldn't find any records."),
+            $this->block->toHtml()
+        );
     }
 }

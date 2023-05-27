@@ -1,30 +1,27 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter\Compress;
 
 use Laminas\Stdlib\ArrayUtils;
 use Traversable;
 
+use function is_array;
+use function method_exists;
+
 /**
  * Abstract compression adapter
+ *
+ * @template TOptions of array
  */
 abstract class AbstractCompressionAlgorithm implements CompressionAlgorithmInterface
 {
-    /**
-     * @var array
-     */
+    /** @var TOptions */
     protected $options = [];
 
     /**
-     * Class constructor
-     *
-     * @param null|array|Traversable $options (Optional) Options to set
+     * @param null|iterable $options (Optional) Options to set
      */
     public function __construct($options = null)
     {
@@ -42,6 +39,7 @@ abstract class AbstractCompressionAlgorithm implements CompressionAlgorithmInter
      *
      * @param  string|null $option Option to return
      * @return mixed
+     * @psalm-return ($option is null ? TOptions : mixed)
      */
     public function getOptions($option = null)
     {
@@ -59,7 +57,6 @@ abstract class AbstractCompressionAlgorithm implements CompressionAlgorithmInter
     /**
      * Sets all or one option
      *
-     * @param  array $options
      * @return self
      */
     public function setOptions(array $options)

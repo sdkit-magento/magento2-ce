@@ -193,7 +193,7 @@ define([
         },
 
         /**
-         * Get image for CVV for Unsanitized Html
+         * Get unsanitized html for image for CVV
          * @returns {String}
          */
         getCvvImageUnsanitizedHtml: function () {

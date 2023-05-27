@@ -12,15 +12,15 @@ use Magento\Framework\Api\Filter;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\View\Element\UiComponent\ContextInterface;
+use Magento\Framework\View\Element\UiComponent\DataProvider\DataProviderInterface;
+use Magento\Framework\View\Element\UiComponent\Processor;
 use Magento\Framework\View\Element\UiComponentFactory;
 use Magento\Framework\View\Element\UiComponentInterface;
 use Magento\Ui\Component\Filters\FilterModifier;
+use Magento\Ui\Component\Filters\Type\Input;
 use Magento\Ui\Model\ColorPicker\ColorModesProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Magento\Ui\Component\Filters\Type\Input;
-use Magento\Framework\View\Element\UiComponent\DataProvider\DataProviderInterface;
-use Magento\Framework\View\Element\UiComponent\Processor;
 
 /**
  * ColorTest test.
@@ -91,7 +91,6 @@ class ColorTest extends TestCase
      */
     private function createObject(array $data, ContextInterface $context): Color
     {
-
         $this->uiComponentFactory = $this->createMock(UiComponentFactory::class);
         $this->filterBuilder = $this->createMock(FilterBuilder::class);
         $this->filterModifier = $this->createMock(FilterModifier::class);
@@ -115,7 +114,7 @@ class ColorTest extends TestCase
      */
     private function getContext(array $filterParams): ContextInterface
     {
-        $context = $this->getMockForAbstractClass(ContextInterface::class);
+        $context = $this->createMock(ContextInterface::class);
         $context->expects($this->once())
             ->method('getFiltersParams')
             ->willReturn($filterParams);
@@ -195,7 +194,7 @@ class ColorTest extends TestCase
             ->method('create')
             ->willReturn($filter);
 
-        $dataProvider = $this->getMockForAbstractClass(DataProviderInterface::class);
+        $dataProvider = $this->createMock(DataProviderInterface::class);
         $context->expects($this->any())
             ->method('getDataProvider')
             ->willReturn($dataProvider);
@@ -212,7 +211,7 @@ class ColorTest extends TestCase
      */
     private function getWrappedComponent(ContextInterface $context): MockObject
     {
-        $wrappedComponent = $this->getMockForAbstractClass(UiComponentInterface::class);
+        $wrappedComponent = $this->createMock(UiComponentInterface::class);
         $wrappedComponent->expects($this->once())
             ->method('prepare');
         $wrappedComponent->expects($this->once())

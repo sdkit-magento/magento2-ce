@@ -11,11 +11,11 @@ namespace Magento\AdobeStockImageAdminUi\Test\Unit\Model\Block\Wysiwyg\Images\Co
 use Magento\AdobeStockImageAdminUi\Model\IsAdobeStockIntegrationEnabled;
 use Magento\AdobeStockImageAdminUi\Plugin\AddSearchButton;
 use Magento\Backend\Block\Widget\Container;
+use Magento\Framework\AuthorizationInterface;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Framework\View\LayoutInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Magento\Framework\AuthorizationInterface;
 
 /**
  * Test adding Adobe Stock Search button to the media gallery toolbar.
@@ -47,9 +47,9 @@ class AddSearchButtonTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->layoutInterface = $this->getMockForAbstractClass(LayoutInterface::class);
+        $this->layoutInterface = $this->createMock(LayoutInterface::class);
         $this->isAdobeStockIntegrationEnabledMock = $this->createMock(IsAdobeStockIntegrationEnabled::class);
-        $this->authorization = $this->getMockForAbstractClass(AuthorizationInterface::class);
+        $this->authorization = $this->createMock(AuthorizationInterface::class);
 
         $this->addSearchButton = (new ObjectManager($this))->getObject(
             AddSearchButton::class,

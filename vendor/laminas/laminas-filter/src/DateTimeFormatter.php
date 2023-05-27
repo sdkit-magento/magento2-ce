@@ -1,15 +1,23 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
 use DateTime;
+use Throwable;
+use Traversable;
 
+use function is_int;
+use function is_string;
+
+/**
+ * @psalm-type Options = array{
+ *     format?: string,
+ *     ...
+ * }
+ * @extends AbstractFilter<Options>
+ */
 class DateTimeFormatter extends AbstractFilter
 {
     /**
@@ -22,7 +30,7 @@ class DateTimeFormatter extends AbstractFilter
     /**
      * Sets filter options
      *
-     * @param array|\Traversable $options
+     * @param array|Traversable $options
      */
     public function __construct($options = null)
     {
@@ -47,15 +55,15 @@ class DateTimeFormatter extends AbstractFilter
     /**
      * Filter a datetime string by normalizing it to the filters specified format
      *
-     * @param  DateTime|string|integer $value
+     * @param  DateTime|string|int|mixed $value
      * @throws Exception\InvalidArgumentException
-     * @return string
+     * @return string|mixed
      */
     public function filter($value)
     {
         try {
             $result = $this->normalizeDateTime($value);
-        } catch (\Exception $e) {
+        } catch (Throwable $e) {
             // DateTime threw an exception, an invalid date string was provided
             throw new Exception\InvalidArgumentException('Invalid date string provided', $e->getCode(), $e);
         }
@@ -70,10 +78,9 @@ class DateTimeFormatter extends AbstractFilter
     /**
      * Normalize the provided value to a formatted string
      *
-     * @param  string|int|DateTime $value
-     * @return string
+     * @return string|mixed
      */
-    protected function normalizeDateTime($value)
+    protected function normalizeDateTime(mixed $value)
     {
         if ($value === '' || $value === null) {
             return $value;

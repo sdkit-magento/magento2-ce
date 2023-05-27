@@ -1,40 +1,54 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
 use Laminas\Filter\Exception\InvalidArgumentException;
 
+use function floor;
+use function in_array;
+use function is_numeric;
+use function log;
+use function number_format;
+use function sprintf;
+use function strtolower;
+
+/**
+ * @psalm-type Options = array{
+ *     mode?: string,
+ *     unit?: string,
+ *     precision?: int,
+ *     prefixes?: list<string>,
+ * }
+ * @extends AbstractFilter<Options>
+ */
 final class DataUnitFormatter extends AbstractFilter
 {
-    const MODE_BINARY = 'binary';
-    const MODE_DECIMAL = 'decimal';
+    public const MODE_BINARY  = 'binary';
+    public const MODE_DECIMAL = 'decimal';
 
-    const BASE_BINARY = 1024;
-    const BASE_DECIMAL = 1000;
+    public const BASE_BINARY  = 1024;
+    public const BASE_DECIMAL = 1000;
 
     /**
      * A list of all possible filter modes:
      *
-     * @var array
+     * @var list<string>
      */
-    private static $modes = [
+    private static array $modes = [
         self::MODE_BINARY,
         self::MODE_DECIMAL,
     ];
 
     /**
      * A list of standardized binary prefix formats for decimal and binary mode
+     *
      * @link https://en.wikipedia.org/wiki/Binary_prefix
      *
-     * @var array
+     * @var array<string, list<string>>
      */
-    private static $standardizedPrefixes = [
+    private static array $standardizedPrefixes = [
         // binary IEC units:
         self::MODE_BINARY => ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi', 'Yi'],
         // decimal SI units:
@@ -44,7 +58,7 @@ final class DataUnitFormatter extends AbstractFilter
     /**
      * Default options:
      *
-     * @var array
+     * @var Options
      */
     protected $options = [
         'mode'      => self::MODE_DECIMAL,
@@ -54,11 +68,11 @@ final class DataUnitFormatter extends AbstractFilter
     ];
 
     /**
-     * @param array $options
+     * @param Options $options
      */
     public function __construct($options = [])
     {
-        if (! static::isOptions($options)) {
+        if (! self::isOptions($options)) {
             throw new InvalidArgumentException('The unit filter needs options to work.');
         }
 
@@ -73,7 +87,6 @@ final class DataUnitFormatter extends AbstractFilter
      * Define the mode of the filter. Possible values can be fount at self::$modes.
      *
      * @param string $mode
-     *
      * @throws InvalidArgumentException
      */
     protected function setMode($mode)
@@ -138,7 +151,7 @@ final class DataUnitFormatter extends AbstractFilter
     /**
      * Set the precision of the filtered result.
      *
-     * @param $precision
+     * @param int $precision
      */
     protected function setPrecision($precision)
     {
@@ -158,7 +171,7 @@ final class DataUnitFormatter extends AbstractFilter
     /**
      * Set the precision of the result.
      *
-     * @param array $prefixes
+     * @param list<string> $prefixes
      */
     protected function setPrefixes(array $prefixes)
     {
@@ -168,7 +181,7 @@ final class DataUnitFormatter extends AbstractFilter
     /**
      * Get the predefined prefixes or use the build-in standardized lists of prefixes.
      *
-     * @return array
+     * @return list<string>
      */
     protected function getPrefixes()
     {
@@ -183,14 +196,12 @@ final class DataUnitFormatter extends AbstractFilter
     /**
      * Find the prefix at a specific location in the prefixes array.
      *
-     * @param $index
-     *
      * @return string|null
      */
-    protected function getPrefixAt($index)
+    protected function getPrefixAt(mixed $index)
     {
         $prefixes = $this->getPrefixes();
-        return isset($prefixes[$index]) ? $prefixes[$index] : null;
+        return $prefixes[$index] ?? null;
     }
 
     /**
@@ -200,8 +211,9 @@ final class DataUnitFormatter extends AbstractFilter
      *
      * If the value provided is not numeric, the value will remain unfiltered
      *
-     * @param  string $value
+     * @param  mixed $value
      * @return string|mixed
+     * @psalm-return ($value is numeric ? string : mixed)
      */
     public function filter($value)
     {
@@ -216,9 +228,9 @@ final class DataUnitFormatter extends AbstractFilter
         }
 
         // Calculate the correct size and prefix:
-        $base = $this->isBinaryMode() ? self::BASE_BINARY : self::BASE_DECIMAL;
-        $power = floor(log($amount, $base));
-        $prefix = $this->getPrefixAt((int)$power);
+        $base   = $this->isBinaryMode() ? self::BASE_BINARY : self::BASE_DECIMAL;
+        $power  = floor(log($amount, $base));
+        $prefix = $this->getPrefixAt((int) $power);
 
         // When the amount is too big, no prefix can be found:
         if ($prefix === null) {
@@ -226,19 +238,18 @@ final class DataUnitFormatter extends AbstractFilter
         }
 
         // return formatted value:
-        $result = ($amount / pow($base, $power));
+        $result    = $amount / $base ** $power;
         $formatted = number_format($result, $this->getPrecision());
         return $this->formatAmount($formatted, $prefix);
     }
 
     /**
-     * @param      $amount
-     * @param null $prefix
-     *
+     * @param float|string $amount
+     * @param string|null  $prefix
      * @return string
      */
     protected function formatAmount($amount, $prefix = null)
     {
-        return sprintf('%s %s%s', $amount, $prefix, $this->getUnit());
+        return sprintf('%s %s%s', (string) $amount, (string) $prefix, $this->getUnit());
     }
 }

@@ -3,26 +3,33 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Framework\HTTP\Test\Unit\PhpEnvironment;
 
-use \Magento\Framework\HTTP\PhpEnvironment\Response;
+use Laminas\Http\Header\GenericHeader;
+use Laminas\Http\Headers;
+use Magento\Framework\App\Response\Http;
+use Magento\Framework\HTTP\PhpEnvironment\Response;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class ResponseTest extends \PHPUnit\Framework\TestCase
+class ResponseTest extends TestCase
 {
-    /** @var \PHPUnit\Framework\MockObject\MockObject|\Magento\Framework\HTTP\PhpEnvironment\Response */
+    /** @var MockObject|Response */
     protected $response;
 
-    /** @var \PHPUnit\Framework\MockObject\MockObject|\Zend\Http\Headers */
+    /** @var MockObject|Headers */
     protected $headers;
 
     protected function setUp(): void
     {
         $this->response = $this->createPartialMock(
-            \Magento\Framework\HTTP\PhpEnvironment\Response::class,
+            Response::class,
             ['getHeaders', 'send', 'clearHeader']
         );
         $this->headers = $this->createPartialMock(
-            \Zend\Http\Headers::class,
+            Headers::class,
             ['has', 'get', 'current', 'removeHeader']
         );
     }
@@ -111,13 +118,13 @@ class ResponseTest extends \PHPUnit\Framework\TestCase
     public function testClearHeaderIfHeaderExistsAndWasFound()
     {
         $response = $this->response = $this->createPartialMock(
-            \Magento\Framework\HTTP\PhpEnvironment\Response::class,
+            Response::class,
             ['getHeaders', 'send']
         );
 
         $this->headers->addHeaderLine('Header-name: header-value');
 
-        $header = \Zend\Http\Header\GenericHeader::fromString('Header-name: header-value');
+        $header = GenericHeader::fromString('Header-name: header-value');
 
         $this->headers
             ->expects($this->once())
@@ -146,13 +153,13 @@ class ResponseTest extends \PHPUnit\Framework\TestCase
     public function testClearHeaderAndHeaderNotExists()
     {
         $response = $this->response = $this->createPartialMock(
-            \Magento\Framework\HTTP\PhpEnvironment\Response::class,
+            Response::class,
             ['getHeaders', 'send']
         );
 
         $this->headers->addHeaderLine('Header-name: header-value');
 
-        $header = \Zend\Http\Header\GenericHeader::fromString('Header-name: header-value');
+        $header = GenericHeader::fromString('Header-name: header-value');
 
         $this->headers
             ->expects($this->once())
@@ -177,13 +184,10 @@ class ResponseTest extends \PHPUnit\Framework\TestCase
         $response->clearHeader('Header-name');
     }
 
-    /**
-     */
     public function testHttpResponseCodeWithException()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException('InvalidArgumentException');
         $this->expectExceptionMessageMatches('/Invalid HTTP response code/');
-
         $this->response->setHttpResponseCode(1);
     }
 
@@ -194,9 +198,9 @@ class ResponseTest extends \PHPUnit\Framework\TestCase
      */
     public function testSetRedirect()
     {
-        /** @var \Magento\Framework\App\Response\Http $response */
+        /** @var Http $response */
         $response = $this->createPartialMock(
-            \Magento\Framework\HTTP\PhpEnvironment\Response::class,
+            Response::class,
             ['setHeader', 'setHttpResponseCode', 'sendHeaders']
         );
         $response

@@ -3,6 +3,8 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\ImportExport\Test\Unit\Block\Adminhtml\Grid\Column\Renderer;
 
 use Magento\Backend\Block\Context;
@@ -11,14 +13,16 @@ use Magento\Framework\DataObject;
 use Magento\Framework\Escaper;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
 use Magento\ImportExport\Block\Adminhtml\Grid\Column\Renderer\Download;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\ImportExport\Block\Adminhtml\Grid\Column\Renderer\Download class.
  */
-class DownloadTest extends \PHPUnit\Framework\TestCase
+class DownloadTest extends TestCase
 {
     /**
-     * @var Context
+     * @var Context|MockObject
      */
     protected $context;
 
@@ -33,12 +37,12 @@ class DownloadTest extends \PHPUnit\Framework\TestCase
     protected $download;
 
     /**
-     * @var Escaper|\PHPUnit_Framework_MockObject_MockObjecti
+     * @var Escaper|MockObject
      */
     private $escaperMock;
 
     /**
-     * Set up
+     * @inheritdoc
      */
     protected function setUp(): void
     {
@@ -55,26 +59,24 @@ class DownloadTest extends \PHPUnit\Framework\TestCase
             Download::class,
             [
                 'context' => $this->context,
-                'data' => $data
+                'data' => $data,
             ]
         );
     }
 
     /**
      * Test _getValue()
+     *
+     * @return void
      */
-    public function testGetValue()
+    public function testGetValue(): void
     {
         $data = ['imported_file' => 'file.csv'];
         $row = new DataObject($data);
-        $this->escaperMock->expects($this->at(0))
+        $this->escaperMock
             ->method('escapeHtml')
-            ->with('file.csv')
-            ->willReturn('file.csv');
-        $this->escaperMock->expects($this->at(1))
-            ->method('escapeHtml')
-            ->with('Download')
-            ->willReturn('Download');
+            ->withConsecutive(['file.csv'], ['Download'])
+            ->willReturnOnConsecutiveCalls('file.csv', 'Download');
         $this->assertEquals('<p> file.csv</p><a href="url">Download</a>', $this->download->_getValue($row));
     }
 }

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Framework\Filesystem\Directory;
 
+use Magento\Framework\Config\Dom\ValidationException;
 use Magento\Framework\Exception\FileSystemException;
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\Filesystem\DriverInterface;
@@ -37,7 +38,7 @@ class Write extends Read implements WriteInterface
         \Magento\Framework\Filesystem\File\WriteFactory $fileFactory,
         DriverInterface $driver,
         $path,
-        $createPermissions = null,
+        ?int $createPermissions = null,
         ?PathValidatorInterface $pathValidator = null
     ) {
         parent::__construct($fileFactory, $driver, $path, $pathValidator);
@@ -71,8 +72,8 @@ class Write extends Read implements WriteInterface
      */
     protected function assertIsFile($path)
     {
-        clearstatcache();
         $absolutePath = $this->driver->getAbsolutePath($this->path, $path);
+        clearstatcache(true, $absolutePath);
         if (!$this->driver->isFile($absolutePath)) {
             throw new FileSystemException(
                 new Phrase('The "%1" file doesn\'t exist.', [$absolutePath])
@@ -170,7 +171,7 @@ class Write extends Read implements WriteInterface
         $absolutePath = $this->driver->getAbsolutePath($this->path, $path);
         $absoluteDestination = $targetDirectory->getAbsolutePath($destination);
 
-        return $this->driver->symlink($absolutePath, $absoluteDestination, $targetDirectory->driver);
+        return $this->driver->symlink($absolutePath, $absoluteDestination, $this->driver);
     }
 
     /**
@@ -350,14 +351,24 @@ class Write extends Read implements WriteInterface
      * @param string $path
      * @param string $content
      * @param string|null $mode
+     * @param bool $lock
      * @return int The number of bytes that were written.
      * @throws FileSystemException|ValidatorException
      */
-    public function writeFile($path, $content, $mode = 'w+')
+    public function writeFile($path, $content, $mode = 'w+', bool $lock = false)
     {
         $this->validatePath($path);
         $file = $this->openFile($path, $mode);
-        $result = $file->write($content);
+        try {
+            if ($lock) {
+                $file->lock();
+            }
+            $result = $file->write($content);
+        } finally {
+            if ($lock) {
+                $file->unlock();
+            }
+        }
         $file->close();
 
         return $result;

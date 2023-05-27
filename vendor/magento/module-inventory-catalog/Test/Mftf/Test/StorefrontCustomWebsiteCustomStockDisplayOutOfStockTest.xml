@@ -13,26 +13,26 @@
             <stories value="Product not assigned to inventory sources"/>
             <title value="Product not assigned to inventory sources"/>
             <description value="Check that product not assigned to inventory sources is shown on storefront as out of stock when Display Out Of Stock is enabled"/>
-            <testCaseId value="MC-34591"/>
+            <testCaseId value="MC-34701"/>
             <severity value="MAJOR"/>
             <group value="msi"/>
             <group value="multi_mode"/>
         </annotations>
         <before>
             <!-- Login to backend-->
-            <actionGroup ref="LoginAsAdmin" stepKey="loginAsAdmin"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="loginAsAdmin"/>
             <!-- Display out of stock product -->
-            <actionGroup ref="displayOutOfStockProduct" stepKey="displayOutOfStockProduct"/>
+            <actionGroup ref="DisplayOutOfStockProductActionGroup" stepKey="displayOutOfStockProduct"/>
             <!--Add store code to url.-->
             <magentoCLI command="config:set {{StorefrontEnableAddStoreCodeToUrls.path}} {{StorefrontEnableAddStoreCodeToUrls.value}}" stepKey="addStoreCodeToUrlEnable"/>
             <!--Create source -->
-            <createData entity="_minimalSource" stepKey="source"/>
+            <createData entity="AustinStorePickupEnabledSource" stepKey="austinSource"/>
             <!--Create stock -->
             <createData entity="BasicMsiStock1" stepKey="stock"/>
             <!--Link stock to source-->
             <createData entity="SourceStockLinked1" stepKey="sourceStockLink2">
                 <requiredEntity createDataKey="stock"/>
-                <requiredEntity createDataKey="source"/>
+                <requiredEntity createDataKey="austinSource"/>
             </createData>
             <!--Create category-->
             <createData entity="_defaultCategory" stepKey="category"/>
@@ -65,9 +65,11 @@
                 <argument name="stockName" value="$stock.stock[name]$"/>
                 <argument name="websiteName" value="{{customWebsite.name}}"/>
             </actionGroup>
+            <magentoCron groups="index" stepKey="reindex"/>
             <!--Open product edit page-->
-            <amOnPage url="{{AdminProductEditPage.url($product.id$)}}" stepKey="openProductEditPage"/>
-            <waitForPageLoad stepKey="waitForProductEditPage"/>
+            <actionGroup ref="AdminProductPageOpenByIdActionGroup" stepKey="openProductEditPage">
+                <argument name="productId" value="$$product.id$$"/>
+            </actionGroup>
             <!--Assign product to website-->
             <actionGroup ref="AdminAssignProductInWebsiteActionGroup" stepKey="assignProductToSecondWebsite">
                 <argument name="website" value="{{customWebsite.name}}"/>
@@ -77,7 +79,7 @@
         </before>
         <after>
             <!-- Don't display out of stock product -->
-            <actionGroup ref="noDisplayOutOfStockProduct" stepKey="revertDisplayOutOfStockProduct"/>
+            <actionGroup ref="NoDisplayOutOfStockProductActionGroup" stepKey="revertDisplayOutOfStockProduct"/>
             <!--Disable 'add store code to url'-->
             <magentoCLI command="config:set {{StorefrontDisableAddStoreCodeToUrls.path}} {{StorefrontDisableAddStoreCodeToUrls.value}}" stepKey="addStoreCodeToUrlDisable"/>
             <!--Delete category-->
@@ -94,18 +96,37 @@
             <deleteData createDataKey="stock" stepKey="deleteStock"/>
             <!--Disable all sources.-->
             <actionGroup ref="DisableAllSourcesActionGroup" stepKey="disableAllSources"/>
+            <actionGroup ref="AssignWebsiteToStockActionGroup" stepKey="assignMainWebsiteToDefaultStock">
+                <argument name="stockName" value="{{_defaultStock.name}}"/>
+                <argument name="websiteName" value="{{_defaultWebsite.name}}"/>
+            </actionGroup>
             <!--Logout from backend-->
-            <actionGroup ref="logout" stepKey="logoutOfAdmin"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logoutOfAdmin"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </after>
         <!-- Assert product is visible on default website category page-->
-        <amOnPage url="{{StorefrontHomePage.url}}/{{_defaultStore.code}}/$category.name$.html" stepKey="navigateToDefaultWebsite"/>
-        <see userInput="$product.name$" stepKey="assertProductPresentOnDefaultWebsite"/>
-        <!-- Assert product 2 is visible on default website category page-->
-        <see userInput="$product2.name$" stepKey="assertProduct2PresentOnDefaultWebsite"/>
+        <actionGroup ref="StorefrontAssertProductOnCategoryPageAdditionalWebsiteActionGroup" stepKey="assertProductPresentOnDefaultWebsite">
+            <argument name="categoryName" value="$$category.name$$"/>
+            <argument name="storeCode" value="{{_defaultStore.code}}"/>
+            <argument name="productName" value="$$product.name$"/>
+        </actionGroup>
+        <!-- Assert product is visible on default website category page-->
+        <actionGroup ref="StorefrontAssertProductOnCategoryPageAdditionalWebsiteActionGroup" stepKey="assertProduct2PresentOnDefaultWebsite">
+            <argument name="categoryName" value="$$category.name$$"/>
+            <argument name="storeCode" value="{{_defaultStore.code}}"/>
+            <argument name="productName" value="$$product2.name$"/>
+        </actionGroup>
         <!-- Assert product is visible on custom website category page-->
-        <amOnPage url="{{StorefrontHomePage.url}}/{{customStore.code}}/$category.name$.html" stepKey="navigateToCustomWebsite"/>
-        <see userInput="$product.name$" stepKey="assertProductPresentOnCustomWebsite"/>
+        <actionGroup ref="StorefrontAssertProductOnCategoryPageAdditionalWebsiteActionGroup" stepKey="assertProductPresentOnCustomWebsite">
+            <argument name="categoryName" value="$$category.name$$"/>
+            <argument name="storeCode" value="{{customStore.code}}"/>
+            <argument name="productName" value="$$product.name$"/>
+        </actionGroup>
         <!-- Assert product 2 is not visible on custom website category page-->
-        <dontSee userInput="$product2.name$" stepKey="assertProduct2AbsentOnCategoryPage"/>
+        <actionGroup ref="StorefrontAssertProductAbsentOnCategoryPageAdditionalWebsiteActionGroup" stepKey="assertProduct2AbsentOnCategoryPage">
+            <argument name="categoryName" value="$$category.name$$"/>
+            <argument name="storeCode" value="{{customStore.code}}"/>
+            <argument name="productName" value="$$product2.name$"/>
+        </actionGroup>
     </test>
 </tests>

@@ -1,33 +1,39 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Unit Test for \Magento\Framework\Filesystem\Directory\Write
- *
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Filesystem\Test\Unit\Directory;
 
+use Magento\Framework\Filesystem\Directory\Write;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\Framework\Filesystem\Driver\File;
 use Magento\Framework\Filesystem\DriverInterface;
+use Magento\Framework\Filesystem\File\WriteFactory;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class WriteTest extends \PHPUnit\Framework\TestCase
+/**
+ * Unit Test for \Magento\Framework\Filesystem\Directory\Write
+ */
+class WriteTest extends TestCase
 {
     /**
      * \Magento\Framework\Filesystem\Driver
      *
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $driver;
 
     /**
-     * @var \Magento\Framework\Filesystem\Directory\Write
+     * @var Write
      */
     protected $write;
 
     /**
      * \Magento\Framework\Filesystem\File\ReadFactory
      *
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $fileFactory;
 
@@ -41,10 +47,10 @@ class WriteTest extends \PHPUnit\Framework\TestCase
      */
     protected function setUp(): void
     {
-        $this->driver = $this->createMock(\Magento\Framework\Filesystem\Driver\File::class);
-        $this->fileFactory = $this->createMock(\Magento\Framework\Filesystem\File\WriteFactory::class);
+        $this->driver = $this->createMock(File::class);
+        $this->fileFactory = $this->createMock(WriteFactory::class);
         $this->path = 'PATH/';
-        $this->write = new \Magento\Framework\Filesystem\Directory\Write(
+        $this->write = new Write(
             $this->fileFactory,
             $this->driver,
             $this->path,
@@ -87,8 +93,7 @@ class WriteTest extends \PHPUnit\Framework\TestCase
 
     public function testCreateSymlinkTargetDirectoryExists()
     {
-        $targetDir = $this->getMockBuilder(WriteInterface::class)->getMock();
-        $targetDir->driver = $this->driver;
+        $targetDir = $this->getMockForAbstractClass(WriteInterface::class);
         $sourcePath = 'source/path/file';
         $destinationDirectory = 'destination/path';
         $destinationFile = $destinationDirectory . '/' . 'file';
@@ -111,18 +116,15 @@ class WriteTest extends \PHPUnit\Framework\TestCase
             ->with(
                 $this->getAbsolutePath($sourcePath),
                 $this->getAbsolutePath($destinationFile),
-                $targetDir->driver
+                $this->driver
             )->willReturn(true);
 
         $this->assertTrue($this->write->createSymlink($sourcePath, $destinationFile, $targetDir));
     }
 
-    /**
-     */
     public function testOpenFileNonWritable()
     {
-        $this->expectException(\Magento\Framework\Exception\FileSystemException::class);
-
+        $this->expectException('Magento\Framework\Exception\FileSystemException');
         $targetPath = '/path/to/target.file';
         $this->driver->expects($this->once())->method('isExists')->willReturn(true);
         $this->driver->expects($this->once())->method('isWritable')->willReturn(false);
@@ -167,7 +169,6 @@ class WriteTest extends \PHPUnit\Framework\TestCase
     {
         if ($targetDir !== null) {
             /** @noinspection PhpUndefinedFieldInspection */
-            $targetDir->driver = $this->getMockBuilder(DriverInterface::class)->getMockForAbstractClass();
             $targetDirPath = 'TARGET_PATH/';
             $targetDir->expects($this->once())
                 ->method('getAbsolutePath')

@@ -30,7 +30,7 @@ define([
                 list[key] = filterTemplateData(value);
             }
 
-            if (key === '__disableTmpl') {
+            if (key === '__disableTmpl' || key === 'title') {
                 delete list[key];
             }
         });
@@ -79,6 +79,9 @@ define([
         ).always(
             function () {
                 fullScreenLoader.stopLoader();
+                _.each(hooks.afterRequestListeners, function (listener) {
+                    listener();
+                });
             }
         );
     };

@@ -6,13 +6,21 @@
 namespace Magento\Framework\Code\Generator;
 
 use Laminas\Code\Generator\ValueGenerator;
+use Magento\Framework\GetParameterClassTrait;
 
 /**
- * Parent class for entities
+ * Abstract entity
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 abstract class EntityAbstract
 {
-    const ENTITY_TYPE = 'abstract';
+    use GetParameterClassTrait;
+
+    /**
+     * Entity type abstract
+     */
+    public const ENTITY_TYPE = 'abstract';
 
     /**
      * @var string[]
@@ -151,8 +159,7 @@ abstract class EntityAbstract
      */
     protected function _getFullyQualifiedClassName($className)
     {
-        $className = ltrim($className, '\\');
-        return $className ? '\\' . $className : '';
+        return $className ? '\\' . ltrim($className, '\\') : '';
     }
 
     /**
@@ -237,7 +244,7 @@ abstract class EntityAbstract
     }
 
     /**
-     * Ensures that data is valid
+     * Validate data
      *
      * @return bool
      */
@@ -264,7 +271,7 @@ abstract class EntityAbstract
     }
 
     /**
-     * Retrieves documentation block from class
+     * Get class DocBlock
      *
      * @return array
      */
@@ -275,7 +282,7 @@ abstract class EntityAbstract
     }
 
     /**
-     * Retrieves generated code
+     * Get generated code
      *
      * @return string
      */
@@ -286,7 +293,7 @@ abstract class EntityAbstract
     }
 
     /**
-     * Fixes code style errors
+     * Fix code style
      *
      * @param string $sourceCode
      * @return string
@@ -312,7 +319,7 @@ abstract class EntityAbstract
     }
 
     /**
-     * Retrieve type from parameter
+     * Extract parameter type
      *
      * @param \ReflectionParameter $parameter
      * @return null|string
@@ -320,31 +327,43 @@ abstract class EntityAbstract
     private function extractParameterType(
         \ReflectionParameter $parameter
     ): ?string {
+        if (!$parameter->hasType()) {
+            return null;
+        }
+
         /** @var string|null $typeName */
         $typeName = null;
-        if ($parameter->hasType()) {
-            if ($parameter->isArray()) {
-                $typeName = 'array';
-            } elseif ($parameter->getClass()) {
-                $typeName = $this->_getFullyQualifiedClassName(
-                    $parameter->getClass()->getName()
-                );
-            } elseif ($parameter->isCallable()) {
-                $typeName = 'callable';
-            } else {
-                $typeName = $parameter->getType()->getName();
-            }
+        $parameterType = $parameter->getType();
 
-            if ($parameter->allowsNull()) {
-                $typeName = '?' . $typeName;
-            }
+        if ($parameterType instanceof \ReflectionUnionType) {
+            $parameterType = $parameterType->getTypes();
+            $parameterType = implode('|', $parameterType);
+        } elseif ($parameterType instanceof \ReflectionIntersectionType) {
+            $parameterType = $parameterType->getTypes();
+            $parameterType = implode('&', $parameterType);
+        } else {
+            $parameterType = $parameterType->getName();
+        }
+
+        if ($parameterType === 'array') {
+            $typeName = 'array';
+        } elseif ($parameterClass = $this->getParameterClass($parameter)) {
+            $typeName = $this->_getFullyQualifiedClassName($parameterClass->getName());
+        } elseif ($parameterType === 'callable') {
+            $typeName = 'callable';
+        } else {
+            $typeName = $parameterType;
+        }
+
+        if ($parameter->allowsNull() && $typeName !== 'mixed') {
+            $typeName = '?' . $typeName;
         }
 
         return $typeName;
     }
 
     /**
-     * Retrieve default value from parameter
+     * Extract parameter default value
      *
      * @param \ReflectionParameter $parameter
      * @return null|ValueGenerator
@@ -378,9 +397,12 @@ abstract class EntityAbstract
     {
         $parameterInfo = [
             'name' => $parameter->getName(),
-            'passedByReference' => $parameter->isPassedByReference(),
-            'variadic' => $parameter->isVariadic()
+            'passedByReference' => $parameter->isPassedByReference()
         ];
+        if ($parameter->isVariadic()) {
+            $parameterInfo['variadic'] = $parameter->isVariadic();
+        }
+
         if ($type = $this->extractParameterType($parameter)) {
             $parameterInfo['type'] = $type;
         }

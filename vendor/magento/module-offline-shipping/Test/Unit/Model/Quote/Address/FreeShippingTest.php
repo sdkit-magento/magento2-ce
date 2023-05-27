@@ -14,12 +14,13 @@ use Magento\Quote\Model\Quote\Address;
 use Magento\Quote\Model\Quote\Item;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use PHPUnit\Framework\MockObject\MockObject as MockObject;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for Magento\OfflineShipping\Model\Quote\Address\FreeShipping class.
  */
-class FreeShippingTest extends \PHPUnit\Framework\TestCase
+class FreeShippingTest extends TestCase
 {
     private static $websiteId = 1;
 

@@ -11,9 +11,12 @@
     <test name="VerifyThatMessageOnlyZeroLeftNotAppearedOnSimpleProductPageOnFrontendWithWebsiteAndNewStoreAndNewStoreViewTest"
           extends="VerifyThatMessageOnlyZeroLeftNotAppearedOnSimpleProductPageOnFrontendTest">
         <annotations>
+            <stories value="Verify that message 'Only 0 left' not appeared on Simple product page on frontend with Website and new Store and new Store View"/>
+            <title value="Verify that message 'Only 0 left' not appeared on Simple product page on frontend with Website and new Store and new Store View"/>
             <description
                     value="Verify that message 'Only 0 left' not appeared on Simple product page on frontend with Website and new Store and new Store View"/>
             <testCaseId value="https://app.hiptest.com/projects/69435/test-plan/folders/908790/scenarios/3041079"/>
+            <severity value="MAJOR"/>
             <group value="msi"/>
             <group value="multi_mode"/>
         </annotations>
@@ -44,6 +47,7 @@
             <magentoCLI
                     command="config:set {{StorefrontEnableAddStoreCodeToUrls.path}} {{StorefrontEnableAddStoreCodeToUrls.value}}"
                     stepKey="setConfigAddStoreCodeToUrl" after="fillConfigValue"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </before>
         <after>
             <remove keyForRemoval="deleteStock"/>
@@ -54,6 +58,7 @@
             <magentoCLI
                     command="config:set {{StorefrontDisableAddStoreCodeToUrls.path}} {{StorefrontDisableAddStoreCodeToUrls.value}}"
                     stepKey="DisableAddStoreCodeToUrl" after="disableCreatedSourceComment"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </after>
         <!-- Add this product to second website -->
         <click selector="{{ProductInWebsitesSection.sectionHeader}}" stepKey="openProductInWebsitesSection1"

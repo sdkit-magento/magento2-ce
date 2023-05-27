@@ -2723,6 +2723,10 @@ return [
     ['Magento\CatalogSearch\Model\Fulltext\Observer'],
     ['Magento\CatalogSearch\Model\ResourceModel\Indexer\Fulltext'],
     [
+        'Magento\CatalogSearch\Setup\Patch\Data\MySQLSearchDeprecationNotification',
+        'Magento\CatalogSearch\Setup\Patch\Data\MySQLSearchRemovalNotification',
+    ],
+    [
         'Magento\Tax\Block\Adminhtml\Rate\Grid\Renderer\Country',
         'Magento\TaxImportExport\Block\Adminhtml\Rate\Grid\Renderer\Country',
     ],
@@ -4238,15 +4242,33 @@ return [
         'Magento\Elasticsearch\Test\Unit\Model\SearchAdapter\ConnectionManagerTest',
         'Magento\Elasticsearch\Test\Unit\SearchAdapter\ConnectionManagerTest'
     ],
-    ['Zend_Feed', 'Zend\Feed'],
-    ['Zend_Uri', 'Zend\Uri\Uri'],
+    ['Zend_Feed', 'Laminas\Feed'],
+    ['Zend_Uri', 'Laminas\Uri\Uri'],
     ['Zend_Mime', 'Magento\Framework\HTTP\Mime'],
+    ['Zend_Mail'],
+    ['Zend_Json'],
+    ['Zend_Currency', 'Magento\Framework\Currency'],
     ['Magento\Framework\Encryption\Crypt', 'Magento\Framework\Encryption\EncryptionAdapterInterface'],
     ['Magento\Wishlist\Setup\Patch\Schema\AddProductIdConstraint'],
-    ['Magento\Wishlist\Setup\Patch\Data\CleanUpData'],
+    ['Magento\Elasticsearch\Block\Adminhtml\System\Config\TestConnection'],
+    ['Magento\Elasticsearch\Model\Adapter\BatchDataMapper\CategoryFieldsProvider'],
+    ['Magento\Elasticsearch\Model\Adapter\DataMapper\ProductDataMapper'],
+    ['Magento\Elasticsearch\Model\Adapter\FieldMapper\ProductFieldMapper'],
+    ['Magento\Elasticsearch\Model\Client\Elasticsearch'],
+    ['Magento\Elasticsearch\SearchAdapter\Aggregation\Interval'],
+    ['Magento\Elasticsearch\Elasticsearch5\Model\Adapter\FieldType'],
+    ['Magento\Elasticsearch\Model\Adapter\DataMapperInterface'],
+    ['Magento\Elasticsearch\Elasticsearch5\Model\Adapter\DataMapper\ProductDataMapperProxy'],
+    ['Magento\Elasticsearch\Elasticsearch5\Model\Adapter\DataMapper\ProductDataMapper'],
+    ['Magento\Elasticsearch\Model\Adapter\DataMapper\DataMapperResolver'],
+    ['Magento\Elasticsearch\Model\Adapter\Container\Attribute'],
+    ['PHPUnit_Framework_MockObject_MockObject', 'PHPUnit\Framework\MockObject\MockObject'],
+    ['PHPUnit\Framework\BaseTestListener'],
+    ['Magento\Backend\Model\Setup\MenuBuilder'],
     ['Magento\Setup\Controller\AddDatabase'],
     ['Magento\Setup\Controller\BackupActionItems'],
     ['Magento\Setup\Controller\CompleteBackup'],
+    ['Magento\Setup\Controller\ConfigureCatalogSearch'],
     ['Magento\Setup\Controller\CreateAdminAccount'],
     ['Magento\Setup\Controller\CreateBackup'],
     ['Magento\Setup\Controller\CustomizeYourStore'],
@@ -4277,6 +4299,7 @@ return [
     ['Magento\Setup\Controller\UrlCheck'],
     ['Magento\Setup\Controller\ValidateAdminCredentials'],
     ['Magento\Setup\Controller\WebConfiguration'],
+    ['Magento\Setup\Controller\Session'],
     ['Magento\Setup\Model\Grid\Extension'],
     ['Magento\Setup\Model\Grid\Module'],
     ['Magento\Setup\Model\Installer\ProgressFactory'],
@@ -4294,4 +4317,33 @@ return [
     ['Magento\Setup\Validator\AdminCredentialsValidator'],
     ['Magento\Setup\Model\Updater'],
     ['Magento\Setup\Console\Command\CronRunCommand'],
+    [
+        'Magento\Elasticsearch\SearchAdapter\Query\Builder\Match',
+        'Magento\Elasticsearch\SearchAdapter\Query\Builder\MatchQuery'
+    ],
+    [
+        'Magento\Framework\Search\Request\Query\Match',
+        'Magento\Framework\Search\Request\Query\MatchQuery'
+    ],
+    [
+        'Magento\Elasticsearch\Test\Unit\SearchAdapter\Query\Builder\MatchTest',
+        'Magento\Elasticsearch\Test\Unit\SearchAdapter\Query\Builder\MatchQueryTest'
+    ],
+    [
+        'Magento\Elasticsearch6\Block\Adminhtml\System\Config\TestConnection',
+        'Magento\Elasticsearch7\Block\Adminhtml\System\Config\TestConnection'
+    ],
+    [
+        'Magento\Elasticsearch6\Model\Adapter\FieldMapper\Product\FieldProvider\FieldName\Resolver\DefaultResolver',
+        'Magento\Elasticsearch7\Model\Adapter\FieldMapper\Product\FieldProvider\FieldName\Resolver\DefaultResolver'
+    ],
+    [
+        'Magento\Elasticsearch6\Model\Client\Elasticsearch',
+        'Magento\Elasticsearch7\Model\Client\Elasticsearch'
+    ],
+    ['Magento\Elasticsearch\Test\Unit\Model\DataProvider\Base\SuggestionsTest'],
+    ['Magento\Elasticsearch6\Test\Unit\Model\Client\ElasticsearchTest'],
+    ['Magento\Elasticsearch6\Test\Unit\Model\Adapter\FieldMapper\Product\FieldProvider\FieldName\Resolver\DefaultResolverTest'],
+    ['Zend_Measure_Length', 'Magento\Framework\Measure\Length'],
+    ['Zend_Measure_Weight', 'Magento\Framework\Measure\Weight'],
 ];

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Store\Model\ResourceModel\Store;
 
 class CollectionTest extends \PHPUnit\Framework\TestCase
@@ -48,10 +49,18 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     {
         $this->_collection->addGroupFilter(1);
         $quote = $this->_getQuoteIdentifierSymbol();
-        $this->assertStringContainsString("{$quote}group_id{$quote} IN", (string)$this->_collection->getSelect(), 'Group filter');
+        $this->assertStringContainsString(
+            "{$quote}group_id{$quote} IN",
+            (string)$this->_collection->getSelect(),
+            'Group filter'
+        );
 
         $this->_collection->addIdFilter(1);
-        $this->assertStringContainsString("{$quote}store_id{$quote} IN", (string)$this->_collection->getSelect(), 'Id filter');
+        $this->assertStringContainsString(
+            "{$quote}store_id{$quote} IN",
+            (string)$this->_collection->getSelect(),
+            'Id filter'
+        );
 
         $this->_collection->addWebsiteFilter(1);
         $this->assertStringContainsString(

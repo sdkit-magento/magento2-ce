@@ -6,6 +6,10 @@
 
 namespace Magento\Catalog\Model\Product\Option\Type\File;
 
+use Laminas\Validator\File\ExcludeExtension;
+use Laminas\Validator\File\FilesSize;
+use Laminas\Validator\File\ImageSize;
+use Magento\Framework\File\Http;
 use Magento\Framework\Math\Random;
 
 /**
@@ -67,14 +71,14 @@ class ValidatorFileTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     *
      * @return void
      */
     public function testRunValidationException()
     {
         $this->expectException(\Magento\Framework\Validator\Exception::class);
-        $httpAdapterMock = $this->createPartialMock(\Zend_File_Transfer_Adapter_Http::class, ['isValid']);
-        $this->httpFactoryMock->expects($this->once())->method('create')->will($this->returnValue($httpAdapterMock));
+
+        $httpAdapterMock = $this->createPartialMock(Http::class, ['isValid']);
+        $this->httpFactoryMock->expects($this->once())->method('create')->willReturn($httpAdapterMock);
 
         $this->model->validate(
             $this->objectManager->create(\Magento\Framework\DataObject::class),
@@ -96,14 +100,14 @@ class ValidatorFileTest extends \PHPUnit\Framework\TestCase
         );
         $this->prepareEnv();
         $_SERVER['CONTENT_LENGTH'] = $this->maxFileSize + 1;
-        $httpAdapterMock = $this->createPartialMock(\Zend_File_Transfer_Adapter_Http::class, ['getFileInfo']);
+        $httpAdapterMock = $this->createPartialMock(Http::class, ['getFileInfo']);
         $exception = function () {
             throw new \Exception();
         };
-        $httpAdapterMock->expects($this->once())->method('getFileInfo')->will($this->returnCallback($exception));
-        $this->httpFactoryMock->expects($this->once())->method('create')->will($this->returnValue($httpAdapterMock));
+        $httpAdapterMock->expects($this->once())->method('getFileInfo')->willReturnCallback($exception);
+        $this->httpFactoryMock->expects($this->once())->method('create')->willReturn($httpAdapterMock);
 
-        $property = new \ReflectionProperty($httpAdapterMock, '_files');
+        $property = new \ReflectionProperty($httpAdapterMock, 'files');
         $property->setAccessible(true);
         $property->setValue($httpAdapterMock, ['options_1_file' => $_FILES['options_1_file']]);
         $this->model->validate(
@@ -113,21 +117,21 @@ class ValidatorFileTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     *
      * @return void
      */
     public function testOptionRequiredException()
     {
         $this->expectException(\Magento\Catalog\Model\Product\Exception::class);
+
         $this->prepareEnv();
-        $httpAdapterMock = $this->createPartialMock(\Zend_File_Transfer_Adapter_Http::class, ['getFileInfo']);
+        $httpAdapterMock = $this->createPartialMock(Http::class, ['getFileInfo']);
         $exception = function () {
             throw new \Exception();
         };
-        $httpAdapterMock->expects($this->once())->method('getFileInfo')->will($this->returnCallback($exception));
-        $this->httpFactoryMock->expects($this->once())->method('create')->will($this->returnValue($httpAdapterMock));
+        $httpAdapterMock->expects($this->once())->method('getFileInfo')->willReturnCallback($exception);
+        $this->httpFactoryMock->expects($this->once())->method('create')->willReturn($httpAdapterMock);
 
-        $property = new \ReflectionProperty($httpAdapterMock, '_files');
+        $property = new \ReflectionProperty($httpAdapterMock, 'files');
         $property->setAccessible(true);
         $property->setValue($httpAdapterMock, ['options_1_file' => $_FILES['options_1_file']]);
         $this->model->validate(
@@ -137,18 +141,18 @@ class ValidatorFileTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     *
      * @return void
      */
     public function testException()
     {
         $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
-        $this->prepareEnv();
-        $httpAdapterMock = $this->createPartialMock(\Zend_File_Transfer_Adapter_Http::class, ['isUploaded']);
-        $httpAdapterMock->expects($this->once())->method('isUploaded')->will($this->returnValue(false));
-        $this->httpFactoryMock->expects($this->once())->method('create')->will($this->returnValue($httpAdapterMock));
 
-        $property = new \ReflectionProperty($httpAdapterMock, '_files');
+        $this->prepareEnv();
+        $httpAdapterMock = $this->createPartialMock(Http::class, ['isUploaded']);
+        $httpAdapterMock->expects($this->once())->method('isUploaded')->willReturn(false);
+        $this->httpFactoryMock->expects($this->once())->method('create')->willReturn($httpAdapterMock);
+
+        $property = new \ReflectionProperty($httpAdapterMock, 'files');
         $property->setAccessible(true);
         $property->setValue($httpAdapterMock, ['options_1_file' => $_FILES['options_1_file']]);
         $this->model->validate(
@@ -178,7 +182,7 @@ class ValidatorFileTest extends \PHPUnit\Framework\TestCase
         );
         $this->prepareEnv();
         $httpAdapterMock = $this->createPartialMock(
-            \Zend_File_Transfer_Adapter_Http::class,
+            Http::class,
             ['isValid', 'getErrors', 'getFileInfo', 'isUploaded']
         );
         $httpAdapterMock->expects($this->once())
@@ -195,10 +199,10 @@ class ValidatorFileTest extends \PHPUnit\Framework\TestCase
             ->method('getErrors')
             ->willReturn(
                 [
-                    \Zend_Validate_File_ExcludeExtension::FALSE_EXTENSION,
-                    \Zend_Validate_File_Extension::FALSE_EXTENSION,
-                    \Zend_Validate_File_ImageSize::WIDTH_TOO_BIG,
-                    \Zend_Validate_File_FilesSize::TOO_BIG,
+                    ExcludeExtension::FALSE_EXTENSION,
+                    ExcludeExtension::FALSE_EXTENSION,
+                    ImageSize::WIDTH_TOO_BIG,
+                    FilesSize::TOO_BIG,
                 ]
             );
         $this->httpFactoryMock->expects($this->once())
@@ -219,11 +223,11 @@ class ValidatorFileTest extends \PHPUnit\Framework\TestCase
     public function testValidate()
     {
         $this->prepareGoodEnv();
-        $httpAdapterMock = $this->createPartialMock(\Zend_File_Transfer_Adapter_Http::class, ['isValid']);
-        $httpAdapterMock->expects($this->once())->method('isValid')->will($this->returnValue(true));
-        $this->httpFactoryMock->expects($this->once())->method('create')->will($this->returnValue($httpAdapterMock));
+        $httpAdapterMock = $this->createPartialMock(Http::class, ['isValid']);
+        $httpAdapterMock->expects($this->once())->method('isValid')->willReturn(true);
+        $this->httpFactoryMock->expects($this->once())->method('create')->willReturn($httpAdapterMock);
 
-        $property = new \ReflectionProperty($httpAdapterMock, '_files');
+        $property = new \ReflectionProperty($httpAdapterMock, 'files');
         $property->setAccessible(true);
         $property->setValue($httpAdapterMock, ['options_1_file' => $_FILES['options_1_file']]);
         $result = $this->model->validate(
@@ -241,11 +245,11 @@ class ValidatorFileTest extends \PHPUnit\Framework\TestCase
         $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
         $this->expectExceptionMessage('The file is empty. Select another file and try again.');
 
-        $httpAdapterMock = $this->createPartialMock(\Zend_File_Transfer_Adapter_Http::class, ['isValid']);
-        $httpAdapterMock->expects($this->once())->method('isValid')->will($this->returnValue(true));
-        $this->httpFactoryMock->expects($this->once())->method('create')->will($this->returnValue($httpAdapterMock));
+        $httpAdapterMock = $this->createPartialMock(Http::class, ['isValid']);
+        $httpAdapterMock->expects($this->once())->method('isValid')->willReturn(true);
+        $this->httpFactoryMock->expects($this->once())->method('create')->willReturn($httpAdapterMock);
 
-        $property = new \ReflectionProperty($httpAdapterMock, '_files');
+        $property = new \ReflectionProperty($httpAdapterMock, 'files');
         $property->setAccessible(true);
         $property->setValue($httpAdapterMock, ['options_1_file' => $_FILES['options_1_file']]);
         $this->model->validate(
@@ -362,8 +366,8 @@ class ValidatorFileTest extends \PHPUnit\Framework\TestCase
         return [
             'type' => 'image/jpeg',
             'title' => 'test.jpg',
-            'quote_path' => 'custom_options/quote/t/e/RandomString',
-            'order_path' => 'custom_options/order/t/e/RandomString',
+            'quote_path' => 'custom_options/quote/R/a/RandomString',
+            'order_path' => 'custom_options/order/R/a/RandomString',
             'size' => '3046',
             'width' => 136,
             'height' => 131,

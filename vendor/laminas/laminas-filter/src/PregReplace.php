@@ -1,17 +1,34 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
+use Closure;
 use Traversable;
 
+use function func_get_args;
+use function get_debug_type;
+use function gettype;
+use function is_array;
+use function is_object;
+use function is_string;
+use function iterator_to_array;
+use function preg_match;
+use function preg_replace;
+use function sprintf;
+use function str_contains;
+
+/**
+ * @psalm-type Options = array{
+ *     pattern?: string|list<string>|null,
+ *     replacement?: string|list<string>,
+ * }
+ * @extends AbstractFilter<Options>
+ */
 class PregReplace extends AbstractFilter
 {
+    /** @var Options */
     protected $options = [
         'pattern'     => null,
         'replacement' => '',
@@ -23,7 +40,7 @@ class PregReplace extends AbstractFilter
      *     'pattern'     => matching pattern
      *     'replacement' => replace with this
      *
-     * @param  array|Traversable|string|null $options
+     * @param  iterable|Options|string|null $options
      */
     public function __construct($options = null)
     {
@@ -46,9 +63,10 @@ class PregReplace extends AbstractFilter
 
     /**
      * Set the regex pattern to search for
+     *
      * @see preg_replace()
      *
-     * @param  string|array $pattern - same as the first argument of preg_replace
+     * @param  string|list<string> $pattern - same as the first argument of preg_replace
      * @return self
      * @throws Exception\InvalidArgumentException
      */
@@ -58,7 +76,7 @@ class PregReplace extends AbstractFilter
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s expects pattern to be array or string; received "%s"',
                 __METHOD__,
-                (is_object($pattern) ? get_class($pattern) : gettype($pattern))
+                is_object($pattern) ? $pattern::class : gettype($pattern)
             ));
         }
 
@@ -79,7 +97,7 @@ class PregReplace extends AbstractFilter
     /**
      * Get currently set match pattern
      *
-     * @return string|array
+     * @return string|list<string>|null
      */
     public function getPattern()
     {
@@ -88,9 +106,10 @@ class PregReplace extends AbstractFilter
 
     /**
      * Set the replacement array/string
+     *
      * @see preg_replace()
      *
-     * @param  array|string $replacement - same as the second argument of preg_replace
+     * @param  string|list<string> $replacement - same as the second argument of preg_replace
      * @return self
      * @throws Exception\InvalidArgumentException
      */
@@ -100,7 +119,7 @@ class PregReplace extends AbstractFilter
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s expects replacement to be array or string; received "%s"',
                 __METHOD__,
-                (is_object($replacement) ? get_class($replacement) : gettype($replacement))
+                get_debug_type($replacement)
             ));
         }
         $this->options['replacement'] = $replacement;
@@ -110,7 +129,7 @@ class PregReplace extends AbstractFilter
     /**
      * Get currently set replacement value
      *
-     * @return string|array
+     * @return string|list<string>
      */
     public function getReplacement()
     {
@@ -126,18 +145,31 @@ class PregReplace extends AbstractFilter
      */
     public function filter($value)
     {
-        if (! is_scalar($value) && ! is_array($value)) {
-            return $value;
-        }
+        return self::applyFilterOnlyToStringableValuesAndStringableArrayValues(
+            $value,
+            Closure::fromCallable([$this, 'filterNormalizedValue'])
+        );
+    }
 
+    /**
+     * @param  string|string[] $value
+     * @return string|string[]
+     */
+    private function filterNormalizedValue($value)
+    {
         if ($this->options['pattern'] === null) {
             throw new Exception\RuntimeException(sprintf(
                 'Filter %s does not have a valid pattern set',
-                get_class($this)
+                static::class
             ));
         }
 
-        return preg_replace($this->options['pattern'], $this->options['replacement'], $value);
+        /** @var string|string[] $pattern */
+        $pattern = $this->options['pattern'];
+        /** @var string|string[] $replacement */
+        $replacement = $this->options['replacement'];
+
+        return preg_replace($pattern, $replacement, $value);
     }
 
     /**
@@ -153,7 +185,7 @@ class PregReplace extends AbstractFilter
             return true;
         }
 
-        if (false !== strpos($matches['modifier'], 'e')) {
+        if (str_contains($matches['modifier'], 'e')) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Pattern for a PregReplace filter may not contain the "e" pattern modifier; received "%s"',
                 $pattern

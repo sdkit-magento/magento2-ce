@@ -3,27 +3,42 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Bundle\Test\Unit\Helper\Catalog\Product;
 
+use Magento\Bundle\Model\Product\Price;
+use Magento\Bundle\Model\Product\Type;
+use Magento\Bundle\Model\ResourceModel\Option\Collection;
+use Magento\Catalog\Helper\Product\Configuration;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Configuration\Item\ItemInterface;
+use Magento\Catalog\Model\Product\Configuration\Item\Option\OptionInterface;
+use Magento\Catalog\Model\Product\Option;
+use Magento\Framework\Escaper;
+use Magento\Framework\Pricing\Helper\Data;
+use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ConfigurationTest extends \PHPUnit\Framework\TestCase
+class ConfigurationTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Pricing\Helper\Data|\PHPUnit\Framework\MockObject\MockObject
+     * @var Data|MockObject
      */
     private $pricingHelper;
 
     /**
-     * @var \Magento\Catalog\Helper\Product\Configuration|\PHPUnit\Framework\MockObject\MockObject
+     * @var Configuration|MockObject
      */
     private $productConfiguration;
 
     /**
-     * @var \Magento\Framework\Escaper|\PHPUnit\Framework\MockObject\MockObject
+     * @var Escaper|MockObject
      */
     private $escaper;
 
@@ -33,26 +48,29 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     private $helper;
 
     /**
-     * @var \Magento\Catalog\Model\Product\Configuration\Item\ItemInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var ItemInterface|MockObject
      */
     private $item;
 
     /**
-     * @var \Magento\Framework\Serialize\Serializer\Json
+     * @var Json
      */
     private $serializer;
 
+    /**
+     * @inheritDoc
+     */
     protected function setUp(): void
     {
-        $this->pricingHelper = $this->createPartialMock(\Magento\Framework\Pricing\Helper\Data::class, ['currency']);
-        $this->productConfiguration = $this->createMock(\Magento\Catalog\Helper\Product\Configuration::class);
-        $this->escaper = $this->createPartialMock(\Magento\Framework\Escaper::class, ['escapeHtml']);
-        $this->item = $this->createPartialMock(
-            \Magento\Catalog\Model\Product\Configuration\Item\ItemInterface::class,
-            ['getQty', 'getProduct', 'getOptionByCode', 'getFileDownloadParams']
-        );
-        $this->serializer = $this->getMockBuilder(\Magento\Framework\Serialize\Serializer\Json::class)
-            ->setMethods(['unserialize'])
+        $this->pricingHelper = $this->createPartialMock(Data::class, ['currency']);
+        $this->productConfiguration = $this->createMock(Configuration::class);
+        $this->escaper = $this->createPartialMock(Escaper::class, ['escapeHtml']);
+        $this->item = $this->getMockBuilder(ItemInterface::class)
+            ->addMethods(['getQty'])
+            ->onlyMethods(['getProduct', 'getOptionByCode', 'getFileDownloadParams'])
+            ->getMockForAbstractClass();
+        $this->serializer = $this->getMockBuilder(Json::class)
+            ->onlyMethods(['unserialize'])
             ->getMockForAbstractClass();
 
         $this->serializer->expects($this->any())
@@ -74,12 +92,19 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    public function testGetSelectionQty()
+    /**
+     * @return void
+     */
+    public function testGetSelectionQty(): void
     {
         $selectionId = 15;
         $selectionQty = 35;
-        $product = $this->createMock(\Magento\Catalog\Model\Product::class);
-        $option = $this->createPartialMock(\Magento\Catalog\Model\Product\Option::class, ['__wakeup', 'getValue']);
+        $product = $this->createMock(Product::class);
+        $option = $this->getMockBuilder(Option::class)
+            ->addMethods(['getValue'])
+            ->onlyMethods(['__wakeup'])
+            ->disableOriginalConstructor()
+            ->getMock();
 
         $product->expects($this->once())
             ->method('getCustomOption')
@@ -92,10 +117,13 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($selectionQty, $this->helper->getSelectionQty($product, $selectionId));
     }
 
-    public function testGetSelectionQtyIfCustomOptionIsNotSet()
+    /**
+     * @return void
+     */
+    public function testGetSelectionQtyIfCustomOptionIsNotSet(): void
     {
         $selectionId = 15;
-        $product = $this->createMock(\Magento\Catalog\Model\Product::class);
+        $product = $this->createMock(Product::class);
 
         $product->expects($this->once())->method('getCustomOption')->with('selection_qty_' . $selectionId)
             ->willReturn(null);
@@ -103,13 +131,16 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(0, $this->helper->getSelectionQty($product, $selectionId));
     }
 
-    public function testGetSelectionFinalPrice()
+    /**
+     * @return void
+     */
+    public function testGetSelectionFinalPrice(): void
     {
         $itemQty = 2;
 
-        $product = $this->createMock(\Magento\Catalog\Model\Product::class);
-        $price = $this->createMock(\Magento\Bundle\Model\Product\Price::class);
-        $selectionProduct = $this->createMock(\Magento\Catalog\Model\Product::class);
+        $product = $this->createMock(Product::class);
+        $price = $this->createMock(Price::class);
+        $selectionProduct = $this->createMock(Product::class);
 
         $selectionProduct->expects($this->once())->method('unsetData')->with('final_price');
         $this->item->expects($this->once())->method('getProduct')->willReturn($product);
@@ -121,11 +152,13 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
         $this->helper->getSelectionFinalPrice($this->item, $selectionProduct);
     }
 
-    public function testGetBundleOptionsEmptyBundleOptionsIds()
+    /**
+     * @return void
+     */
+    public function testGetBundleOptionsEmptyBundleOptionsIds(): void
     {
-        $typeInstance = $this->createMock(\Magento\Bundle\Model\Product\Type::class);
-        $product = $this->createPartialMock(\Magento\Catalog\Model\Product::class, ['getTypeInstance',
-            '__wakeup']);
+        $typeInstance = $this->createMock(Type::class);
+        $product = $this->createPartialMock(Product::class, ['getTypeInstance', '__wakeup']);
 
         $product->expects($this->once())->method('getTypeInstance')->willReturn($typeInstance);
         $this->item->expects($this->once())->method('getProduct')->willReturn($product);
@@ -135,19 +168,21 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals([], $this->helper->getBundleOptions($this->item));
     }
 
-    public function testGetBundleOptionsEmptyBundleSelectionIds()
+    /**
+     * @return void
+     */
+    public function testGetBundleOptionsEmptyBundleSelectionIds(): void
     {
         $optionIds = '{"0":"1"}';
-        $collection = $this->createMock(\Magento\Bundle\Model\ResourceModel\Option\Collection::class);
-        $product = $this->createPartialMock(\Magento\Catalog\Model\Product::class, ['getTypeInstance',
-            '__wakeup']);
-        $typeInstance = $this->createPartialMock(\Magento\Bundle\Model\Product\Type::class, ['getOptionsByIds']);
+        $collection = $this->createMock(Collection::class);
+        $product = $this->createPartialMock(Product::class, ['getTypeInstance', '__wakeup']);
+        $typeInstance = $this->createPartialMock(Type::class, ['getOptionsByIds']);
         $selectionOption = $this->createPartialMock(
-            \Magento\Catalog\Model\Product\Configuration\Item\Option\OptionInterface::class,
+            OptionInterface::class,
             ['getValue']
         );
         $itemOption = $this->createPartialMock(
-            \Magento\Catalog\Model\Product\Configuration\Item\Option\OptionInterface::class,
+            OptionInterface::class,
             ['getValue']
         );
 
@@ -170,60 +205,54 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
         $this->item->expects($this->once())
             ->method('getProduct')
             ->willReturn($product);
-        $this->item->expects($this->at(1))
+        $this->item
             ->method('getOptionByCode')
-            ->with('bundle_option_ids')
-            ->willReturn($itemOption);
-        $this->item->expects($this->at(2))
-            ->method('getOptionByCode')
-            ->with('bundle_selection_ids')
-            ->willReturn($selectionOption);
+            ->withConsecutive(['bundle_option_ids'], ['bundle_selection_ids'])
+            ->willReturnOnConsecutiveCalls($itemOption, $selectionOption);
 
         $this->assertEquals([], $this->helper->getBundleOptions($this->item));
     }
 
     /**
+     * @return void
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
-    public function testGetOptions()
+    public function testGetOptions(): void
     {
         $optionIds = '{"0":"1"}';
         $selectionIds =  '{"0":"2"}';
         $selectionId = '2';
-        $product = $this->createPartialMock(
-            \Magento\Catalog\Model\Product::class,
-            ['getTypeInstance', '__wakeup', 'getCustomOption', 'getSelectionId', 'getName', 'getPriceModel']
-        );
+        $product = $this->getMockBuilder(Product::class)
+            ->addMethods(['getSelectionId'])
+            ->onlyMethods(['getTypeInstance', '__wakeup', 'getCustomOption', 'getName', 'getPriceModel'])
+            ->disableOriginalConstructor()
+            ->getMock();
         $typeInstance = $this->createPartialMock(
-            \Magento\Bundle\Model\Product\Type::class,
+            Type::class,
             ['getOptionsByIds', 'getSelectionsByIds']
         );
         $priceModel = $this->createPartialMock(
-            \Magento\Bundle\Model\Product\Price::class,
+            Price::class,
             ['getSelectionFinalTotalPrice']
         );
         $selectionQty = $this->createPartialMock(
             \Magento\Quote\Model\Quote\Item\Option::class,
             ['getValue', '__wakeup']
         );
-        $bundleOption = $this->createPartialMock(
-            \Magento\Bundle\Model\Option::class,
-            [
-                'getSelections',
-                'getTitle',
-                '__wakeup'
-            ]
-        );
+        $bundleOption = $this->getMockBuilder(\Magento\Bundle\Model\Option::class)->addMethods(['getSelections'])
+            ->onlyMethods(['getTitle', '__wakeup'])
+            ->disableOriginalConstructor()
+            ->getMock();
         $selectionOption = $this->createPartialMock(
-            \Magento\Catalog\Model\Product\Configuration\Item\Option\OptionInterface::class,
+            OptionInterface::class,
             ['getValue']
         );
         $collection = $this->createPartialMock(
-            \Magento\Bundle\Model\ResourceModel\Option\Collection::class,
+            Collection::class,
             ['appendSelections']
         );
         $itemOption = $this->createPartialMock(
-            \Magento\Catalog\Model\Product\Configuration\Item\Option\OptionInterface::class,
+            OptionInterface::class,
             ['getValue']
         );
         $collection2 = $this->createMock(\Magento\Bundle\Model\ResourceModel\Selection\Collection::class);
@@ -260,10 +289,10 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
         $product->expects($this->once())->method('getName')->willReturn('name');
         $product->expects($this->once())->method('getPriceModel')->willReturn($priceModel);
         $this->item->expects($this->any())->method('getProduct')->willReturn($product);
-        $this->item->expects($this->at(1))->method('getOptionByCode')->with('bundle_option_ids')
-            ->willReturn($itemOption);
-        $this->item->expects($this->at(2))->method('getOptionByCode')->with('bundle_selection_ids')
-            ->willReturn($selectionOption);
+        $this->item
+            ->method('getOptionByCode')
+            ->withConsecutive(['bundle_option_ids'], ['bundle_selection_ids'])
+            ->willReturnOnConsecutiveCalls($itemOption, $selectionOption);
         $this->productConfiguration->expects($this->once())->method('getCustomOptions')->with($this->item)
             ->willReturn([0 => ['label' => 'title', 'value' => 'value']]);
 
@@ -272,9 +301,9 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
                 [
                     'label' => 'title',
                     'value' => ['1 x name <span class="price">$15.00</span>'],
-                    'has_html' => true,
+                    'has_html' => true
                 ],
-                ['label' => 'title', 'value' => 'value'],
+                ['label' => 'title', 'value' => 'value']
             ],
             $this->helper->getOptions($this->item)
         );

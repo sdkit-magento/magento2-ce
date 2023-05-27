@@ -5,14 +5,11 @@
  */
 namespace Magento\Framework\Filesystem\Directory;
 
-use FilesystemIterator;
 use Magento\Framework\Exception\FileSystemException;
 use Magento\Framework\Exception\ValidatorException;
-use Magento\Framework\Filesystem\DriverInterface;
 
 /**
- * Directory Read Class
- *
+ * Filesystem directory instance for read operations
  * @api
  * @since 100.0.2
  */
@@ -35,28 +32,24 @@ class Read implements ReadInterface
     /**
      * Filesystem driver
      *
-     * @var DriverInterface
+     * @var \Magento\Framework\Filesystem\DriverInterface
      */
     protected $driver;
 
     /**
-     * Validator for path strings
-     *
      * @var PathValidatorInterface|null
      */
     private $pathValidator;
 
     /**
-     * Constructor. Set properties.
-     *
      * @param \Magento\Framework\Filesystem\File\ReadFactory $fileFactory
-     * @param DriverInterface $driver
+     * @param \Magento\Framework\Filesystem\DriverInterface $driver
      * @param string $path
      * @param PathValidatorInterface|null $pathValidator
      */
     public function __construct(
         \Magento\Framework\Filesystem\File\ReadFactory $fileFactory,
-        DriverInterface $driver,
+        \Magento\Framework\Filesystem\DriverInterface $driver,
         $path,
         ?PathValidatorInterface $pathValidator = null
     ) {
@@ -67,7 +60,7 @@ class Read implements ReadInterface
     }
 
     /**
-     * Validate provided path with scheme.
+     * Validate the path is correct and within the directory
      *
      * @param null|string $path
      * @param null|string $scheme
@@ -96,7 +89,6 @@ class Read implements ReadInterface
      * Sets base path
      *
      * @param string $path
-     *
      * @return void
      */
     protected function setPath($path)
@@ -107,12 +99,11 @@ class Read implements ReadInterface
     }
 
     /**
-     * Retrieves absolute path E.g.: /var/www/application/file.txt
+     * Retrieves absolute path i.e. /var/www/application/file.txt
      *
      * @param string $path
      * @param string $scheme
      * @throws ValidatorException
-     *
      * @return string
      */
     public function getAbsolutePath($path = null, $scheme = null)
@@ -144,7 +135,6 @@ class Read implements ReadInterface
      * Retrieve list of all entities in given path
      *
      * @param string|null $path
-     * @throws FileSystemException
      * @throws ValidatorException
      * @return string[]
      */
@@ -164,7 +154,6 @@ class Read implements ReadInterface
      * Read recursively
      *
      * @param string|null $path
-     * @throws FileSystemException
      * @throws ValidatorException
      * @return string[]
      */
@@ -174,7 +163,7 @@ class Read implements ReadInterface
 
         $result = [];
         $paths = $this->driver->readDirectoryRecursively($this->driver->getAbsolutePath($this->path, $path));
-        /** @var FilesystemIterator $file */
+        /** @var \FilesystemIterator $file */
         foreach ($paths as $file) {
             $result[] = $this->getRelativePath($file);
         }
@@ -187,7 +176,6 @@ class Read implements ReadInterface
      *
      * @param string $pattern
      * @param string $path [optional]
-     * @throws FileSystemException
      * @throws ValidatorException
      * @return string[]
      */
@@ -214,7 +202,7 @@ class Read implements ReadInterface
      *
      * @param string $path [optional]
      * @return bool
-     * @throws FileSystemException
+     * @throws \Magento\Framework\Exception\FileSystemException
      * @throws ValidatorException
      */
     public function isExist($path = null)
@@ -231,7 +219,7 @@ class Read implements ReadInterface
      *
      * @param string $path
      * @return array
-     * @throws FileSystemException
+     * @throws \Magento\Framework\Exception\FileSystemException
      * @throws ValidatorException
      */
     public function stat($path)
@@ -246,7 +234,7 @@ class Read implements ReadInterface
      *
      * @param string $path [optional]
      * @return bool
-     * @throws FileSystemException
+     * @throws \Magento\Framework\Exception\FileSystemException
      * @throws ValidatorException
      */
     public function isReadable($path = null)
@@ -296,7 +284,6 @@ class Read implements ReadInterface
      * Check whether given path is file
      *
      * @param string $path
-     * @throws FileSystemException
      * @throws ValidatorException
      * @return bool
      */
@@ -311,7 +298,6 @@ class Read implements ReadInterface
      * Check whether given path is directory
      *
      * @param string $path [optional]
-     * @throws FileSystemException
      * @throws ValidatorException
      * @return bool
      */

@@ -1,11 +1,5 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-uri for the canonical source repository
- * @copyright https://github.com/laminas/laminas-uri/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-uri/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Uri;
 
 use Exception as PhpException;
@@ -16,7 +10,6 @@ use function array_intersect_assoc;
 use function array_pop;
 use function array_unshift;
 use function explode;
-use function get_class;
 use function gettype;
 use function http_build_query;
 use function implode;
@@ -181,7 +174,7 @@ class Uri implements UriInterface
         } elseif ($uri !== null) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Expecting a string or a URI object, received "%s"',
-                is_object($uri) ? get_class($uri) : gettype($uri)
+                is_object($uri) ? $uri::class : gettype($uri)
             ));
         }
     }
@@ -219,7 +212,7 @@ class Uri implements UriInterface
     public function isValid()
     {
         if ($this->host) {
-            if (strlen($this->path) > 0 && 0 !== strpos($this->path, '/')) {
+            if (null !== $this->path && strlen($this->path) > 0 && 0 !== strpos($this->path, '/')) {
                 return false;
             }
             return true;
@@ -589,8 +582,8 @@ class Uri implements UriInterface
             return $this;
         }
 
-        $pathParts = preg_split('|(/)|', $this->getPath(), null, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
-        $baseParts = preg_split('|(/)|', $baseUri->getPath(), null, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+        $pathParts = preg_split('|(/)|', $this->getPath() ?? '', -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+        $baseParts = preg_split('|(/)|', $baseUri->getPath() ?? '', -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
 
         // Get the intersection of existing path parts and those from the
         // provided URI
@@ -1009,7 +1002,7 @@ class Uri implements UriInterface
         if (! is_string($userInfo)) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Expecting a string, got %s',
-                is_object($userInfo) ? get_class($userInfo) : gettype($userInfo)
+                is_object($userInfo) ? $userInfo::class : gettype($userInfo)
             ));
         }
 
@@ -1037,7 +1030,7 @@ class Uri implements UriInterface
         if (! is_string($path)) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Expecting a string, got %s',
-                is_object($path) ? get_class($path) : gettype($path)
+                is_object($path) ? $path::class : gettype($path)
             ));
         }
 
@@ -1066,7 +1059,7 @@ class Uri implements UriInterface
         if (! is_string($input)) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Expecting a string, got %s',
-                is_object($input) ? get_class($input) : gettype($input)
+                is_object($input) ? $input::class : gettype($input)
             ));
         }
 
@@ -1098,7 +1091,7 @@ class Uri implements UriInterface
         if (! is_string($uriString)) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Expecting a string, got %s',
-                is_object($uriString) ? get_class($uriString) : gettype($uriString)
+                is_object($uriString) ? $uriString::class : gettype($uriString)
             ));
         }
 

@@ -3,6 +3,8 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Store\Test\Unit\App\Config\Source;
 
 use Magento\Framework\App\DeploymentConfig;
@@ -11,15 +13,17 @@ use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\DB\Adapter\TableNotFoundException;
 use Magento\Framework\DB\Select;
 use Magento\Store\App\Config\Source\RuntimeConfigSource;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.ExcessiveParameterList)
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class RuntimeConfigSourceTest extends \PHPUnit\Framework\TestCase
+class RuntimeConfigSourceTest extends TestCase
 {
     /**
-     * @var DeploymentConfig|\PHPUnit\Framework\MockObject\MockObject
+     * @var DeploymentConfig|MockObject
      */
     private $deploymentConfig;
 
@@ -29,12 +33,12 @@ class RuntimeConfigSourceTest extends \PHPUnit\Framework\TestCase
     private $configSource;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $connection;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $resourceConnection;
 
@@ -59,7 +63,9 @@ class RuntimeConfigSourceTest extends \PHPUnit\Framework\TestCase
             ->willReturn(true);
         $this->resourceConnection->expects($this->any())->method('getConnection')->willReturn($this->connection);
 
-        $selectMock = $this->getMockBuilder(Select::class)->disableOriginalConstructor()->getMock();
+        $selectMock = $this->getMockBuilder(Select::class)
+            ->disableOriginalConstructor()
+            ->getMock();
         $selectMock->expects($this->any())->method('from')->willReturnSelf();
         $this->connection->expects($this->any())->method('select')->willReturn($selectMock);
         $this->connection->expects($this->any())->method('fetchAll')->willReturn([]);

@@ -3,39 +3,44 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Store\Test\Unit\App\Action\Plugin;
 
-class StoreCheckTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Action\AbstractAction;
+use Magento\Framework\Exception\State\InitException;
+use Magento\Store\App\Action\Plugin\StoreCheck;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+class StoreCheckTest extends TestCase
 {
     /**
-     * @var \Magento\Store\App\Action\Plugin\StoreCheck
+     * @var StoreCheck
      */
     protected $_plugin;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var StoreManagerInterface|MockObject
      */
     protected $_storeManagerMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var Store|MockObject
      */
     protected $_storeMock;
 
     /**
-     * @var \Magento\Framework\App\Action\AbstractAction|\PHPUnit\Framework\MockObject\MockObject
+     * @var AbstractAction|MockObject
      */
     protected $subjectMock;
 
-    /**
-     * @var \Magento\Framework\App\RequestInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    protected $requestMock;
-
     protected function setUp(): void
     {
-        $this->_storeManagerMock = $this->createMock(\Magento\Store\Model\StoreManagerInterface::class);
-        $this->_storeMock = $this->createMock(\Magento\Store\Model\Store::class);
+        $this->_storeManagerMock = $this->getMockForAbstractClass(StoreManagerInterface::class);
+        $this->_storeMock = $this->createMock(Store::class);
         $this->_storeManagerMock->expects(
             $this->any()
         )->method(
@@ -43,29 +48,25 @@ class StoreCheckTest extends \PHPUnit\Framework\TestCase
         )->willReturn(
             $this->_storeMock
         );
-        $this->requestMock = $this->createMock(\Magento\Framework\App\RequestInterface::class);
-        $this->subjectMock = $this->getMockBuilder(\Magento\Framework\App\Action\AbstractAction::class)
+        $this->subjectMock = $this->getMockBuilder(AbstractAction::class)
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
 
-        $this->_plugin = new \Magento\Store\App\Action\Plugin\StoreCheck($this->_storeManagerMock);
+        $this->_plugin = new StoreCheck($this->_storeManagerMock);
     }
 
-    /**
-     */
-    public function testBeforeDispatchWhenStoreNotActive()
+    public function testBeforeExecuteWhenStoreNotActive()
     {
-        $this->expectException(\Magento\Framework\Exception\State\InitException::class);
+        $this->expectException(InitException::class);
         $this->expectExceptionMessage('Current store is not active.');
-
         $this->_storeMock->expects($this->any())->method('isActive')->willReturn(false);
-        $this->_plugin->beforeDispatch($this->subjectMock, $this->requestMock);
+        $this->_plugin->beforeExecute($this->subjectMock);
     }
 
-    public function testBeforeDispatchWhenStoreIsActive()
+    public function testBeforeExecuteWhenStoreIsActive()
     {
         $this->_storeMock->expects($this->any())->method('isActive')->willReturn(true);
-        $result = $this->_plugin->beforeDispatch($this->subjectMock, $this->requestMock);
+        $result = $this->_plugin->beforeExecute($this->subjectMock);
         $this->assertNull($result);
     }
 }

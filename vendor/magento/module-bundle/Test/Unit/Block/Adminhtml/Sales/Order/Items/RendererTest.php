@@ -3,29 +3,45 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Bundle\Test\Unit\Block\Adminhtml\Sales\Order\Items;
 
-class RendererTest extends \PHPUnit\Framework\TestCase
+use Magento\Bundle\Block\Adminhtml\Sales\Order\Items\Renderer;
+use Magento\Framework\Serialize\Serializer\Json;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use Magento\Sales\Model\Order\Creditmemo;
+use Magento\Sales\Model\Order\Invoice;
+use Magento\Sales\Model\Order\Item;
+use Magento\Sales\Model\Order\Shipment;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Test Renderer order item
+ */
+class RendererTest extends TestCase
 {
-    /** @var \Magento\Sales\Model\Order\Item|\PHPUnit\Framework\MockObject\MockObject */
+    /** @var Item|MockObject */
     protected $orderItem;
 
-    /** @var \Magento\Bundle\Block\Adminhtml\Sales\Order\Items\Renderer $model */
+    /** @var Renderer $model */
     protected $model;
 
-    /** @var \Magento\Framework\Serialize\Serializer\Json|\PHPUnit\Framework\MockObject\MockObject $serializer */
+    /** @var Json|MockObject $serializer */
     protected $serializer;
 
     protected function setUp(): void
     {
-        $this->orderItem = $this->createPartialMock(
-            \Magento\Sales\Model\Order\Item::class,
-            ['getProductOptions', '__wakeup', 'getParentItem', 'getOrderItem', 'getOrderItemId', 'getId']
-        );
-        $this->serializer = $this->createMock(\Magento\Framework\Serialize\Serializer\Json::class);
-        $objectManager = new \Magento\Framework\TestFramework\Unit\Helper\ObjectManager($this);
+        $this->orderItem = $this->getMockBuilder(Item::class)
+            ->addMethods(['getOrderItem', 'getOrderItemId'])
+            ->onlyMethods(['getProductOptions', '__wakeup', 'getParentItem', 'getId'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->serializer = $this->createMock(Json::class);
+        $objectManager = new ObjectManager($this);
         $this->model = $objectManager->getObject(
-            \Magento\Bundle\Block\Adminhtml\Sales\Order\Items\Renderer::class,
+            Renderer::class,
             ['serializer' => $this->serializer]
         );
     }
@@ -35,10 +51,16 @@ class RendererTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetChildrenEmptyItems($class, $method, $returnClass)
     {
-        $salesModel = $this->createPartialMock($returnClass, ['getAllItems', '__wakeup']);
+        $salesModel = $this->getMockBuilder($returnClass)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getAllItems'])
+            ->getMock();
         $salesModel->expects($this->once())->method('getAllItems')->willReturn([]);
 
-        $item = $this->createPartialMock($class, [$method, 'getOrderItem', '__wakeup']);
+        $item = $this->getMockBuilder($class)
+            ->disableOriginalConstructor()
+            ->onlyMethods([$method, 'getOrderItem'])
+            ->getMock();
         $item->expects($this->once())->method($method)->willReturn($salesModel);
         $item->expects($this->once())->method('getOrderItem')->willReturn($this->orderItem);
         $this->orderItem->expects($this->any())->method('getId')->willReturn(1);
@@ -55,17 +77,17 @@ class RendererTest extends \PHPUnit\Framework\TestCase
             [
                 \Magento\Sales\Model\Order\Invoice\Item::class,
                 'getInvoice',
-                \Magento\Sales\Model\Order\Invoice::class
+                Invoice::class
             ],
             [
                 \Magento\Sales\Model\Order\Shipment\Item::class,
                 'getShipment',
-                \Magento\Sales\Model\Order\Shipment::class
+                Shipment::class
             ],
             [
                 \Magento\Sales\Model\Order\Creditmemo\Item::class,
                 'getCreditmemo',
-                \Magento\Sales\Model\Order\Creditmemo::class
+                Creditmemo::class
             ]
         ];
     }
@@ -76,29 +98,30 @@ class RendererTest extends \PHPUnit\Framework\TestCase
     public function testGetChildren($parentItem)
     {
         if ($parentItem) {
-            $parentItem = $this->createPartialMock(\Magento\Sales\Model\Order\Item::class, ['getId', '__wakeup']);
+            $parentItem = $this->createPartialMock(Item::class, ['getId', '__wakeup']);
             $parentItem->expects($this->any())->method('getId')->willReturn(1);
         }
-        $this->orderItem->expects($this->any())->method('getOrderItem')->willReturnSelf();
-        $this->orderItem->expects($this->any())->method('getParentItem')->willReturn($parentItem);
-        $this->orderItem->expects($this->any())->method('getOrderItemId')->willReturn(2);
-        $this->orderItem->expects($this->any())->method('getId')->willReturn(1);
+        $this->orderItem->method('getOrderItem')->willReturnSelf();
+        $this->orderItem->method('getParentItem')->willReturn($parentItem);
+        $this->orderItem->method('getOrderItemId')->willReturn(2);
+        $this->orderItem->method('getId')->willReturn(1);
 
         $salesModel = $this->createPartialMock(
-            \Magento\Sales\Model\Order\Invoice::class,
+            Invoice::class,
             ['getAllItems', '__wakeup']
         );
-        $salesModel->expects($this->once())->method('getAllItems')->willReturn([$this->orderItem]);
+        $salesModel->method('getAllItems')->willReturn([$this->orderItem]);
 
         $item = $this->createPartialMock(
             \Magento\Sales\Model\Order\Invoice\Item::class,
             ['getInvoice', 'getOrderItem', 'getOrderItemId', '__wakeup']
         );
-        $item->expects($this->any())->method('getInvoice')->willReturn($salesModel);
-        $item->expects($this->any())->method('getOrderItem')->willReturn($this->orderItem);
-        $item->expects($this->any())->method('getOrderItemId')->willReturn(2);
+        $item->method('getInvoice')->willReturn($salesModel);
+        $item->method('getOrderItem')->willReturn($this->orderItem);
+        $item->method('getOrderItemId')->willReturn($this->orderItem->getOrderItemId());
 
-        $this->assertSame([2 => $this->orderItem], $this->model->getChildren($item));
+        $orderItem = $this->model->getChildren($item);
+        $this->assertSame([2 => $this->orderItem], $orderItem);
     }
 
     /**
@@ -142,7 +165,7 @@ class RendererTest extends \PHPUnit\Framework\TestCase
     {
         if ($parentItem) {
             $parentItem =
-                $this->createPartialMock(\Magento\Sales\Model\Order\Item::class, ['getProductOptions',
+                $this->createPartialMock(Item::class, ['getProductOptions',
                     '__wakeup']);
             $parentItem->expects($this->any())->method('getProductOptions')->willReturn($productOptions);
         } else {
@@ -198,7 +221,7 @@ class RendererTest extends \PHPUnit\Framework\TestCase
     {
         if ($parentItem) {
             $parentItem =
-                $this->createPartialMock(\Magento\Sales\Model\Order\Item::class, ['getProductOptions',
+                $this->createPartialMock(Item::class, ['getProductOptions',
                     '__wakeup']);
             $parentItem->expects($this->any())->method('getProductOptions')->willReturn($productOptions);
         } else {
@@ -285,6 +308,33 @@ class RendererTest extends \PHPUnit\Framework\TestCase
             [true, ['product_calculations' => 0], true],
             [false, [], true],
             [false, ['product_calculations' => 0], false],
+        ];
+    }
+
+    /**
+     * @dataProvider getValueHtmlWithoutShipmentSeparatelyDataProvider
+     */
+    public function testGetValueHtmlWithoutShipmentSeparately($qty)
+    {
+        $model = $this->getMockBuilder(Renderer::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['escapeHtml', 'isShipmentSeparately', 'getSelectionAttributes', 'isChildCalculated'])
+            ->getMock();
+        $model->expects($this->any())->method('escapeHtml')->willReturn('Test');
+        $model->expects($this->any())->method('isShipmentSeparately')->willReturn(false);
+        $model->expects($this->any())->method('isChildCalculated')->willReturn(true);
+        $model->expects($this->any())->method('getSelectionAttributes')->willReturn(['qty' => $qty]);
+        $this->assertSame($qty . ' x Test', $model->getValueHtml($this->orderItem));
+    }
+
+    /**
+     * @return array
+     */
+    public function getValueHtmlWithoutShipmentSeparatelyDataProvider()
+    {
+        return [
+            [1],
+            [1.5],
         ];
     }
 }

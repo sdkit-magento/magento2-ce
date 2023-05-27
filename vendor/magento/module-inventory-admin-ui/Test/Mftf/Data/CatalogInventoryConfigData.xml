@@ -13,6 +13,11 @@
         <data key="scope_id">0</data>
         <data key="value">1</data>
     </entity>
+    <entity name="TurnOffOutOfStockConfig">
+        <data key="path">cataloginventory/options/show_out_of_stock</data>
+        <data key="scope_id">0</data>
+        <data key="value">0</data>
+    </entity>
     <entity name="TurnOnManageStockConfig">
         <data key="path">cataloginventory/item_options/manage_stock</data>
         <data key="scope_id">0</data>
@@ -30,11 +35,6 @@
     </entity>
     <entity name="TurnOffAutoReturnConfiguration">
         <data key="path">cataloginventory/item_options/auto_return</data>
-        <data key="scope_id">0</data>
-        <data key="value">0</data>
-    </entity>
-    <entity name="TurnOffOutOfStockConfig">
-        <data key="path">cataloginventory/options/show_out_of_stock</data>
         <data key="scope_id">0</data>
         <data key="value">0</data>
     </entity>
@@ -90,10 +90,6 @@
         <data key="path">cataloginventory/item_options/min_qty</data>
         <data key="value">0</data>
     </entity>
-    <entity name="NotifyQuantityBelowOne">
-        <data key="path">cataloginventory/item_options/notify_stock_qty</data>
-        <data key="value">1</data>
-    </entity>
     <entity name="NotifyQuantityBelow">
         <data key="path">cataloginventory/item_options/notify_stock_qty</data>
         <data key="value">5</data>
@@ -101,6 +97,28 @@
     <entity name="RevertNotifyQuantityBelow">
         <data key="path">cataloginventory/item_options/notify_stock_qty</data>
         <data key="value">0</data>
+    </entity>
+    <entity name="OfflineDistanceProviderForDistanceBasedSSA">
+        <data key="path">cataloginventory/source_selection_distance_based/provider</data>
+        <data key="value">offline</data>
+    </entity>
+    <entity name="OnlineDistanceProviderForDistanceBasedSSA">
+        <data key="path">cataloginventory/source_selection_distance_based/provider</data>
+        <data key="value">google</data>
+    </entity>
+    <entity name="enableWYSYWYG">
+        <data key="path">cms/wysiwyg/enabled</data>
+        <data key="value">enabled</data>
+    </entity>
+    <entity name="disableWYSYWYG">
+        <data key="path">cms/wysiwyg/enabled</data>
+        <data key="value">disabled</data>
+    </entity>
+    <entity name="ImportTables">
+        <data key="path">inventory-geonames:import</data>
+    </entity>
+    <entity name="USTable">
+        <data key="value">us</data>
     </entity>
     <entity name="EnableInventorySynchronization">
         <data key="path">cataloginventory/options/synchronize_with_catalog</data>

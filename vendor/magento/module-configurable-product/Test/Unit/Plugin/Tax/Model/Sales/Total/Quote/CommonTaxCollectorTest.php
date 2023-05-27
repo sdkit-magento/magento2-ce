@@ -17,11 +17,12 @@ use Magento\Tax\Api\Data\QuoteDetailsItemInterfaceFactory;
 use Magento\Tax\Api\Data\TaxClassKeyInterface;
 use Magento\Tax\Model\Sales\Total\Quote\CommonTaxCollector;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for CommonTaxCollector plugin
  */
-class CommonTaxCollectorTest extends \PHPUnit\Framework\TestCase
+class CommonTaxCollectorTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -38,7 +39,7 @@ class CommonTaxCollectorTest extends \PHPUnit\Framework\TestCase
      */
     protected function setUp(): void
     {
-        $this->objectManager = new \Magento\Framework\TestFramework\Unit\Helper\ObjectManager($this);
+        $this->objectManager = new ObjectManager($this);
         $this->commonTaxCollectorPlugin = $this->objectManager->getObject(CommonTaxCollectorPlugin::class);
     }
 
@@ -50,10 +51,10 @@ class CommonTaxCollectorTest extends \PHPUnit\Framework\TestCase
         $childTaxClassId = 10;
 
         /** @var Product|MockObject $childProductMock */
-        $childProductMock = $this->createPartialMock(
-            Product::class,
-            ['getTaxClassId']
-        );
+        $childProductMock = $this->getMockBuilder(Product::class)
+            ->addMethods(['getTaxClassId'])
+            ->disableOriginalConstructor()
+            ->getMock();
         $childProductMock->method('getTaxClassId')->willReturn($childTaxClassId);
         /* @var AbstractItem|MockObject $quoteItemMock */
         $childQuoteItemMock = $this->createMock(
@@ -68,10 +69,11 @@ class CommonTaxCollectorTest extends \PHPUnit\Framework\TestCase
         );
         $productMock->method('getTypeId')->willReturn(Configurable::TYPE_CODE);
         /* @var AbstractItem|MockObject $quoteItemMock */
-        $quoteItemMock = $this->createPartialMock(
-            AbstractItem::class,
-            ['getProduct', 'getHasChildren', 'getChildren', 'getQuote', 'getAddress', 'getOptionByCode']
-        );
+        $quoteItemMock = $this->getMockBuilder(AbstractItem::class)
+            ->addMethods(['getHasChildren'])
+            ->onlyMethods(['getProduct', 'getChildren', 'getQuote', 'getAddress', 'getOptionByCode'])
+            ->disableOriginalConstructor()
+            ->getMockForAbstractClass();
         $quoteItemMock->method('getProduct')->willReturn($productMock);
         $quoteItemMock->method('getHasChildren')->willReturn(true);
         $quoteItemMock->method('getChildren')->willReturn([$childQuoteItemMock]);

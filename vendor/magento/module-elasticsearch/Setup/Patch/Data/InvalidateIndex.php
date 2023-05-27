@@ -12,6 +12,7 @@ use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Framework\Indexer\IndexerRegistry;
 use Magento\CatalogSearch\Model\Indexer\Fulltext as FulltextIndexer;
+use Magento\Framework\Setup\Patch\PatchInterface;
 
 /**
  * Invalidate fulltext index
@@ -41,7 +42,7 @@ class InvalidateIndex implements DataPatchInterface
     /**
      * @inheritDoc
      */
-    public function apply()
+    public function apply(): PatchInterface
     {
         $this->indexerRegistry->get(FulltextIndexer::INDEXER_ID)->invalidate();
         return $this;
@@ -50,7 +51,7 @@ class InvalidateIndex implements DataPatchInterface
     /**
      * @inheritDoc
      */
-    public static function getDependencies()
+    public static function getDependencies(): array
     {
         return [];
     }
@@ -58,7 +59,7 @@ class InvalidateIndex implements DataPatchInterface
     /**
      * @inheritDoc
      */
-    public function getAliases()
+    public function getAliases(): array
     {
         return [];
     }

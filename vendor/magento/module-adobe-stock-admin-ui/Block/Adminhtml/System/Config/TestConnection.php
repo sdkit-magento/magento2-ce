@@ -8,10 +8,12 @@ declare(strict_types=1);
 
 namespace Magento\AdobeStockAdminUi\Block\Adminhtml\System\Config;
 
+use Magento\AdminAdobeIms\Service\ImsConfig;
 use Magento\AdobeImsApi\Api\ConfigInterface;
 use Magento\AdobeStockClientApi\Api\ClientInterface;
-use Magento\Config\Block\System\Config\Form\Field;
 use Magento\Backend\Block\Template\Context;
+use Magento\Config\Block\System\Config\Form\Field;
+use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Data\Form\Element\AbstractElement;
 
 /**
@@ -19,8 +21,10 @@ use Magento\Framework\Data\Form\Element\AbstractElement;
  */
 class TestConnection extends Field
 {
+    private const TEST_CONNECTION_PATH = 'adobe_stock/system_config/testconnection';
+
     /**
-     * @inheritdoc
+     * @var string
      */
     protected $_template = 'Magento_AdobeStockAdminUi::system/config/connection.phtml';
 
@@ -35,21 +39,28 @@ class TestConnection extends Field
     private $config;
 
     /**
-     * TestConnection constructor.
-     *
+     * @var ImsConfig
+     */
+    private ImsConfig $adminAdobeImsConfig;
+
+    /**
      * @param ClientInterface $client
      * @param ConfigInterface $config
-     * @param Context         $context
-     * @param array           $data
+     * @param Context $context
+     * @param array $data
+     * @param ImsConfig|null $adminAdobeImsConfig
      */
     public function __construct(
         ClientInterface $client,
         ConfigInterface $config,
         Context $context,
-        array $data = []
+        array $data = [],
+        ?ImsConfig $adminAdobeImsConfig = null
     ) {
         $this->client = $client;
         $this->config = $config;
+        $this->adminAdobeImsConfig = $adminAdobeImsConfig
+            ?? ObjectManager::getInstance()->get(ImsConfig::class);
         parent::__construct($context, $data);
     }
 
@@ -61,8 +72,13 @@ class TestConnection extends Field
      */
     public function render(AbstractElement $element): string
     {
-        $element->setData('scope', null);
-        return parent::render($element);
+        // render Test Connection button only if Admin Adobe IMS is disabled
+        if (!$this->adminAdobeImsConfig->enabled()) {
+            $element->setData('scope', null);
+            return parent::render($element);
+        }
+
+        return '';
     }
 
     /**
@@ -104,7 +120,7 @@ class TestConnection extends Field
     public function getAjaxUrl(): string
     {
         return $this->_urlBuilder->getUrl(
-            'adobe_stock/system_config/testconnection',
+            self::TEST_CONNECTION_PATH,
             [
                 'form_key' => $this->getFormKey(),
             ]

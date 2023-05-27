@@ -3,10 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Reports\Model\ResourceModel\Product\Lowstock;
 
 /**
- * Class CollectionTest
+ * Test for \Magento\Reports\Model\ResourceModel\Product\Lowstock\Collection
  */
 class CollectionTest extends \PHPUnit\Framework\TestCase
 {
@@ -33,6 +34,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     public function testFilterByProductTypeException()
     {
         $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+
         $this->collection->filterByProductType(100);
     }
 

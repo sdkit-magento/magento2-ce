@@ -11,7 +11,6 @@ namespace Magento\AdobeIms\Test\Unit\Controller\Adminhtml\User;
 use Magento\AdobeIms\Controller\Adminhtml\User\Logout;
 use Magento\AdobeImsApi\Api\LogOutInterface;
 use Magento\Backend\App\Action\Context as ActionContext;
-use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Exception\NotFoundException;
@@ -24,32 +23,27 @@ use PHPUnit\Framework\TestCase;
 class LogoutTest extends TestCase
 {
     /**
-     * @var MockObject|LogOutInterface $logoutInterfaceMock
+     * @var MockObject|LogOutInterface
      */
     private $logoutInterfaceMock;
 
     /**
-     * @var MockObject|ActionContext $context
+     * @var MockObject|ActionContext
      */
     private $context;
 
     /**
-     * @var Logout $getLogout
+     * @var Logout
      */
     private $getLogout;
 
     /**
-     * @var MockObject $request
-     */
-    private $request;
-
-    /**
-     * @var MockObject $resultFactory
+     * @var MockObject
      */
     private $resultFactory;
 
     /**
-     * @var MockObject $jsonObject
+     * @var MockObject
      */
     private $jsonObject;
 
@@ -58,9 +52,8 @@ class LogoutTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->logoutInterfaceMock = $this->getMockForAbstractClass(LogOutInterface::class);
+        $this->logoutInterfaceMock = $this->createMock(LogOutInterface::class);
         $this->context = $this->createMock(ActionContext::class);
-        $this->request = $this->getMockForAbstractClass(RequestInterface::class);
         $this->resultFactory = $this->createMock(ResultFactory::class);
         $this->context->expects($this->once())
             ->method('getResultFactory')

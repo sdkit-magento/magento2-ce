@@ -20,8 +20,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Class SaveLicensedImageTest
- * Test for SaveLicensedImage class
+ * Test saving the Adobe Stock Image that was licensed on Adobe Stock previously
  */
 class SaveLicensedImageTest extends TestCase
 {
@@ -55,9 +54,9 @@ class SaveLicensedImageTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->clientInterfaceMock = $this->getMockForAbstractClass(ClientInterface::class);
-        $this->saveImageMock = $this->getMockForAbstractClass(SaveImageInterface::class);
-        $this->getAssetByIdMock = $this->getMockForAbstractClass(GetAssetByIdInterface::class);
+        $this->clientInterfaceMock = $this->createMock(ClientInterface::class);
+        $this->saveImageMock = $this->createMock(SaveImageInterface::class);
+        $this->getAssetByIdMock = $this->createMock(GetAssetByIdInterface::class);
         $this->documentMock = $this->createMock(Document::class);
 
         $this->sut = (new ObjectManager($this))->getObject(

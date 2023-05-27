@@ -1,38 +1,39 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-i18n for the canonical source repository
- * @copyright https://github.com/laminas/laminas-i18n/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-i18n/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\I18n\Translator;
 
-use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Config;
 use Laminas\ServiceManager\FactoryInterface;
 use Laminas\ServiceManager\ServiceLocatorInterface;
+use Laminas\ServiceManager\ServiceManager;
+use Psr\Container\ContainerInterface;
 
+use function is_array;
+
+/** @psalm-import-type ServiceManagerConfiguration from ServiceManager */
 class LoaderPluginManagerFactory implements FactoryInterface
 {
     /**
      * laminas-servicemanager v2 options passed to factory.
      *
-     * @param array
+     * @deprecated Since 2.16.0 - This component is no longer compatible with Service Manager v2.
+     *             This property will be removed in version 3.0
+     *
+     * @var array
      */
     protected $creationOptions = [];
 
     /**
      * Create and return a LoaderPluginManager.
      *
-     * @param ContainerInterface $container
      * @param string $name
-     * @param null|array $options
+     * @param array<string, mixed>|null $options
+     * @psalm-param ServiceManagerConfiguration|null $options
      * @return LoaderPluginManager
      */
-    public function __invoke(ContainerInterface $container, $name, array $options = null)
+    public function __invoke(ContainerInterface $container, $name, ?array $options = null)
     {
-        $options = $options ?: [];
+        $options       = $options ?: [];
         $pluginManager = new LoaderPluginManager($container, $options);
 
         // If this is in a laminas-mvc application, the ServiceListener will inject
@@ -62,7 +63,9 @@ class LoaderPluginManagerFactory implements FactoryInterface
     /**
      * laminas-servicemanager v2 factory to return LoaderPluginManager
      *
-     * @param ServiceLocatorInterface $container
+     * @deprecated Since 2.16.0 - This component is no longer compatible with Service Manager v2.
+     *             This method will be removed in version 3.0
+     *
      * @return LoaderPluginManager
      */
     public function createService(ServiceLocatorInterface $container)
@@ -72,6 +75,9 @@ class LoaderPluginManagerFactory implements FactoryInterface
 
     /**
      * v2 support for instance creation options.
+     *
+     * @deprecated Since 2.16.0 - This component is no longer compatible with Service Manager v2.
+     *             This method will be removed in version 3.0
      *
      * @param array $options
      * @return void

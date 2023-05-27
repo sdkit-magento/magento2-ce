@@ -1,13 +1,25 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
+use function array_map;
+use function assert;
+use function in_array;
+use function is_string;
+use function mb_internal_encoding;
+use function mb_list_encodings;
+use function sprintf;
+use function strtolower;
+
+/**
+ * @psalm-type UnicodeOptions = array{
+ *     encoding?: string|null,
+ * }
+ * @template TOptions of UnicodeOptions
+ * @extends AbstractFilter<UnicodeOptions>
+ */
 abstract class AbstractUnicode extends AbstractFilter
 {
     /**
@@ -21,13 +33,6 @@ abstract class AbstractUnicode extends AbstractFilter
     public function setEncoding($encoding = null)
     {
         if ($encoding !== null) {
-            if (! function_exists('mb_strtolower')) {
-                throw new Exception\ExtensionNotLoadedException(sprintf(
-                    '%s requires mbstring extension to be loaded',
-                    get_class($this)
-                ));
-            }
-
             $encoding    = strtolower($encoding);
             $mbEncodings = array_map('strtolower', mb_list_encodings());
             if (! in_array($encoding, $mbEncodings, true)) {
@@ -49,10 +54,14 @@ abstract class AbstractUnicode extends AbstractFilter
      */
     public function getEncoding()
     {
-        if ($this->options['encoding'] === null && function_exists('mb_internal_encoding')) {
-            $this->options['encoding'] = mb_internal_encoding();
+        $encoding = $this->options['encoding'] ?? null;
+        assert($encoding === null || is_string($encoding));
+        if ($encoding === null) {
+            $encoding = mb_internal_encoding();
+            assert(is_string($encoding));
+            $this->options['encoding'] = $encoding;
         }
 
-        return $this->options['encoding'];
+        return $encoding;
     }
 }

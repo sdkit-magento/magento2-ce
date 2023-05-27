@@ -1,15 +1,13 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter\Encrypt;
 
 /**
  * Encryption interface
+ *
+ * @deprecated Since 2.24.0. This interface will be removed in 3.0
  */
 interface EncryptionAlgorithmInterface
 {

@@ -1,13 +1,15 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
+use function is_scalar;
+
+/**
+ * @psalm-type Options = array{}
+ * @extends AbstractFilter<Options>
+ */
 class ToFloat extends AbstractFilter
 {
     /**
@@ -19,6 +21,7 @@ class ToFloat extends AbstractFilter
      *
      * @param  mixed $value
      * @return float|mixed
+     * @psalm-return ($value is scalar ? float : mixed)
      */
     public function filter($value)
     {

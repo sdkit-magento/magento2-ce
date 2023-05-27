@@ -42,7 +42,6 @@ define([
         update: function () {
             $(this.options.targetElement).trigger('contentUpdated');
             this._calcHeight();
-            this._isOverflowed();
         },
 
         /**
@@ -64,14 +63,11 @@ define([
             events['click ' + this.options.button.checkout] = $.proxy(function () {
                 var cart = customerData.get('cart'),
                     customer = customerData.get('customer'),
-                    cookieOptions = {
-                        samesite: 'lax'
-                    },
                     element = $(this.options.button.checkout);
 
                 if (!customer().firstname && cart().isGuestCheckoutAllowed === false) {
                     // set URL for redirect on successful login/registration. It's postprocessed on backend.
-                    $.cookie('login_redirect', this.options.url.checkout, cookieOptions);
+                    $.cookie('login_redirect', this.options.url.checkout);
 
                     if (this.options.url.isRedirectRequired) {
                         element.prop('disabled', true);
@@ -138,23 +134,6 @@ define([
 
             this._on(this.element, events);
             this._calcHeight();
-            this._isOverflowed();
-        },
-
-        /**
-         * Add 'overflowed' class to minicart items wrapper element
-         *
-         * @private
-         */
-        _isOverflowed: function () {
-            var list = $(this.options.minicart.list),
-                cssOverflowClass = 'overflowed';
-
-            if (this.scrollHeight > list.innerHeight()) {
-                list.parent().addClass(cssOverflowClass);
-            } else {
-                list.parent().removeClass(cssOverflowClass);
-            }
         },
 
         /**

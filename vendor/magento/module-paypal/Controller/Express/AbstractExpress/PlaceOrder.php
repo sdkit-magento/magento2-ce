@@ -11,8 +11,7 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Paypal\Model\Api\ProcessableException as ApiProcessableException;
 
 /**
- * Finalizes the PayPal order and executes payment
- *
+ * Creates order on backend and prepares session to show appropriate next step in flow
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class PlaceOrder extends \Magento\Paypal\Controller\Express\AbstractExpress
@@ -100,7 +99,6 @@ class PlaceOrder extends \Magento\Paypal\Controller\Express\AbstractExpress
 
             // prepare session to success or cancellation page
             $this->_getCheckoutSession()->clearHelperData();
-            $this->_getSession()->unsQuoteId();
 
             // "last successful quote"
             $quoteId = $this->_getQuote()->getId();
@@ -113,6 +111,14 @@ class PlaceOrder extends \Magento\Paypal\Controller\Express\AbstractExpress
                     ->setLastRealOrderId($order->getIncrementId())
                     ->setLastOrderStatus($order->getStatus());
             }
+
+            $this->_eventManager->dispatch(
+                'checkout_submit_all_after',
+                [
+                    'order' => $order,
+                    'quote' => $this->_getQuote()
+                ]
+            );
 
             $this->_eventManager->dispatch(
                 'paypal_express_place_order_success',
@@ -129,6 +135,7 @@ class PlaceOrder extends \Magento\Paypal\Controller\Express\AbstractExpress
                 return;
             }
             $this->_initToken(false); // no need in token anymore
+            $this->_getSession()->unsQuoteId(); // clean quote from session that was set in OnAuthorization
             $this->_redirect('checkout/onepage/success');
             return;
         } catch (ApiProcessableException $e) {
@@ -175,6 +182,7 @@ class PlaceOrder extends \Magento\Paypal\Controller\Express\AbstractExpress
                 $this->_redirectSameToken();
                 break;
             case ApiProcessableException::API_ADDRESS_MATCH_FAIL:
+            case ApiProcessableException::API_TRANSACTION_HAS_BEEN_COMPLETED:
                 $this->redirectToOrderReviewPageAndShowError($exception->getUserMessage());
                 break;
             case ApiProcessableException::API_UNABLE_TRANSACTION_COMPLETE:

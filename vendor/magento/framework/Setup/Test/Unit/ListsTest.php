@@ -9,8 +9,8 @@ namespace Magento\Framework\Setup\Test\Unit;
 
 use Magento\Framework\Locale\ConfigInterface;
 use Magento\Framework\Setup\Lists;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 class ListsTest extends TestCase
 {
@@ -23,16 +23,6 @@ class ListsTest extends TestCase
      * @var MockObject|ConfigInterface
      */
     private $mockConfig;
-
-    /**
-     * @var array
-     */
-    private $expectedTimezones = [
-        'Australia/Darwin',
-        'America/Los_Angeles',
-        'Europe/Kiev',
-        'Asia/Jerusalem',
-    ];
 
     /**
      * @var array
@@ -56,6 +46,16 @@ class ListsTest extends TestCase
         'sr_Latn_RS' => 'Serbian (Latin, Serbia)'
     ];
 
+    private function getExpectedTimezones($timeZone): array
+    {
+        return [
+            'Australia/Darwin',
+            'America/Los_Angeles',
+            $timeZone,
+            'Asia/Jerusalem',
+        ];
+    }
+
     protected function setUp(): void
     {
         $this->mockConfig = $this->getMockBuilder(ConfigInterface::class)
@@ -71,8 +71,11 @@ class ListsTest extends TestCase
 
     public function testGetTimezoneList()
     {
-        $timezones = array_intersect($this->expectedTimezones, array_keys($this->lists->getTimezoneList()));
-        $this->assertEquals($this->expectedTimezones, $timezones);
+        $resultTimezone = array_keys($this->lists->getTimezoneList());
+        $timeZone = in_array('Europe/Kyiv', $resultTimezone) ? 'Europe/Kyiv' : 'Europe/Kiev';
+        $expectedTimezones = $this->getExpectedTimezones($timeZone);
+        $timezones = array_intersect($expectedTimezones, $resultTimezone);
+        $this->assertEquals($expectedTimezones, $timezones);
     }
 
     public function testGetLocaleList()

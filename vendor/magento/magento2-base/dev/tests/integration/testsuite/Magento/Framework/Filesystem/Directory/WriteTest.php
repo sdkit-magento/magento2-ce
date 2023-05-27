@@ -256,8 +256,8 @@ class WriteTest extends TestCase
      * @param int $permissions
      * @param string $name
      * @param string $newName
-     * @throws FileSystemException
      * @throws ValidatorException
+     * @throws FileSystemException
      */
     public function testCopy($basePath, $permissions, $name, $newName)
     {
@@ -285,8 +285,7 @@ class WriteTest extends TestCase
     /**
      * Test for copy outside
      *
-     * @throws FileSystemException
-     * @throws ValidatorException
+     * @throws FileSystemException|ValidatorException
      */
     public function testCopyOutside()
     {
@@ -373,7 +372,7 @@ class WriteTest extends TestCase
     }
 
     /**
-     * Test change permissions outside
+     * Test for changePermissions outside
      *
      * @throws FileSystemException
      */
@@ -415,7 +414,7 @@ class WriteTest extends TestCase
     }
 
     /**
-     * Test writable for outside
+     * Test for changePermissionsRecursively outside
      *
      * @throws FileSystemException
      */
@@ -474,7 +473,7 @@ class WriteTest extends TestCase
     }
 
     /**
-     * Test touch for outside
+     * Test for touch outside
      *
      * @throws FileSystemException
      */
@@ -514,7 +513,7 @@ class WriteTest extends TestCase
     }
 
     /**
-     * Test writable for outside
+     * Test isWritable method outside
      *
      * @throws FileSystemException
      */
@@ -573,7 +572,7 @@ class WriteTest extends TestCase
     }
 
     /**
-     * Test open file outside
+     * Test for openFile outside
      *
      * @throws FileSystemException
      */
@@ -648,7 +647,7 @@ class WriteTest extends TestCase
     }
 
     /**
-     * Test writing file to outside
+     * Test for writeFile outside
      *
      * @throws FileSystemException
      */
@@ -675,7 +674,7 @@ class WriteTest extends TestCase
     }
 
     /**
-     * Test for invalid delete path
+     * Test for invalidDeletePath
      *
      * @throws ValidatorException
      */
@@ -691,8 +690,7 @@ class WriteTest extends TestCase
     /**
      * Tear down
      *
-     * @throws FileSystemException
-     * @throws ValidatorException
+     * @throws ValidatorException|FileSystemException
      */
     protected function tearDown(): void
     {

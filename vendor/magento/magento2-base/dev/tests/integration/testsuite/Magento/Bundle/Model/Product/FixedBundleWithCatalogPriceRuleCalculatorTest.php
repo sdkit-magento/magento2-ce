@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Magento\Bundle\Model\Product;
 
@@ -11,7 +12,7 @@ use \Magento\Bundle\Api\Data\LinkInterface;
 /**
  * @magentoAppArea frontend
  */
-class FixedBundleWithCatalogPriceRuleCalculatorTest extends BundlePriceCalculatorAbstract
+class FixedBundleWithCatalogPriceRuleCalculatorTest extends BundlePriceAbstract
 {
     /**
      * @param array $strategyModifiers

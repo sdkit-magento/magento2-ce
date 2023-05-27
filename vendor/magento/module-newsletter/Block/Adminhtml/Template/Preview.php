@@ -65,8 +65,6 @@ class Preview extends \Magento\Backend\Block\Widget
             $template->setTemplateType($previewData['type']);
             $template->setTemplateText($previewData['text']);
             $template->setTemplateStyles($previewData['styles']);
-            // Emulate DB-loaded template to invoke strict mode
-            $template->setTemplateId(123);
         }
 
         \Magento\Framework\Profiler::start($this->profilerName);
@@ -76,6 +74,9 @@ class Preview extends \Magento\Backend\Block\Widget
         if ($this->getRequest()->getParam('subscriber')) {
             $vars['subscriber']->load($this->getRequest()->getParam('subscriber'));
         }
+        $vars['subscriber_data']['unsubscription_link'] = $vars['subscriber'] ?
+            $vars['subscriber']->getUnsubscriptionLink() :
+            null;
 
         $template->emulateDesign($this->getStoreId());
         $templateProcessed = $this->_appState->emulateAreaCode(

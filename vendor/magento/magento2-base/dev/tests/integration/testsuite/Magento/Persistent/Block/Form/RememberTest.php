@@ -30,7 +30,7 @@ class RememberTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp(): void
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -48,7 +48,6 @@ class RememberTest extends TestCase
      */
     public function testRememberMeEnabled(): void
     {
-        $html = $this->block->toHtml();
         $this->assertFalse($this->block->isRememberMeChecked());
         $this->assertEquals(
             1,
@@ -57,7 +56,7 @@ class RememberTest extends TestCase
                     '//input[@name="persistent_remember_me"]/following-sibling::label/span[contains(text(), "%s")]',
                     __('Remember Me')
                 ),
-                $html
+                $this->block->toHtml()
             ),
             'Remember Me checkbox wasn\'t found.'
         );
@@ -72,7 +71,6 @@ class RememberTest extends TestCase
      */
     public function testRememberMeAndRememberDefaultEnabled(): void
     {
-        $blockHtml = $this->block->toHtml();
         $this->assertTrue($this->block->isRememberMeChecked());
         $this->assertEquals(
             1,
@@ -81,7 +79,7 @@ class RememberTest extends TestCase
                     '//input[@name="persistent_remember_me"]/following-sibling::label/span[contains(text(), "%s")]',
                     __('Remember Me')
                 ),
-                $blockHtml
+                $this->block->toHtml()
             ),
             'Remember Me checkbox wasn\'t found or not checked by default.'
         );

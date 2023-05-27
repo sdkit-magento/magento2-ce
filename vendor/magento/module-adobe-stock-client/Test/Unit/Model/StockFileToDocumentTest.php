@@ -49,7 +49,7 @@ class StockFileToDocumentTest extends TestCase
 
         $this->documentFactory = $this->createMock(DocumentFactory::class);
         $this->attributeValueFactory = $this->createMock(AttributeValueFactory::class);
-        $logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $logger = $this->createMock(LoggerInterface::class);
 
         $this->stockFileToDocument = $this->objectManager->getObject(
             StockFileToDocument::class,
@@ -70,14 +70,12 @@ class StockFileToDocumentTest extends TestCase
     public function testConvert(StockFile $stockFile, array $attributesData): void
     {
         $item = $this->createMock(Document::class);
+        $attributeValueFactoryReturn = [];
 
-        $i = 0;
         foreach ($attributesData as $attributeKey => $attributeValue) {
             $attribute = $this->createMock(AttributeValue::class);
 
-            $this->attributeValueFactory->expects($this->at($i))
-                ->method('create')
-                ->willReturn($attribute);
+            $attributeValueFactoryReturn[] = $attribute;
 
             $attribute->expects($this->once())
                 ->method('setValue')
@@ -86,8 +84,10 @@ class StockFileToDocumentTest extends TestCase
             $attribute->expects($this->once())
                 ->method('setAttributeCode')
                 ->with($attributeKey);
-            $i++;
         }
+        $this->attributeValueFactory
+            ->method('create')
+            ->willReturnOnConsecutiveCalls(...$attributeValueFactoryReturn);
 
         $this->documentFactory->expects($this->once())
             ->method('create')
@@ -108,7 +108,6 @@ class StockFileToDocumentTest extends TestCase
      */
     public function convertDataProvider(): array
     {
-        /** @var StockFile $stockFile */
         $stockFile = new StockFile([]);
 
         $stockFileId = 5;

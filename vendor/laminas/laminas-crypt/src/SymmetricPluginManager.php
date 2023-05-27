@@ -1,14 +1,11 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-crypt for the canonical source repository
- * @copyright https://github.com/laminas/laminas-crypt/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-crypt/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Crypt;
 
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
+
+use function array_key_exists;
+use function sprintf;
 
 /**
  * Plugin manager implementation for the symmetric adapter instances.
@@ -25,7 +22,8 @@ class SymmetricPluginManager implements ContainerInterface
      * @var array
      */
     protected $symmetric = [
-        'mcrypt' => Symmetric\Mcrypt::class,
+        'mcrypt'  => Symmetric\Mcrypt::class,
+        'openssl' => Symmetric\Openssl::class,
     ];
 
     /**
@@ -47,6 +45,12 @@ class SymmetricPluginManager implements ContainerInterface
      */
     public function get($id)
     {
+        if (! $this->has($id)) {
+            throw new Exception\NotFoundException(sprintf(
+                'The symmetric adapter %s does not exist',
+                $id
+            ));
+        }
         $class = $this->symmetric[$id];
         return new $class();
     }

@@ -1,6 +1,6 @@
 {
     "name": "laminas/laminas-crypt",
-    "description": " ",
+    "description": "Strong cryptography tools and password hashing",
     "license": "BSD-3-Clause",
     "keywords": [
         "laminas",
@@ -16,27 +16,28 @@
         "forum": "https://discourse.laminas.dev"
     },
     "config": {
-        "sort-packages": true
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "2.6-dev",
-            "dev-develop": "2.7-dev"
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "platform": {
+            "php": "8.0.99"
         }
     },
     "require": {
-        "php": "^5.5 || ^7.0",
-        "container-interop/container-interop": "~1.0",
-        "laminas/laminas-math": "^2.6",
-        "laminas/laminas-stdlib": "^2.7 || ^3.0",
-        "laminas/laminas-zendframework-bridge": "^1.0"
+        "php": "~8.0.0 || ~8.1.0 || ~8.2.0",
+        "ext-mbstring": "*",
+        "laminas/laminas-math": "^3.4",
+        "laminas/laminas-servicemanager": "^3.11.2",
+        "laminas/laminas-stdlib": "^3.6",
+        "psr/container": "^1.1"
     },
     "require-dev": {
-        "fabpot/php-cs-fixer": "1.7.*",
-        "phpunit/phpunit": "~4.0"
+        "laminas/laminas-coding-standard": "~2.4.0",
+        "phpunit/phpunit": "^9.5.25"
     },
     "suggest": {
-        "ext-mcrypt": "Required for most features of Laminas\\Crypt"
+        "ext-openssl": "Required for most features of Laminas\\Crypt"
     },
     "autoload": {
         "psr-4": {
@@ -44,11 +45,24 @@
         }
     },
     "autoload-dev": {
+        "files": [
+            "test/_autoload.php"
+        ],
         "psr-4": {
             "LaminasTest\\Crypt\\": "test/"
         }
     },
-    "replace": {
-        "zendframework/zend-crypt": "self.version"
+    "scripts": {
+        "check": [
+            "@cs-check",
+            "@test"
+        ],
+        "cs-check": "phpcs",
+        "cs-fix": "phpcbf",
+        "test": "phpunit --colors=always",
+        "test-coverage": "phpunit --colors=always --coverage-clover clover.xml"
+    },
+    "conflict": {
+        "zendframework/zend-crypt": "*"
     }
 }

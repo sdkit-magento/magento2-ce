@@ -2,11 +2,13 @@
 
 /**
  * @see       https://github.com/laminas/laminas-server for the canonical source repository
- * @copyright https://github.com/laminas/laminas-server/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-server/blob/master/LICENSE.md New BSD License
  */
 
 namespace Laminas\Server\Method;
+
+use function is_array;
+use function method_exists;
+use function ucfirst;
 
 /**
  * Method parameter metadata
@@ -64,7 +66,7 @@ class Parameter
      * Set object state from array of options
      *
      * @param  array $options
-     * @return \Laminas\Server\Method\Parameter
+     * @return Parameter
      */
     public function setOptions(array $options)
     {
@@ -81,7 +83,7 @@ class Parameter
      * Set default value
      *
      * @param  mixed $defaultValue
-     * @return \Laminas\Server\Method\Parameter
+     * @return Parameter
      */
     public function setDefaultValue($defaultValue)
     {
@@ -102,8 +104,8 @@ class Parameter
     /**
      * Set description
      *
-     * @param  string $description
-     * @return \Laminas\Server\Method\Parameter
+     * @param  mixed $description
+     * @return Parameter
      */
     public function setDescription($description)
     {
@@ -124,8 +126,8 @@ class Parameter
     /**
      * Set name
      *
-     * @param  string $name
-     * @return \Laminas\Server\Method\Parameter
+     * @param  mixed $name
+     * @return Parameter
      */
     public function setName($name)
     {
@@ -146,8 +148,8 @@ class Parameter
     /**
      * Set optional flag
      *
-     * @param  bool $flag
-     * @return \Laminas\Server\Method\Parameter
+     * @param  mixed $flag
+     * @return Parameter
      */
     public function setOptional($flag)
     {
@@ -168,8 +170,8 @@ class Parameter
     /**
      * Set parameter type
      *
-     * @param  string $type
-     * @return \Laminas\Server\Method\Parameter
+     * @param  mixed $type
+     * @return Parameter
      */
     public function setType($type)
     {

@@ -14,28 +14,23 @@
             <title value="Checks that Instant Purchase functionality works fine"/>
             <description value="Checks that customer with different billing and shipping addresses work with Instant Purchase functionality fine"/>
             <useCaseId value="MAGETWO-90898"/>
-            <testCaseId value="MC-6432"/>
+            <testCaseId value="MC-25924"/>
             <severity value="CRITICAL"/>
             <group value="instant_purchase"/>
             <group value="vault"/>
-            <group value="braintree"/>
+            <group value="paypal"/>
         </annotations>
         <before>
             <magentoCLI command="downloadable:domains:add" arguments="example.com static.magento.com" stepKey="addDownloadableDomain"/>
-            <!-- Configure Braintree payment method -->
-            <createData entity="BraintreeConfig" stepKey="configureBraintreePayment"/>
-            <!-- Enable Braintree with Vault -->
-            <createData entity="CustomBraintreeConfigurationData" stepKey="enableBraintreeAndVault"/>
+            <!-- Configure Paypal Payflow Pro payment method -->
+            <createData entity="PaypalPayflowProConfig" stepKey="configurePaypalPayflowProPayment"/>
+            <!-- Enable Paypal Payflow Pro with Vault -->
+            <createData entity="EnablePaypalPayflowProWithVault" stepKey="enablePaypalPayflowProPaymentWithVault"/>
             <createData entity="Simple_US_Customer_Multiple_Addresses" stepKey="createCustomer"/>
             <!-- Create all product variations -->
             <createData entity="SimpleProduct2" stepKey="createSimpleProduct"/>
             <createData entity="VirtualProduct" stepKey="createVirtualProduct"/>
             <actionGroup ref="AdminCreateApiConfigurableProductActionGroup" stepKey="createConfigurableProduct"/>
-            <!-- Create Downloadable Product -->
-            <createData entity="ApiDownloadableProduct" stepKey="createDownloadableProduct"/>
-            <createData entity="ApiDownloadableLink" stepKey="addDownloadableLink">
-                <requiredEntity createDataKey="createDownloadableProduct"/>
-            </createData>
             <!-- Create Bundle Product -->
             <createData entity="ApiFixedBundleProduct" stepKey="createBundleProduct"/>
             <createData entity="DropDownBundleOption" stepKey="createBundleOption">
@@ -45,6 +40,11 @@
                 <requiredEntity createDataKey="createBundleProduct"/>
                 <requiredEntity createDataKey="createBundleOption"/>
                 <requiredEntity createDataKey="createSimpleProduct"/>
+            </createData>
+            <!-- Create Downloadable Product -->
+            <createData entity="ApiDownloadableProduct" stepKey="createDownloadableProduct"/>
+            <createData entity="downloadableLink1" stepKey="addDownloadableLink">
+                <requiredEntity createDataKey="createDownloadableProduct"/>
             </createData>
             <!-- Create Grouped Product -->
             <createData entity="ApiGroupedProduct" stepKey="createGroupedProduct"/>
@@ -63,12 +63,12 @@
             <actionGroup ref="GoToCheckoutFromMinicartActionGroup" stepKey="goToCheckoutFromMinicart"/>
             <actionGroup ref="StorefrontSetShippingMethodActionGroup" stepKey="setShippingMethodFlatRate"/>
             <actionGroup ref="StorefrontCheckoutClickNextOnShippingStepActionGroup" stepKey="goToCheckoutPaymentStep"/>
-            <!-- Fill Braintree card data -->
-            <click selector="{{BraintreeConfigurationPaymentSection.creditCart}}" stepKey="selectBraintreePaymentMethod"/>
-            <waitForPageLoad stepKey="waitForBraintreeFormLoad"/>
-            <scrollTo selector="{{BraintreeConfigurationPaymentSection.creditCart}}" stepKey="scrollToCreditCardSection"/>
-            <actionGroup ref="StorefrontFillCartDataActionGroup" stepKey="fillCardData">
-                <argument name="cartData" value="PaymentAndShippingInfo"/>
+            <!-- Fill Paypal card data -->
+            <click selector="{{StorefrontPaypalCheckoutSection.creditCard}}" stepKey="selectPaypalPaymentMethod"/>
+            <waitForPageLoad stepKey="waitForPaypalFormLoad"/>
+            <scrollTo selector="{{StorefrontPaypalCheckoutSection.creditCard}}" stepKey="scrollToCreditCardSection"/>
+            <actionGroup ref="StorefrontPaypalFillCardDataActionGroup" stepKey="fillCardDataPaypal">
+                <argument name="cardData" value="Visa3DSecureCard"/>
             </actionGroup>
             <waitForPageLoad stepKey="waitForFillCardData"/>
             <checkOption selector="{{StorefrontOnePageCheckoutPaymentSection.saveForLaterUse}}" stepKey="checkSaveForLaterUse"/>
@@ -78,9 +78,11 @@
             </actionGroup>
         </before>
         <after>
+            <actionGroup ref="StorefrontCustomerLogoutActionGroup" stepKey="logoutCustomer"/>
+            <deleteData createDataKey="createCustomer" stepKey="deleteCustomer"/>
             <!-- Set configs to default -->
-            <createData entity="DefaultBraintreeConfig" stepKey="defaultBraintreeConfig"/>
-            <createData entity="RollBackCustomBraintreeConfigurationData" stepKey="rollBackCustomBraintreeConfigurationData"/>
+            <createData entity="DefaultPaypalPayflowProConfig" stepKey="defaultPaypalPayflowProConfig"/>
+            <createData entity="RollbackPaypalPayflowPro" stepKey="rollbackPaypalPayflowProConfig"/>
             <!-- Remove created products/attributes -->
             <deleteData createDataKey="createSimpleProduct" stepKey="deleteSimpleProduct"/>
             <deleteData createDataKey="createVirtualProduct" stepKey="deleteVirtualProduct"/>
@@ -95,9 +97,9 @@
             <deleteData createDataKey="createConfigChildProduct1CreateConfigurableProduct" stepKey="deleteConfigChildProduct1"/>
             <deleteData createDataKey="createConfigChildProduct2CreateConfigurableProduct" stepKey="deleteConfigChildProduct2"/>
             <!-- Reindex invalidated indices after product attribute has been created/deleted -->
-            <actionGroup ref="CliRunReindexUsingCronJobsActionGroup" stepKey="reindexInvalidatedIndices"/>
-            <actionGroup ref="StorefrontCustomerLogoutActionGroup" stepKey="logoutCustomer"/>
-            <deleteData createDataKey="createCustomer" stepKey="deleteCustomer"/>
+            <actionGroup ref="CliIndexerReindexActionGroup" stepKey="reindexInvalidatedIndices">
+                <argument name="indices" value=""/>
+            </actionGroup>
         </after>
         <!-- 1. Browse all product page and verify that the "Instant Purchase" button appears -->
         <!-- Virtual product -->
@@ -109,7 +111,7 @@
         <!-- Bundle Product -->
         <amOnPage url="{{StorefrontProductPage.url($createBundleProduct.custom_attributes[url_key]$)}}" stepKey="openBundleProductPage"/>
         <waitForElementVisible selector="{{StorefrontBundleProductActionSection.customizeAndAddToCartButton}}" stepKey="waitForCustomizeAndAddToCartButton"/>
-        <click selector="{{StorefrontBundleProductActionSection.customizeAndAddToCartButton}}" stepKey="clickCustomizeAndAddToCart"/>
+        <actionGroup ref="StorefrontSelectCustomizeAndAddToTheCartButtonActionGroup" stepKey="clickCustomizeAndAddToCart"/>
         <waitForElementVisible selector="{{StorefrontInstantPurchaseSection.instantPurchaseButton}}" stepKey="waitForButtonOnBundleProductPage"/>
         <!-- Grouped product -->
         <amOnPage url="{{StorefrontProductPage.url($createGroupedProduct.custom_attributes[url_key]$)}}" stepKey="openGroupedProductPage"/>
@@ -123,7 +125,7 @@
         <actionGroup ref="AssertStorefrontInstantPurchaseConfirmationDataActionGroup" stepKey="assertInstantPurchasePopupData">
             <argument name="shippingStreet" value="{{US_Address_NY.street[0]}}"/>
             <argument name="billingStreet" value="{{US_Address_NY.street[0]}}"/>
-            <argument name="cardEnding" value="{{StoredPaymentMethods.cardNumberEnding}}"/>
+            <argument name="cardEnding" value="{{Visa3DSecureCardInfo.cardNumberEnding}}"/>
         </actionGroup>
         <!-- 3. Confirm Instant Purchase -->
         <click selector="{{ModalConfirmationSection.OkButton}}" stepKey="placeOrderAgain"/>
@@ -142,12 +144,12 @@
         <actionGroup ref="StorefrontSetShippingMethodActionGroup" stepKey="setShippingMethodFlatRateAgain"/>
         <click selector="{{CheckoutShippingMethodsSection.shipHereButton}}" stepKey="changeShippingAddress"/>
         <actionGroup ref="StorefrontCheckoutClickNextOnShippingStepActionGroup" stepKey="goToCheckoutPaymentStepAgain"/>
-        <!-- Fill Braintree card data -->
-        <click selector="{{BraintreeConfigurationPaymentSection.creditCart}}" stepKey="selectBraintreePaymentMethodAgain"/>
-        <waitForPageLoad stepKey="waitForBraintreeFormLoadAgain"/>
-        <scrollTo selector="{{BraintreeConfigurationPaymentSection.creditCart}}" stepKey="scrollToCreditCardSectionAgain"/>
-        <actionGroup ref="StorefrontFillCartDataActionGroup" stepKey="fillCardDataAgain">
-            <argument name="cartData" value="VisaDefaultCard"/>
+        <!-- Fill Paypal card data -->
+        <click selector="{{StorefrontPaypalCheckoutSection.creditCard}}" stepKey="selectPaypalPaymentMethodAgain"/>
+        <waitForPageLoad stepKey="waitForPaypalFormLoadAgain"/>
+        <scrollTo selector="{{StorefrontPaypalCheckoutSection.creditCard}}" stepKey="scrollToCreditCardSectionAgain"/>
+        <actionGroup ref="StorefrontPaypalFillCardDataActionGroup" stepKey="fillCardDataAgain">
+            <argument name="cardData" value="VisaDefaultCard"/>
         </actionGroup>
         <waitForPageLoad stepKey="waitForFillCardDataAgain"/>
         <!-- 5.2 Customer save this payment method -->

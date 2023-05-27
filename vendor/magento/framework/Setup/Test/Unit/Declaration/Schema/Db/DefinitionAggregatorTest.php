@@ -3,18 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Framework\Setup\Test\Unit\Declaration\Schema\Db;
 
-use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Framework\Setup\Declaration\Schema\Db\DbDefinitionProcessorInterface;
 use Magento\Framework\Setup\Declaration\Schema\Db\DefinitionAggregator;
 use Magento\Framework\Setup\Declaration\Schema\Dto\ElementInterface;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for Definition Aggregator.
  *
  */
-class DefinitionAggregatorTest extends \PHPUnit\Framework\TestCase
+class DefinitionAggregatorTest extends TestCase
 {
     /**
      * @var DefinitionAggregator
@@ -27,7 +31,7 @@ class DefinitionAggregatorTest extends \PHPUnit\Framework\TestCase
     private $objectManager;
 
     /**
-     * @var DbDefinitionProcessorInterface[]|\PHPUnit\Framework\MockObject\MockObject[]
+     * @var DbDefinitionProcessorInterface[]|MockObject[]
      */
     private $definitonProcessors;
 
@@ -57,17 +61,17 @@ class DefinitionAggregatorTest extends \PHPUnit\Framework\TestCase
 
     public function testToDefinition()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException('InvalidArgumentException');
         $this->expectExceptionMessage('Cannot process object to definition for type text');
-        /** @var ElementInterface|\PHPUnit\Framework\MockObject\MockObject $columnInt */
+        /** @var ElementInterface|MockObject $columnInt */
         $columnInt = $this->getMockBuilder(ElementInterface::class)
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
-        /** @var ElementInterface|\PHPUnit\Framework\MockObject\MockObject $columnVarchar */
+        /** @var ElementInterface|MockObject $columnVarchar */
         $columnVarchar = $this->getMockBuilder(ElementInterface::class)
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
-        /** @var ElementInterface|\PHPUnit\Framework\MockObject\MockObject $columnText */
+        /** @var ElementInterface|MockObject $columnText */
         $columnText = $this->getMockBuilder(ElementInterface::class)
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
@@ -81,13 +85,10 @@ class DefinitionAggregatorTest extends \PHPUnit\Framework\TestCase
         $this->definitonAggregator->toDefinition($columnText);
     }
 
-    /**
-     * Cannot process definition to array for type text
-     */
     public function testFromDefinition()
     {
-        $this->expectException(\InvalidArgumentException::class);
-
+        $this->expectException('InvalidArgumentException');
+        $this->expectExceptionMessage('Cannot process definition to array for type text');
         $data = [
             'col_int' => [
                 'type' => 'int'

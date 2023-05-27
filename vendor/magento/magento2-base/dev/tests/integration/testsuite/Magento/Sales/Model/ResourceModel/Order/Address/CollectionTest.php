@@ -34,7 +34,7 @@ class CollectionTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->localeResolverMock = $this->getMockForAbstractClass(ResolverInterface::class);
+        $this->localeResolverMock = $this->createMock(ResolverInterface::class);
         Bootstrap::getObjectManager()->removeSharedInstance(ResolverInterface::class);
         Bootstrap::getObjectManager()->removeSharedInstance(Resolver::class);
         Bootstrap::getObjectManager()->addSharedInstance($this->localeResolverMock, ResolverInterface::class);
@@ -78,7 +78,7 @@ class CollectionTest extends TestCase
     /**
      * @magentoDataFixture Magento/Directory/_files/region_name_jp.php
      */
-    public function testCollectionWithJpLocale()
+    public function testCollectionWithJpLocale(): void
     {
         $locale = 'JA_jp';
         $this->localeResolverMock->method('getLocale')->willReturn($locale);

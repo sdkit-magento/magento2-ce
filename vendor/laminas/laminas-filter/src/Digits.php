@@ -1,15 +1,20 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
 use Laminas\Stdlib\StringUtils;
 
+use function is_float;
+use function is_int;
+use function is_string;
+use function preg_replace;
+
+/**
+ * @psalm-type Options = array{}
+ * @extends AbstractFilter<Options>
+ */
 class Digits extends AbstractFilter
 {
     /**
@@ -19,8 +24,9 @@ class Digits extends AbstractFilter
      *
      * If the value provided is not integer, float or string, the value will remain unfiltered
      *
-     * @param  string $value
+     * @param  mixed $value
      * @return string|mixed
+     * @psalm-return ($value is int|float|string ? numeric-string : mixed)
      */
     public function filter($value)
     {
@@ -35,12 +41,8 @@ class Digits extends AbstractFilter
         if (! StringUtils::hasPcreUnicodeSupport()) {
             // POSIX named classes are not supported, use alternative 0-9 match
             $pattern = '/[^0-9]/';
-        } elseif (extension_loaded('mbstring')) {
-            // Filter for the value with mbstring
-            $pattern = '/[^[:digit:]]/';
         } else {
-            // Filter for the value without mbstring
-            $pattern = '/[\p{^N}]/';
+            $pattern = '/[^[:digit:]]/';
         }
 
         return preg_replace($pattern, '', $value);

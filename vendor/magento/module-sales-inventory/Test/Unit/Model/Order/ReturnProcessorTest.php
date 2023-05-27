@@ -3,72 +3,76 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\SalesInventory\Test\Unit\Model\Order;
 
 use Magento\CatalogInventory\Api\StockManagementInterface;
+use Magento\CatalogInventory\Model\Indexer\Stock\Processor;
 use Magento\Sales\Api\Data\CreditmemoInterface;
 use Magento\Sales\Api\Data\CreditmemoItemInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderItemInterface;
 use Magento\Sales\Api\OrderItemRepositoryInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\SalesInventory\Model\Order\ReturnProcessor;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Magento\SalesInventory\Model\Order\ReturnProcessor;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
- * Class ReturnProcessorTest
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ReturnProcessorTest extends \PHPUnit\Framework\TestCase
+class ReturnProcessorTest extends TestCase
 {
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|OrderInterface
+     * @var MockObject|OrderInterface
      */
     private $orderMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|CreditmemoInterface
+     * @var MockObject|CreditmemoInterface
      */
     private $creditmemoMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|StockManagementInterface
+     * @var MockObject|StockManagementInterface
      */
     private $stockManagementMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|\Magento\CatalogInventory\Model\Indexer\Stock\Processor
+     * @var MockObject|Processor
      */
     private $stockIndexerProcessorMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|\Magento\Catalog\Model\Indexer\Product\Price\Processor
+     * @var MockObject|\Magento\Catalog\Model\Indexer\Product\Price\Processor
      */
     private $priceIndexerMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|StoreManagerInterface
+     * @var MockObject|StoreManagerInterface
      */
     private $storeManagerMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|OrderItemRepositoryInterface
+     * @var MockObject|OrderItemRepositoryInterface
      */
     private $orderItemRepositoryMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|CreditmemoItemInterface
+     * @var MockObject|CreditmemoItemInterface
      */
     private $creditmemoItemMock;
 
     /** @var  ReturnProcessor */
     private $returnProcessor;
 
-    /** @var  \PHPUnit\Framework\MockObject\MockObject|OrderItemInterface */
+    /** @var  MockObject|OrderItemInterface */
     private $orderItemMock;
 
-    /** @var  \PHPUnit\Framework\MockObject\MockObject|StoreInterface */
+    /** @var  MockObject|StoreInterface */
     private $storeMock;
 
     protected function setUp(): void
@@ -77,7 +81,7 @@ class ReturnProcessorTest extends \PHPUnit\Framework\TestCase
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
         $this->stockIndexerProcessorMock = $this->getMockBuilder(
-            \Magento\CatalogInventory\Model\Indexer\Stock\Processor::class
+            Processor::class
         )->disableOriginalConstructor()
             ->getMock();
         $this->priceIndexerMock = $this->getMockBuilder(\Magento\Catalog\Model\Indexer\Product\Price\Processor::class)

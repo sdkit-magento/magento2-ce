@@ -1,17 +1,29 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
 use Laminas\Uri\Exception\ExceptionInterface as UriException;
 use Laminas\Uri\Uri;
 use Laminas\Uri\UriFactory;
+use Traversable;
 
+use function assert;
+use function count;
+use function explode;
+use function is_scalar;
+use function str_contains;
+
+/**
+ * @psalm-type Options = array{
+ *     default_scheme?: string,
+ *     enforced_scheme?: string,
+ *     ...
+ * }
+ * @template TOptions of Options
+ * @template-extends AbstractFilter<TOptions>
+ */
 class UriNormalize extends AbstractFilter
 {
     /**
@@ -31,7 +43,7 @@ class UriNormalize extends AbstractFilter
     /**
      * Sets filter options
      *
-     * @param array|\Traversable|null $options
+     * @param Options|Traversable|null $options
      */
     public function __construct($options = null)
     {
@@ -47,7 +59,7 @@ class UriNormalize extends AbstractFilter
      * normalize the URI and thus may affect the resulting normalize URI.
      *
      * @param  string $defaultScheme
-     * @return self
+     * @return $this
      */
     public function setDefaultScheme($defaultScheme)
     {
@@ -67,7 +79,7 @@ class UriNormalize extends AbstractFilter
      * real-world user mishaps, it may yield unexpected results at times.
      *
      * @param  string $enforcedScheme
-     * @return self
+     * @return $this
      */
     public function setEnforcedScheme($enforcedScheme)
     {
@@ -78,8 +90,8 @@ class UriNormalize extends AbstractFilter
     /**
      * Filter the URL by normalizing it and applying a default scheme if set
      *
-     * @param  string $value
-     * @return string
+     * @param  mixed $value
+     * @return mixed|string
      */
     public function filter($value)
     {
@@ -100,8 +112,8 @@ class UriNormalize extends AbstractFilter
             if ($this->enforcedScheme && ! $uri->getScheme()) {
                 $this->enforceScheme($uri);
             }
-        } catch (UriException $ex) {
-            // We are unable to parse / enfore scheme with the given config and input
+        } catch (UriException) {
+            // We are unable to parse / enforce scheme with the given config and input
             return $value;
         }
 
@@ -120,14 +132,17 @@ class UriNormalize extends AbstractFilter
      * This will also adjust the host and path parts of the URI as expected in
      * the case of scheme-less network URIs
      *
-     * @param Uri $uri
+     * @return void
      */
     protected function enforceScheme(Uri $uri)
     {
-        $path = $uri->getPath();
-        if (strpos($path, '/') !== false) {
-            list($host, $path) = explode('/', $path, 2);
-            $path = '/' . $path;
+        $path = $uri->getPath() ?? '';
+
+        if (str_contains($path, '/')) {
+            $parts = explode('/', $path, 2);
+            assert(count($parts) >= 2);
+            [$host, $path] = $parts;
+            $path          = '/' . $path;
         } else {
             $host = $path;
             $path = '';

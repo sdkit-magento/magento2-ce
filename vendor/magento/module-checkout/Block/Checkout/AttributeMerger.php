@@ -397,14 +397,14 @@ class AttributeMerger
     /**
      * Retrieve field options from attribute configuration
      *
-     * @param string $attributeCode
+     * @param mixed $attributeCode
      * @param array $attributeConfig
      * @return array
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     protected function getFieldOptions($attributeCode, array $attributeConfig)
     {
-        return isset($attributeConfig['options']) ? $attributeConfig['options'] : [];
+        return $attributeConfig['options'] ?? [];
     }
 
     /**

@@ -7,8 +7,6 @@
 namespace Magento\Wishlist\Model;
 
 /**
- * Class LocaleQuantityProcessor for localized quantity to internal format
- *
  * @api
  * @since 100.0.2
  */
@@ -49,6 +47,7 @@ class LocaleQuantityProcessor
         if ($qty < 0) {
             $qty = null;
         }
+
         return $qty;
     }
 }

@@ -5,21 +5,31 @@
  */
 namespace Magento\Framework\View;
 
-use \Magento\Framework\App\State;
+use Magento\Framework\App\State;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\View\Layout\Element;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class LayoutTestWithExceptions extends \PHPUnit\Framework\TestCase
+/**
+ * Class to test Layout model functionality with exceptions
+ */
+class LayoutTestWithExceptions extends TestCase
 {
     /**
-     * @var \Magento\Framework\View\Layout
+     * @var Layout
      */
     protected $layout;
 
-    public function setUp(): void
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $layoutFactory = $objectManager->get(\Magento\Framework\View\LayoutFactory::class);
+        $objectManager = Bootstrap::getObjectManager();
+        $layoutFactory = $objectManager->get(LayoutFactory::class);
         $this->layout = $layoutFactory->create();
-        $layoutElement = new \Magento\Framework\View\Layout\Element(
+        $layoutElement = new Element(
             __DIR__ . '/_files/layout_with_exceptions/layout.xml',
             0,
             true
@@ -29,19 +39,25 @@ class LayoutTestWithExceptions extends \PHPUnit\Framework\TestCase
         $objectManager->get(\Magento\Framework\App\Cache\Type\Layout::class)->clean();
     }
 
+    /**
+     * Test to Create structure of elements from the loaded XML configuration with exception
+     */
     public function testProcessWithExceptionsDeveloperMode()
     {
-        $this->expectExceptionMessage("Construction problem.");
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
+        $this->expectExceptionMessage('Construction problem.');
+
         $this->layout->generateElements();
     }
 
     /**
+     * Test to Get all blocks marked for output with exceptions
+     *
      * @magentoAppIsolation enabled
      */
     public function testProcessWithExceptions()
     {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\App\State::class)
+        Bootstrap::getObjectManager()->get(State::class)
             ->setMode(State::MODE_DEFAULT);
 
         $this->layout->generateElements();

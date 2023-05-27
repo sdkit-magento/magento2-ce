@@ -62,9 +62,12 @@ class GroupManagementTest extends \PHPUnit\Framework\TestCase
         $this->assertDefaultGroupMatches($testGroup, $nonDefaultStoreId);
     }
 
+    /**
+     */
     public function testGetDefaultGroupWithInvalidStoreId()
     {
         $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+
         $storeId = 1234567;
         $this->groupManagement->getDefaultGroup($storeId);
     }
@@ -72,12 +75,15 @@ class GroupManagementTest extends \PHPUnit\Framework\TestCase
     public function testIsReadonlyWithGroupId()
     {
         $testGroup = ['id' => 3, 'code' => 'General', 'tax_class_id' => 3, 'tax_class_name' => 'Retail Customer'];
-        $this->assertEquals(false, $this->groupManagement->isReadonly($testGroup['id']));
+        $this->assertFalse($this->groupManagement->isReadonly($testGroup['id']));
     }
 
+    /**
+     */
     public function testIsReadonlyWithInvalidGroupId()
     {
         $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+
         $testGroup = ['id' => 4, 'code' => 'General', 'tax_class_id' => 3, 'tax_class_name' => 'Retail Customer'];
         $this->groupManagement->isReadonly($testGroup['id']);
     }

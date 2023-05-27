@@ -91,6 +91,13 @@ class ProductDataMapper implements BatchDataMapperInterface
     private $filterableAttributeTypes;
 
     /**
+     * @var string[]
+     */
+    private $sortableCaseSensitiveAttributes = [
+        'name',
+    ];
+
+    /**
      * @param Builder $builder
      * @param FieldMapperInterface $fieldMapper
      * @param DateFieldType $dateFieldType
@@ -99,6 +106,7 @@ class ProductDataMapper implements BatchDataMapperInterface
      * @param array $excludedAttributes
      * @param array $sortableAttributesValuesToImplode
      * @param array $filterableAttributeTypes
+     * @param array $sortableCaseSensitiveAttributes
      */
     public function __construct(
         Builder $builder,
@@ -108,7 +116,8 @@ class ProductDataMapper implements BatchDataMapperInterface
         DataProvider $dataProvider,
         array $excludedAttributes = [],
         array $sortableAttributesValuesToImplode = [],
-        array $filterableAttributeTypes = []
+        array $filterableAttributeTypes = [],
+        array $sortableCaseSensitiveAttributes = []
     ) {
         $this->builder = $builder;
         $this->fieldMapper = $fieldMapper;
@@ -122,6 +131,10 @@ class ProductDataMapper implements BatchDataMapperInterface
         $this->dataProvider = $dataProvider;
         $this->attributeOptionsCache = [];
         $this->filterableAttributeTypes = $filterableAttributeTypes;
+        $this->sortableCaseSensitiveAttributes = array_merge(
+            $this->sortableCaseSensitiveAttributes,
+            $sortableCaseSensitiveAttributes
+        );
     }
 
     /**
@@ -259,6 +272,9 @@ class ProductDataMapper implements BatchDataMapperInterface
      * @param array $attributeValues
      * @param int $storeId
      * @return array
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     private function prepareAttributeValues(
         int $productId,
@@ -298,6 +314,12 @@ class ProductDataMapper implements BatchDataMapperInterface
             $attributeValues = [$productId => implode(' ', $attributeValues)];
         }
 
+        if (in_array($attribute->getAttributeCode(), $this->sortableCaseSensitiveAttributes)) {
+            foreach ($attributeValues as $key => $attributeValue) {
+                $attributeValues[$key] = strtolower($attributeValue);
+            }
+        }
+
         return $attributeValues;
     }
 
@@ -309,9 +331,14 @@ class ProductDataMapper implements BatchDataMapperInterface
      */
     private function prepareMultiselectValues(array $values): array
     {
-        return \array_merge(...\array_map(function (string $value) {
-            return \explode(',', $value);
-        }, $values));
+        return \array_merge(
+            ...\array_map(
+                function (string $value) {
+                    return \explode(',', $value);
+                },
+                $values
+            )
+        );
     }
 
     /**
@@ -343,8 +370,11 @@ class ProductDataMapper implements BatchDataMapperInterface
             return $attributeLabels;
         }
 
+        // array_flip() + foreach { isset() }  is much faster than foreach { in_array() } when there are many options
+        $attributeValues = array_flip($attributeValues);
+
         foreach ($options as $option) {
-            if (\in_array($option['value'], $attributeValues)) {
+            if (isset($attributeValues[$option['value']])) {
                 $attributeLabels[] = $option['label'];
             }
         }
@@ -385,8 +415,8 @@ class ProductDataMapper implements BatchDataMapperInterface
      */
     private function retrieveFieldValue(array $values)
     {
-        $values = array_unique($values);
+        $values = \array_unique($values);
 
-        return count($values) === 1 ? array_shift($values) : array_values($values);
+        return count($values) === 1 ? \array_shift($values) : \array_values($values);
     }
 }

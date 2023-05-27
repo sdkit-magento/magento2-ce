@@ -53,9 +53,9 @@ class StockResolverTest extends TestCase
     /**
      * Resolve stock and check data.
      *
-     * @magentoDataFixture ../../../../app/code/Magento/InventorySalesApi/Test/_files/websites_with_stores.php
-     * @magentoDataFixture ../../../../app/code/Magento/InventoryApi/Test/_files/stocks.php
-     * @magentoDataFixture ../../../../app/code/Magento/InventorySalesApi/Test/_files/stock_website_sales_channels.php
+     * @magentoDataFixture Magento_InventorySalesApi::Test/_files/websites_with_stores.php
+     * @magentoDataFixture Magento_InventoryApi::Test/_files/stocks.php
+     * @magentoDataFixture Magento_InventorySalesApi::Test/_files/stock_website_sales_channels.php
      *
      * @magentoDbIsolation disabled
      */
@@ -66,7 +66,7 @@ class StockResolverTest extends TestCase
         $this->assertEquals(10, $stock->getStockId());
         $this->assertEquals('EU-stock', $stock->getName());
         $salesChannels = $stock->getExtensionAttributes()->getSalesChannels();
-        $this->assertCount(1, $salesChannels);
+        $this->assertEquals(1, count($salesChannels));
         /** @var SalesChannelInterface $salesChannel */
         $salesChannel = $salesChannels[0];
         $this->assertEquals('website', $salesChannel->getType());
@@ -76,9 +76,9 @@ class StockResolverTest extends TestCase
     /**
      * Resolve stock and check data after sales channels was changed.
      *
-     * @magentoDataFixture ../../../../app/code/Magento/InventorySalesApi/Test/_files/websites_with_stores.php
-     * @magentoDataFixture ../../../../app/code/Magento/InventoryApi/Test/_files/stocks.php
-     * @magentoDataFixture ../../../../app/code/Magento/InventorySalesApi/Test/_files/stock_website_sales_channels.php
+     * @magentoDataFixture Magento_InventorySalesApi::Test/_files/websites_with_stores.php
+     * @magentoDataFixture Magento_InventoryApi::Test/_files/stocks.php
+     * @magentoDataFixture Magento_InventorySalesApi::Test/_files/stock_website_sales_channels.php
      *
      * @magentoDbIsolation disabled
      */
@@ -90,7 +90,7 @@ class StockResolverTest extends TestCase
         $this->assertEquals($stockId, $stock->getStockId());
         $this->assertEquals('US-stock', $stock->getName());
         $salesChannels = $stock->getExtensionAttributes()->getSalesChannels();
-        $this->assertCount(1, $salesChannels);
+        $this->assertEquals(1, count($salesChannels));
         /** @var SalesChannelInterface $salesChannel */
         $salesChannel = $salesChannels[0];
         $this->assertEquals('website', $salesChannel->getType());
@@ -108,7 +108,7 @@ class StockResolverTest extends TestCase
         $this->assertEquals($stockId, $stock->getStockId());
         $this->assertEquals('US-stock', $stock->getName());
         $salesChannels = $stock->getExtensionAttributes()->getSalesChannels();
-        $this->assertCount(1, $salesChannels);
+        $this->assertEquals(1, count($salesChannels));
         /** @var SalesChannelInterface $salesChannel */
         $salesChannel = $salesChannels[0];
         $this->assertEquals('website', $salesChannel->getType());

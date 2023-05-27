@@ -6,11 +6,15 @@
 namespace Magento\Framework\DB\Adapter\Pdo;
 
 use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\TestFramework\Helper\CacheCleaner;
 use Magento\Framework\DB\Ddl\Table;
 use Magento\TestFramework\Helper\Bootstrap;
 
+/**
+ * Class checks Mysql adapter behaviour
+ *
+ * @magentoDbIsolation disabled
+ */
 class MysqlTest extends \PHPUnit\Framework\TestCase
 {
     /**
@@ -23,12 +27,35 @@ class MysqlTest extends \PHPUnit\Framework\TestCase
         set_error_handler(null);
         $this->resourceConnection = Bootstrap::getObjectManager()
             ->get(ResourceConnection::class);
-        CacheCleaner::cleanAll();
     }
 
     protected function tearDown(): void
     {
         restore_error_handler();
+    }
+
+    /**
+     * Check PDO stringify fetches options
+     */
+    public function testStringifyFetchesTrue(): void
+    {
+        $tableName = $this->resourceConnection->getTableName('table_with_int_column');
+        $columnId = 'integer_column';
+        $adapter = $this->getDbAdapter();
+
+        $table = $adapter
+            ->newTable($tableName)
+            ->addColumn($columnId, Table::TYPE_INTEGER);
+        $adapter->createTable($table);
+        $adapter->insert($tableName, [$columnId => 100]);
+
+        $select = $adapter->select()
+            ->from($tableName)
+            ->columns([$columnId])
+            ->limit(1);
+        $result = $adapter->fetchOne($select);
+        $this->assertIsString($result);
+        $adapter->dropTable($tableName);
     }
 
     /**
@@ -81,7 +108,7 @@ class MysqlTest extends \PHPUnit\Framework\TestCase
      *
      * @param $sql
      * @return void|\Zend_Db_Statement_Pdo
-     * @throws LocalizedException
+     * @throws \Magento\Framework\Exception\LocalizedException
      * @throws \Zend_Db_Adapter_Exception
      */
     private function executeQuery($sql)
@@ -189,7 +216,7 @@ class MysqlTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('created_at', $dateColumn['COLUMN_NAME'], 'Incorrect column name');
         $this->assertEquals(Table::TYPE_DATETIME, $dateColumn['DATA_TYPE'], 'Incorrect column type');
         $this->assertMatchesRegularExpression(
-            '/^(CURRENT_TIMESTAMP|current_timestamp\(\))$/',
+            '/(CURRENT_TIMESTAMP|current_timestamp\(\))/',
             $dateColumn['DEFAULT'],
             'Incorrect column default expression value'
         );
@@ -203,5 +230,67 @@ class MysqlTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('string_column', $stringColumn['COLUMN_NAME'], 'Incorrect column name');
         $this->assertEquals('varchar', $stringColumn['DATA_TYPE'], 'Incorrect column type');
         $this->assertEquals('default test text', $stringColumn['DEFAULT'], 'Incorrect column default string value');
+    }
+
+    /**
+     * Test get auto increment field
+     *
+     * @param array $options
+     * @param string|bool $expected
+     * @throws \Zend_Db_Exception
+     * @dataProvider getAutoIncrementFieldDataProvider
+     */
+    public function testGetAutoIncrementField(array $options, $expected)
+    {
+        $adapter = $this->getDbAdapter();
+        $tableName = 'table_auto_increment_field';
+
+        $table = $adapter
+            ->newTable($tableName)
+            ->addColumn(
+                'row_id',
+                Table::TYPE_INTEGER,
+                null,
+                $options,
+                'Row Id'
+            )
+            ->addColumn(
+                'created_at',
+                Table::TYPE_DATETIME,
+                null,
+                ['default' => new \Zend_Db_Expr('CURRENT_TIMESTAMP')]
+            )
+            ->addColumn(
+                'integer_column',
+                Table::TYPE_INTEGER,
+                11,
+                ['default' => 123456]
+            )->addColumn(
+                'string_column',
+                Table::TYPE_TEXT,
+                255,
+                ['default' => 'default test text']
+            )
+            ->setComment('Test table with auto increment column');
+        $adapter->createTable($table);
+        $autoIncrementField = $adapter->getAutoIncrementField($tableName);
+        $this->assertEquals($expected, $autoIncrementField);
+
+        //clean up database from test table
+        $adapter->dropTable($tableName);
+    }
+
+    public function getAutoIncrementFieldDataProvider()
+    {
+        return [
+            'auto increment field' => [
+                'field options' => ['identity' => true, 'unsigned' => true, 'nullable' => false, 'primary' => true],
+                'expected result' => 'row_id',
+            ],
+            'non auto increment field' => [
+                'field options' => ['unsigned' => true, 'nullable' => false,],
+                'expected result' => false,
+            ]
+        ];
     }
 }

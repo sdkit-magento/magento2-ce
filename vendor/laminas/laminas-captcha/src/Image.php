@@ -4,7 +4,6 @@ namespace Laminas\Captcha;
 
 use DirectoryIterator;
 use Laminas\Stdlib\ErrorHandler;
-use Traversable;
 
 use function extension_loaded;
 use function file_exists;
@@ -136,7 +135,7 @@ class Image extends AbstractWord
     /**
      * Constructor
      *
-     * @param array|Traversable $options
+     * @param iterable<string, mixed>|null $options
      * @throws Exception\ExtensionNotLoadedException
      */
     public function __construct($options = null)
@@ -433,7 +432,7 @@ class Image extends AbstractWord
      */
     protected function randomFreq()
     {
-        return mt_rand(700000, 1000000) / 15000000;
+        return mt_rand(700000, 1_000_000) / 15_000_000;
     }
 
     /**
@@ -444,7 +443,7 @@ class Image extends AbstractWord
     protected function randomPhase()
     {
         // random phase from 0 to pi
-        return mt_rand(0, 3141592) / 1000000;
+        return mt_rand(0, 3_141_592) / 1_000_000;
     }
 
     /**
@@ -597,7 +596,12 @@ class Image extends AbstractWord
                               + $colorXY * $fracX * $fracY;
                 }
 
-                imagesetpixel($img2, $x, $y, imagecolorallocate($img2, $newcolor, $newcolor, $newcolor));
+                imagesetpixel($img2, $x, $y, imagecolorallocate(
+                    $img2,
+                    (int) $newcolor,
+                    (int) $newcolor,
+                    (int) $newcolor
+                ));
             }
         }
 

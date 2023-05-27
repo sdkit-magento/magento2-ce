@@ -3,9 +3,7 @@
 namespace Laminas\Session;
 
 use ArrayIterator;
-use Iterator;
 use Laminas\Session\ManagerInterface as Manager;
-use Laminas\Session\SessionManager;
 use Laminas\Session\Storage\StorageInterface as Storage;
 use Laminas\Stdlib\ArrayObject;
 use Traversable;
@@ -27,6 +25,10 @@ use function time;
  * may have their own expiries, or even expiries per key in the container.
  * Additionally, expiries may be absolute TTLs or measured in "hops", which
  * are based on how many times the key or container were accessed.
+ *
+ * @template TKey of string
+ * @template TValue
+ * @template-extends ArrayObject<TKey, TValue>
  */
 abstract class AbstractContainer extends ArrayObject
 {
@@ -459,14 +461,7 @@ abstract class AbstractContainer extends ArrayObject
         unset($storage[$name][$key]);
     }
 
-    /**
-     * Exchange the current array with another array or object.
-     *
-     * @see ArrayObject::exchangeArray()
-     *
-     * @param  array|object $input
-     * @return array        Returns the old array
-     */
+    /** @inheritDoc */
     public function exchangeArray($input)
     {
         // handle arrayobject, iterators and the like:
@@ -489,11 +484,7 @@ abstract class AbstractContainer extends ArrayObject
         return $old;
     }
 
-    /**
-     * Iterate over session container
-     *
-     * @return Iterator
-     */
+    /** @inheritDoc */
     public function getIterator()
     {
         $this->expireKeys();
@@ -533,15 +524,11 @@ abstract class AbstractContainer extends ArrayObject
             $container = $this;
 
             // Filter out any items not in our container
-            $expires = array_filter($vars, function ($value) use ($container) {
-                return $container->offsetExists($value);
-            });
+            $expires = array_filter($vars, static fn($value): bool => $container->offsetExists($value));
 
             // Map item keys => timestamp
             $expires = array_flip($expires);
-            $expires = array_map(function () use ($ts) {
-                return $ts;
-            }, $expires);
+            $expires = array_map(static fn() => $ts, $expires);
 
             // Create metadata array to merge in
             $data = ['EXPIRE_KEYS' => $expires];
@@ -584,15 +571,11 @@ abstract class AbstractContainer extends ArrayObject
             $container = $this;
 
             // FilterInterface out any items not in our container
-            $expires = array_filter($vars, function ($value) use ($container) {
-                return $container->offsetExists($value);
-            });
+            $expires = array_filter($vars, static fn($value): bool => $container->offsetExists($value));
 
             // Map item keys => timestamp
             $expires = array_flip($expires);
-            $expires = array_map(function () use ($hops, $ts) {
-                return ['hops' => $hops, 'ts' => $ts];
-            }, $expires);
+            $expires = array_map(static fn() => ['hops' => $hops, 'ts' => $ts], $expires);
 
             // Create metadata array to merge in
             $data = ['EXPIRE_HOPS_KEYS' => $expires];
@@ -610,11 +593,7 @@ abstract class AbstractContainer extends ArrayObject
         return $this;
     }
 
-    /**
-     * Creates a copy of the specific container name
-     *
-     * @return array
-     */
+    /** @inheritDoc */
     public function getArrayCopy()
     {
         $storage   = $this->verifyNamespace();

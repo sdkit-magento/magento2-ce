@@ -1,16 +1,32 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
 use Laminas\Stdlib\ArrayUtils;
 use Traversable;
 
+use function array_shift;
+use function func_get_args;
+use function function_exists;
+use function htmlentities;
+use function iconv;
+use function is_array;
+use function is_scalar;
+use function strlen;
+
+use const ENT_QUOTES;
+
+/**
+ * @psalm-type Options = array{
+ *     quote_style?: int,
+ *     encoding?: string,
+ *     double_quote?: bool,
+ *     ...
+ * }
+ * @extends AbstractFilter<Options>
+ */
 class HtmlEntities extends AbstractFilter
 {
     /**
@@ -45,7 +61,7 @@ class HtmlEntities extends AbstractFilter
             $options = ArrayUtils::iteratorToArray($options);
         }
         if (! is_array($options)) {
-            $options = func_get_args();
+            $options            = func_get_args();
             $temp['quotestyle'] = array_shift($options);
             if (! empty($options)) {
                 $temp['charset'] = array_shift($options);
@@ -173,9 +189,10 @@ class HtmlEntities extends AbstractFilter
      *
      * If the value provided is non-scalar, the value will remain unfiltered
      *
-     * @param  string $value
+     * @param  mixed $value
      * @return string|mixed
-     * @throws Exception\DomainException on encoding mismatches
+     * @throws Exception\DomainException On encoding mismatches.
+     * @psalm-return ($value is scalar ? string : mixed)
      */
     public function filter($value)
     {

@@ -20,6 +20,7 @@
             <skip>
                 <issueId value="https://github.com/magento/inventory/issues/2413"/>
             </skip>
+            <group value="pr_exclude"/>
         </annotations>
 
         <before>
@@ -41,17 +42,19 @@
             <actionGroup ref="DeleteProductBySkuActionGroup" stepKey="deleteCreatedConfigurableProduct">
                 <argument name="sku" value="{{ConfigurableMsiProduct.sku}}"/>
             </actionGroup>
+            <actionGroup ref="ResetAdminDataGridToDefaultViewActionGroup" stepKey="clearFilters"/>
             <!--Disable additional source.-->
             <actionGroup ref="DisableSourceActionGroup" stepKey="disableCreatedSource">
                 <argument name="sourceCode" value="$$additionalSource.source[source_code]$$"/>
             </actionGroup>
-            <actionGroup ref="logout" stepKey="logout"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logout"/>
             <!-- Delete Created Data -->
             <deleteData createDataKey="category" stepKey="deleteCategory"/>
             <deleteData createDataKey="additionalStock" stepKey="deleteStock"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </after>
         <!--Create configurable product.-->
-        <actionGroup ref="LoginAsAdmin" stepKey="loginToAdminPanel"/>
+        <actionGroup ref="AdminLoginActionGroup" stepKey="loginToAdminPanel"/>
         <amOnPage url="{{AdminProductIndexPage.url}}" stepKey="navigateToAdminProductGrid"/>
         <waitForPageLoad time="30" stepKey="waitForProductGridLoad"/>
         <click selector="{{AdminProductGridActionSection.addProductToggle}}" stepKey="clickOnAddProductToggle"/>
@@ -104,7 +107,7 @@
         </actionGroup>
         <click selector="{{AdminProductGridSection.productGridXRowYColumnButton('1', '2')}}" stepKey="editWhiteConfigurableVariation"/>
         <click selector="{{AdminProductFormSection.enableProductLabel}}" stepKey="disableProduct"/>
-        <actionGroup ref="AdminFormSaveAndClose" stepKey="saveAndCloseProductForm"/>
+        <actionGroup ref="AdminFormSaveAndCloseActionGroup" stepKey="saveAndCloseProductForm"/>
         <!--Set 'Out of Stock' red configurable option.-->
         <actionGroup ref="FilterProductGridByNameActionGroup" stepKey="filterRedConfigurableVariation">
             <argument name="product" value="colorProductAttribute2"/>
@@ -113,7 +116,7 @@
         <selectOption selector="{{AdminProductSourcesGrid.rowStatus('0')}}" userInput="Out of Stock" stepKey="setConfigurableOptionToOutOfStock"/>
         <click selector="{{AdminProductFormActionSection.saveButton}}"  stepKey="clickOnSaveButton"/>
         <!--Verify configurable product is not visible on storefront.-->
-        <amOnPage url="{{StorefrontCategoryPage.url($$category.name$$)}}" stepKey="navigateToCategoryPage"/>
+        <amOnPage url="{{StorefrontCategoryPage.url($$category.custom_attributes[url_key]$$)}}" stepKey="navigateToCategoryPage"/>
         <waitForPageLoad stepKey="waitForCategoryPageLoad"/>
         <dontSee userInput="{{ConfigurableMsiProduct.name}}" stepKey="verifyProductIsNotPresentOnStorefront"/>
         <!--Verify configurable product has 'Out Of Stock' status on PDP.-->

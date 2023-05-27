@@ -54,7 +54,7 @@ class TransparentTest extends TestCase
      * @magentoConfigFixture current_store payment/payflowpro/payment_action Authorization
      * @magentoConfigFixture current_store payment/payflowpro/fmf 1
      */
-    public function testPlaceOrderSuspectedFraud()
+    public function testPlaceOrderSuspectedFraud(): void
     {
         $quote = $this->getQuote('test_order_1');
         $this->addFraudPayment($quote);
@@ -114,7 +114,7 @@ class TransparentTest extends TestCase
      *
      * @return void
      */
-    private function addFraudPayment(CartInterface $quote)
+    private function addFraudPayment(CartInterface $quote): void
     {
         $payment = $quote->getPayment();
         $payment->setMethod(Config::METHOD_PAYFLOWPRO);

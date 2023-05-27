@@ -1,34 +1,39 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter\Word;
 
 use Laminas\Filter\AbstractFilter;
 use Laminas\Filter\Exception;
 
+use function is_array;
+use function is_string;
+
+/**
+ * @psalm-type Options = array{
+ *     separator?: string,
+ *     ...
+ * }
+ * @template TOptions of Options
+ * @extends AbstractFilter<TOptions>
+ */
 abstract class AbstractSeparator extends AbstractFilter
 {
+    /** @var string */
     protected $separator = ' ';
 
     /**
-     * Constructor
-     *
-     * @param array|string $separator Space by default
+     * @param Options|string $separator Space by default
      */
     public function __construct($separator = ' ')
     {
-        if (is_array($separator)) {
-            $temp = ' ';
-            if (isset($separator['separator']) && is_string($separator['separator'])) {
-                $temp = $separator['separator'];
-            }
-            $separator = $temp;
+        if (is_array($separator) && isset($separator['separator']) && is_string($separator['separator'])) {
+            $this->setSeparator($separator['separator']);
+
+            return;
         }
+
         $this->setSeparator($separator);
     }
 

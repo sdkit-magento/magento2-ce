@@ -1,11 +1,5 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-mvc for the canonical source repository
- * @copyright https://github.com/laminas/laminas-mvc/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-mvc/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Mvc\View\Http;
 
 use Laminas\EventManager\AbstractListenerAggregate;
@@ -28,13 +22,12 @@ class CreateViewModelListener extends AbstractListenerAggregate
     /**
      * Inspect the result, and cast it to a ViewModel if an assoc array is detected
      *
-     * @param  MvcEvent $e
      * @return void
      */
     public function createViewModelFromArray(MvcEvent $e)
     {
         $result = $e->getResult();
-        if (!ArrayUtils::hasStringKeys($result, true)) {
+        if (! ArrayUtils::hasStringKeys($result, true)) {
             return;
         }
 
@@ -45,9 +38,8 @@ class CreateViewModelListener extends AbstractListenerAggregate
     /**
      * Inspect the result, and cast it to a ViewModel if null is detected
      *
-     * @param MvcEvent $e
      * @return void
-    */
+     */
     public function createViewModelFromNull(MvcEvent $e)
     {
         $result = $e->getResult();

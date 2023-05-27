@@ -16,8 +16,8 @@ use Magento\CatalogSearch\Model\ResourceModel\Fulltext\SearchCollectionFactory;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
-use Magento\TestModuleCatalogSearch\Model\ElasticsearchVersionChecker;
-use \Magento\Framework\Search\EngineResolverInterface;
+use Magento\TestModuleCatalogSearch\Model\SearchEngineVersionReader;
+use Magento\Framework\Search\EngineResolverInterface;
 
 /**
  * Test for Magento\Catalog\Model\Indexer\Category\Product\Action\Rows class.
@@ -29,11 +29,6 @@ use \Magento\Framework\Search\EngineResolverInterface;
  */
 class RowsTest extends \PHPUnit\Framework\TestCase
 {
-    /**
-     * @var string
-     */
-    private $searchEngine;
-
     /**
      * @var ObjectManager
      */
@@ -71,29 +66,20 @@ class RowsTest extends \PHPUnit\Framework\TestCase
     protected function assertPreConditions(): void
     {
         $currentEngine = $this->objectManager->get(EngineResolverInterface::class)->getCurrentSearchEngine();
-        $this->assertEquals($this->getInstalledSearchEngine(), $currentEngine);
-    }
-
-    /**
-     * Returns installed on server search service.
-     *
-     * @return string
-     */
-    private function getInstalledSearchEngine(): string
-    {
-        if (!$this->searchEngine) {
-            // phpstan:ignore "Class Magento\TestModuleCatalogSearch\Model\ElasticsearchVersionChecker not found."
-            $version = $this->objectManager->get(ElasticsearchVersionChecker::class)->getVersion();
-            $this->searchEngine = 'elasticsearch' . $version;
-        }
-
-        return $this->searchEngine;
+        $installedEngine = $this->objectManager->get(SearchEngineVersionReader::class)->getFullVersion();
+        $this->assertEquals(
+            $installedEngine,
+            $currentEngine,
+            sprintf(
+                'Search engine configuration "%s" is not compatible with the installed version',
+                $currentEngine
+            )
+        );
     }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/category_tree_with_products.php
      * @magentoDataFixture Magento/CatalogSearch/_files/full_reindex.php
-     * @magentoConfigFixture current_store catalog/search/elasticsearch_index_prefix indexerhandlertest
      * @magentoDataFixtureBeforeTransaction Magento/Catalog/_files/enable_reindex_schedule.php
      * @return void
      */
@@ -137,8 +123,8 @@ class RowsTest extends \PHPUnit\Framework\TestCase
         $secondProductId = $productRepository->get('simpleC')->getId();
 
         $this->assertCount(2, $productIds);
-        $this->assertContains($secondProductId,$productIds);
-        $this->assertContains($firstProductId,$productIds);
+        $this->assertContains($secondProductId, $productIds);
+        $this->assertContains($firstProductId, $productIds);
     }
 
     /**

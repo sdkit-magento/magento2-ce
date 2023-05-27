@@ -99,22 +99,38 @@ class DownloadCssTest extends TestCase
         $context = $this->getMockBuilder(Context::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $this->request = $this->getMockBuilder(RequestInterface::class)->getMock();
-        $this->redirect = $this->getMockBuilder(RedirectInterface::class)->getMock();
+        $this->request = $this->getMockBuilder(RequestInterface::class)
+            ->getMock();
+        $this->redirect = $this->getMockBuilder(RedirectInterface::class)
+            ->getMock();
         $this->response = $this->getMockBuilder(ResponseInterface::class)
             ->setMethods(['sendResponse', 'setRedirect'])
             ->getMockForAbstractClass();
-        $this->objectManager = $this->getMockBuilder(ObjectManagerInterface::class)->getMock();
-        $this->messageManager = $this->getMockBuilder(ManagerInterface::class)->getMock();
+        $this->objectManager = $this->getMockBuilder(ObjectManagerInterface::class)
+            ->getMock();
+        $this->messageManager = $this->getMockBuilder(ManagerInterface::class)
+            ->getMock();
         $this->resultFactory = $this->getMockBuilder(ResultFactory::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $context->expects($this->any())->method('getRequest')->willReturn($this->request);
-        $context->expects($this->any())->method('getRedirect')->willReturn($this->redirect);
-        $context->expects($this->any())->method('getResponse')->willReturn($this->response);
-        $context->expects($this->any())->method('getObjectManager')->willReturn($this->objectManager);
-        $context->expects($this->any())->method('getMessageManager')->willReturn($this->messageManager);
-        $context->expects($this->any())->method('getResultFactory')->willReturn($this->resultFactory);
+        $context->expects($this->any())
+            ->method('getRequest')
+            ->willReturn($this->request);
+        $context->expects($this->any())
+            ->method('getRedirect')
+            ->willReturn($this->redirect);
+        $context->expects($this->any())
+            ->method('getResponse')
+            ->willReturn($this->response);
+        $context->expects($this->any())
+            ->method('getObjectManager')
+            ->willReturn($this->objectManager);
+        $context->expects($this->any())
+            ->method('getMessageManager')
+            ->willReturn($this->messageManager);
+        $context->expects($this->any())
+            ->method('getResultFactory')
+            ->willReturn($this->resultFactory);
 
         $this->registry = $this->getMockBuilder(
             Registry::class
@@ -160,12 +176,16 @@ class DownloadCssTest extends TestCase
                     ['file', null, $fileParam],
                 ]
             );
-        $file = $this->getMockBuilder(File::class)->disableOriginalConstructor()->getMock();
+        $file = $this->getMockBuilder(File::class)
+            ->disableOriginalConstructor()
+            ->getMock();
         $theme = $this->getMockBuilder(ThemeInterface::class)
             ->setMethods(['getId', 'load'])
             ->getMockForAbstractClass();
-        $urlDecoder = $this->getMockBuilder(DecoderInterface::class)->getMock();
-        $directoryRead = $this->getMockBuilder(ReadInterface::class)->getMock();
+        $urlDecoder = $this->getMockBuilder(DecoderInterface::class)
+            ->getMock();
+        $directoryRead = $this->getMockBuilder(ReadInterface::class)
+            ->getMock();
         $this->objectManager->expects($this->any())
             ->method('get')
             ->with(DecoderInterface::class)
@@ -174,9 +194,17 @@ class DownloadCssTest extends TestCase
             ->method('create')
             ->with(ThemeInterface::class)
             ->willReturn($theme);
-        $urlDecoder->expects($this->once())->method('decode')->with($fileParam)->willReturn($fileId);
-        $theme->expects($this->once())->method('load')->with($themeId)->willReturnSelf();
-        $theme->expects($this->once())->method('getId')->willReturn($themeId);
+        $urlDecoder->expects($this->once())
+            ->method('decode')
+            ->with($fileParam)
+            ->willReturn($fileId);
+        $theme->expects($this->once())
+            ->method('load')
+            ->with($themeId)
+            ->willReturnSelf();
+        $theme->expects($this->once())
+            ->method('getId')
+            ->willReturn($themeId);
         $this->repository->expects($this->once())
             ->method('createAsset')
             ->with($fileId, ['themeModel' => $theme])
@@ -185,7 +213,9 @@ class DownloadCssTest extends TestCase
             ->method('getDirectoryRead')
             ->with(DirectoryList::ROOT)
             ->willReturn($directoryRead);
-        $file->expects($this->once())->method('getSourceFile')->willReturn($sourceFile);
+        $file->expects($this->once())
+            ->method('getSourceFile')
+            ->willReturn($sourceFile);
         $directoryRead->expects($this->once())
             ->method('getRelativePath')
             ->with($sourceFile)
@@ -194,7 +224,7 @@ class DownloadCssTest extends TestCase
             ->method('create')
             ->with($relPath, ['type' => 'filename', 'value' => $relPath], DirectoryList::ROOT)
             ->willReturn($this->getMockBuilder(ResponseInterface::class)
-                ->getMock());
+            ->getMock());
 
         $this->assertInstanceOf(ResponseInterface::class, $this->controller->execute());
     }
@@ -217,8 +247,10 @@ class DownloadCssTest extends TestCase
         $theme = $this->getMockBuilder(ThemeInterface::class)
             ->setMethods(['getId', 'load'])
             ->getMockForAbstractClass();
-        $urlDecoder = $this->getMockBuilder(DecoderInterface::class)->getMock();
-        $logger = $this->getMockBuilder(LoggerInterface::class)->getMock();
+        $urlDecoder = $this->getMockBuilder(DecoderInterface::class)
+            ->getMock();
+        $logger = $this->getMockBuilder(LoggerInterface::class)
+            ->getMock();
         $this->objectManager->expects($this->any())
             ->method('get')
             ->willReturnMap(
@@ -231,16 +263,27 @@ class DownloadCssTest extends TestCase
             ->method('create')
             ->with(ThemeInterface::class)
             ->willReturn($theme);
-        $urlDecoder->expects($this->once())->method('decode')->with($fileParam)->willReturn($fileId);
+        $urlDecoder->expects($this->once())
+            ->method('decode')
+            ->with($fileParam)
+            ->willReturn($fileId);
         $theme->expects($this->once())
             ->method('load')
             ->with($themeId)
             ->willReturnSelf();
-        $theme->expects($this->once())->method('getId')->willReturn(null);
-        $this->messageManager->expects($this->once())->method('addException');
-        $logger->expects($this->once())->method('critical');
-        $this->redirect->expects($this->once())->method('getRefererUrl')->willReturn($refererUrl);
-        $this->response->expects($this->once())->method('setRedirect')->with($refererUrl);
+        $theme->expects($this->once())
+            ->method('getId')
+            ->willReturn(null);
+        $this->messageManager->expects($this->once())
+            ->method('addException');
+        $logger->expects($this->once())
+            ->method('critical');
+        $this->redirect->expects($this->once())
+            ->method('getRefererUrl')
+            ->willReturn($refererUrl);
+        $this->response->expects($this->once())
+            ->method('setRedirect')
+            ->with($refererUrl);
         $this->escaperMock->expects($this->once())->method('escapeHtml')->with($themeId)->willReturn($themeId);
 
         $this->controller->execute();

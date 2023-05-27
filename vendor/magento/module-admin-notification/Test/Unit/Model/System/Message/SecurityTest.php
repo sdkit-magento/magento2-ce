@@ -3,53 +3,59 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\AdminNotification\Test\Unit\Model\System\Message;
 
-class SecurityTest extends \PHPUnit\Framework\TestCase
+use Magento\AdminNotification\Model\System\Message\Security;
+use Magento\Framework\App\CacheInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\HTTP\Adapter\Curl;
+use Magento\Framework\HTTP\Adapter\CurlFactory;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+class SecurityTest extends TestCase
 {
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var CacheInterface|MockObject
      */
-    protected $_cacheMock;
+    private $cacheMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var ScopeConfigInterface|MockObject
      */
-    protected $_scopeConfigMock;
+    private $scopeConfigMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var CurlFactory|MockObject
      */
-    protected $_configMock;
+    private $curlFactoryMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var Security
      */
-    protected $_curlFactoryMock;
-
-    /**
-     * @var \Magento\AdminNotification\Model\System\Message\Security
-     */
-    protected $_messageModel;
+    private $messageModel;
 
     protected function setUp(): void
     {
         //Prepare objects for constructor
-        $this->_cacheMock = $this->createMock(\Magento\Framework\App\CacheInterface::class);
-        $this->_scopeConfigMock = $this->createMock(\Magento\Framework\App\Config\ScopeConfigInterface::class);
-        $this->_curlFactoryMock = $this->createPartialMock(
-            \Magento\Framework\HTTP\Adapter\CurlFactory::class,
+        $this->cacheMock = $this->getMockForAbstractClass(CacheInterface::class);
+        $this->scopeConfigMock = $this->getMockForAbstractClass(ScopeConfigInterface::class);
+        $this->curlFactoryMock = $this->createPartialMock(
+            CurlFactory::class,
             ['create']
         );
 
-        $objectManagerHelper = new \Magento\Framework\TestFramework\Unit\Helper\ObjectManager($this);
+        $objectManagerHelper = new ObjectManager($this);
         $arguments = [
-            'cache' => $this->_cacheMock,
-            'scopeConfig' => $this->_scopeConfigMock,
-            'curlFactory' => $this->_curlFactoryMock,
+            'cache' => $this->cacheMock,
+            'scopeConfig' => $this->scopeConfigMock,
+            'curlFactory' => $this->curlFactoryMock,
         ];
-        $this->_messageModel = $objectManagerHelper->getObject(
-            \Magento\AdminNotification\Model\System\Message\Security::class,
+        $this->messageModel = $objectManagerHelper->getObject(
+            Security::class,
             $arguments
         );
     }
@@ -64,16 +70,16 @@ class SecurityTest extends \PHPUnit\Framework\TestCase
      */
     public function testIsDisplayed($expectedResult, $cached, $response)
     {
-        $this->_cacheMock->expects($this->any())->method('load')->willReturn($cached);
-        $this->_cacheMock->expects($this->any())->method('save')->willReturn(null);
+        $this->cacheMock->method('load')->willReturn($cached);
+        $this->cacheMock->method('save')->willReturn(null);
 
-        $httpAdapterMock = $this->createMock(\Magento\Framework\HTTP\Adapter\Curl::class);
-        $httpAdapterMock->expects($this->any())->method('read')->willReturn($response);
-        $this->_curlFactoryMock->expects($this->any())->method('create')->willReturn($httpAdapterMock);
+        $httpAdapterMock = $this->createMock(Curl::class);
+        $httpAdapterMock->method('read')->willReturn($response);
+        $this->curlFactoryMock->method('create')->willReturn($httpAdapterMock);
 
-        $this->_scopeConfigMock->expects($this->any())->method('getValue')->willReturn(null);
+        $this->scopeConfigMock->method('getValue')->willReturn(null);
 
-        $this->assertEquals($expectedResult, $this->_messageModel->isDisplayed());
+        $this->assertEquals($expectedResult, $this->messageModel->isDisplayed());
     }
 
     /**
@@ -92,6 +98,6 @@ class SecurityTest extends \PHPUnit\Framework\TestCase
     {
         $messageStart = 'Your web server is set up incorrectly';
 
-        $this->assertStringStartsWith($messageStart, (string)$this->_messageModel->getText());
+        $this->assertStringStartsWith($messageStart, (string)$this->messageModel->getText());
     }
 }

@@ -68,10 +68,13 @@ class GroupRepositoryTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
+    /**
+     */
     public function testGetGroupException()
     {
-        $this->expectExceptionMessage("No such entity with id = 9999");
         $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectExceptionMessage('No such entity with id = 9999');
+
         $this->groupRepository->getById(9999);
     }
 
@@ -128,12 +131,12 @@ class GroupRepositoryTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @magentoDbIsolation enabled
-     *
      */
     public function testUpdateGroupException()
     {
-        $this->expectExceptionMessage("Invalid value of \"9999\" provided for the taxClassId field.");
         $this->expectException(\Magento\Framework\Exception\InputException::class);
+        $this->expectExceptionMessage('Invalid value of "9999" provided for the taxClassId field.');
+
         $group = $this->groupFactory->create()->setId(null)->setCode('New Group')->setTaxClassId(3);
         $groupId = $this->groupRepository->save($group)->getId();
         $this->assertNotNull($groupId);
@@ -171,10 +174,13 @@ class GroupRepositoryTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($this->groupRepository->deleteById($groupId));
     }
 
+    /**
+     */
     public function testDeleteDoesNotExist()
     {
-        $this->expectExceptionMessage("No such entity with id = 9999");
         $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectExceptionMessage('No such entity with id = 9999');
+
         $this->assertFalse($this->groupRepository->deleteById(9999));
     }
 
@@ -183,7 +189,7 @@ class GroupRepositoryTest extends \PHPUnit\Framework\TestCase
         $searchResults = $this->groupRepository->getList($this->searchCriteriaBuilder->create());
         /** @var GroupInterface[] $results */
         $results = $searchResults->getItems();
-        $this->assertEquals(4, count($results));
+        $this->assertCount(4, $results);
     }
 
     /**

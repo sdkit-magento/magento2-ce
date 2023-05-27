@@ -3,69 +3,109 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Magento\AdminNotification\Test\Unit\Model;
 
+use Magento\AdminNotification\Model\Feed;
+use Magento\AdminNotification\Model\Inbox;
+use Magento\AdminNotification\Model\InboxFactory;
+use Magento\Backend\App\ConfigInterface;
+use Magento\Framework\App\CacheInterface;
+use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\App\ProductMetadata;
+use Magento\Framework\App\State;
 use Magento\Framework\Config\ConfigOptionsListConstants;
+use Magento\Framework\HTTP\Adapter\Curl;
+use Magento\Framework\HTTP\Adapter\CurlFactory;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
+use Magento\Framework\UrlInterface;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class FeedTest extends \PHPUnit\Framework\TestCase
+class FeedTest extends TestCase
 {
-    /** @var \Magento\AdminNotification\Model\Feed */
+    /**
+     * @var Feed
+     */
     protected $feed;
 
-    /** @var ObjectManagerHelper */
+    /**
+     * @var ObjectManagerHelper
+     */
     protected $objectManagerHelper;
 
-    /** @var \Magento\AdminNotification\Model\InboxFactory|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var InboxFactory|MockObject
+     */
     protected $inboxFactory;
 
-    /** @var \Magento\AdminNotification\Model\Inbox|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var Inbox|MockObject
+     */
     protected $inboxModel;
 
-    /** @var \Magento\Framework\HTTP\Adapter\CurlFactory|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var CurlFactory|MockObject
+     */
     protected $curlFactory;
 
-    /** @var \Magento\Framework\HTTP\Adapter\Curl|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var Curl|MockObject
+     */
     protected $curl;
 
-    /** @var \Magento\Backend\App\ConfigInterface|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var ConfigInterface|MockObject
+     */
     protected $backendConfig;
 
-    /** @var \Magento\Framework\App\CacheInterface|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var CacheInterface|MockObject
+     */
     protected $cacheManager;
 
-    /** @var \Magento\Framework\App\State|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var State|MockObject
+     */
     protected $appState;
 
-    /** @var \Magento\Framework\App\DeploymentConfig|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var DeploymentConfig|MockObject
+     */
     protected $deploymentConfig;
 
-    /** @var \Magento\Framework\App\ProductMetadata|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var ProductMetadata|MockObject
+     */
     protected $productMetadata;
 
-    /** @var \Magento\Framework\UrlInterface|\PHPUnit\Framework\MockObject\MockObject */
+    /**
+     * @var UrlInterface|MockObject
+     */
     protected $urlBuilder;
 
+    /**
+     * @inheritDoc
+     */
     protected function setUp(): void
     {
         $this->inboxFactory = $this->createPartialMock(
-            \Magento\AdminNotification\Model\InboxFactory::class,
+            InboxFactory::class,
             ['create']
         );
-        $this->curlFactory = $this->createPartialMock(\Magento\Framework\HTTP\Adapter\CurlFactory::class, ['create']);
-        $this->curl = $this->getMockBuilder(\Magento\Framework\HTTP\Adapter\Curl::class)
-            ->disableOriginalConstructor()->getMock();
-        $this->appState = $this->createPartialMock(\Magento\Framework\App\State::class, ['getInstallDate']);
-        $this->inboxModel = $this->createPartialMock(\Magento\AdminNotification\Model\Inbox::class, [
-                '__wakeup',
-                'parse'
-            ]);
+        $this->curlFactory = $this->createPartialMock(CurlFactory::class, ['create']);
+        $this->curl = $this->createMock(Curl::class);
+        $this->appState = $this->createPartialMock(State::class, []);
+        $this->inboxModel = $this->createPartialMock(Inbox::class, [
+            '__wakeup',
+            'parse'
+        ]);
         $this->backendConfig = $this->createPartialMock(
-            \Magento\Backend\App\ConfigInterface::class,
+            ConfigInterface::class,
             [
                 'getValue',
                 'setValue',
@@ -73,7 +113,7 @@ class FeedTest extends \PHPUnit\Framework\TestCase
             ]
         );
         $this->cacheManager = $this->createPartialMock(
-            \Magento\Framework\App\CacheInterface::class,
+            CacheInterface::class,
             [
                 'load',
                 'getFrontend',
@@ -83,18 +123,13 @@ class FeedTest extends \PHPUnit\Framework\TestCase
             ]
         );
 
-        $this->deploymentConfig = $this->getMockBuilder(\Magento\Framework\App\DeploymentConfig::class)
-            ->disableOriginalConstructor()->getMock();
-
+        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
         $this->objectManagerHelper = new ObjectManagerHelper($this);
-
-        $this->productMetadata = $this->getMockBuilder(\Magento\Framework\App\ProductMetadata::class)
-            ->disableOriginalConstructor()->getMock();
-
-        $this->urlBuilder = $this->createMock(\Magento\Framework\UrlInterface::class);
+        $this->productMetadata = $this->createMock(ProductMetadata::class);
+        $this->urlBuilder = $this->getMockForAbstractClass(UrlInterface::class);
 
         $this->feed = $this->objectManagerHelper->getObject(
-            \Magento\AdminNotification\Model\Feed::class,
+            Feed::class,
             [
                 'backendConfig' => $this->backendConfig,
                 'cacheManager' => $this->cacheManager,
@@ -109,11 +144,13 @@ class FeedTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @dataProvider checkUpdateDataProvider
      * @param bool $callInbox
      * @param string $curlRequest
+     *
+     * @return void
+     * @dataProvider checkUpdateDataProvider
      */
-    public function testCheckUpdate($callInbox, $curlRequest)
+    public function testCheckUpdate(bool $callInbox, string $curlRequest): void
     {
         $mockName    = 'Test Product Name';
         $mockVersion = '0.0.0';
@@ -132,17 +169,20 @@ class FeedTest extends \PHPUnit\Framework\TestCase
         ];
 
         $lastUpdate = 0;
-        $this->cacheManager->expects($this->once())->method('load')->will(($this->returnValue($lastUpdate)));
-        $this->curlFactory->expects($this->at(0))->method('create')->willReturn($this->curl);
-        $this->curl->expects($this->once())->method('setConfig')->with($configValues)->willReturnSelf();
+        $this->cacheManager->expects($this->once())->method('load')->willReturn($lastUpdate);
+        $this->curlFactory
+            ->method('create')
+            ->willReturn($this->curl);
+        $this->curl->expects($this->once())->method('setOptions')->with($configValues)->willReturnSelf();
         $this->curl->expects($this->once())->method('read')->willReturn($curlRequest);
-        $this->backendConfig->expects($this->at(0))->method('getValue')->willReturn('1');
         $this->backendConfig->expects($this->once())->method('isSetFlag')->willReturn(false);
-        $this->backendConfig->expects($this->at(1))->method('getValue')
-            ->willReturn('http://feed.magento.com');
+        $this->backendConfig
+            ->method('getValue')
+            ->willReturnOnConsecutiveCalls('1', 'http://feed.magento.com');
         $this->deploymentConfig->expects($this->once())->method('get')
             ->with(ConfigOptionsListConstants::CONFIG_PATH_INSTALL_DATE)
             ->willReturn('Sat, 6 Sep 2014 16:46:11 UTC');
+
         if ($callInbox) {
             $this->inboxFactory->expects($this->once())->method('create')
                 ->willReturn($this->inboxModel);
@@ -177,7 +217,7 @@ class FeedTest extends \PHPUnit\Framework\TestCase
     /**
      * @return array
      */
-    public function checkUpdateDataProvider()
+    public function checkUpdateDataProvider(): array
     {
         return [
             [
@@ -235,7 +275,7 @@ class FeedTest extends \PHPUnit\Framework\TestCase
                             </channel>
                         </rss>'
                 // @codingStandardsIgnoreEnd
-            ],
+            ]
         ];
     }
 }

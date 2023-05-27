@@ -15,9 +15,10 @@
             <description value="AdminAnalytics Check Tracking."/>
             <severity value="MINOR"/>
             <testCaseId value="MC-36869"/>
+            <group value="pr_exclude"/>
         </annotations>
         <before>
-            <actionGroup ref="LoginAsAdmin" stepKey="loginAsAdmin"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="LoginAsAdmin"/>
             <magentoCLI command="config:set admin/usage/enabled 1" stepKey="enableAdminUsageTracking"/>
             <actionGroup ref="CliCacheCleanActionGroup" stepKey="cleanInvalidatedCaches">
                 <argument name="tags" value="config full_page"/>
@@ -26,10 +27,11 @@
         </before>
         <after>
             <magentoCLI command="config:set admin/usage/enabled 0" stepKey="disableAdminUsageTracking"/>
-            <amOnPage url="{{AdminLogoutPage.url}}" stepKey="amOnLogoutPage"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logout"/>
         </after>
 
         <waitForPageLoad stepKey="waitForPageReloaded"/>
+        <seeInPageSource html="var adminAnalyticsMetadata =" stepKey="seeInPageSource"/>
         <grabPageSource stepKey="pageSource"/>
         <assertRegExp message="adminAnalyticsMetadata object is invalid" stepKey="validateadminAnalyticsMetadata">
             <expectedResult type="string">#var\s+adminAnalyticsMetadata\s+=\s+{\s+("[\w_]+":\s+"[^"]*?",\s+)*?("[\w_]+":\s+"[^"]*?"\s+)};#s</expectedResult>

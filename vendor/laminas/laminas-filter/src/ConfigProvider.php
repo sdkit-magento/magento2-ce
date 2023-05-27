@@ -1,19 +1,20 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
+use Laminas\ServiceManager\ConfigInterface;
+
+/**
+ * @psalm-import-type ServiceManagerConfigurationType from ConfigInterface
+ */
 class ConfigProvider
 {
     /**
      * Return configuration for this component.
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function __invoke()
     {
@@ -25,16 +26,16 @@ class ConfigProvider
     /**
      * Return dependency mappings for this component.
      *
-     * @return array
+     * @return ServiceManagerConfigurationType
      */
     public function getDependencyConfig()
     {
         return [
-            'aliases' => [
+            'aliases'   => [
                 'FilterManager' => FilterPluginManager::class,
 
                 // Legacy Zend Framework aliases
-                \Zend\Filter\FilterPluginManager::class => FilterPluginManager::class,
+                'Zend\Filter\FilterPluginManager' => FilterPluginManager::class,
             ],
             'factories' => [
                 FilterPluginManager::class => FilterPluginManagerFactory::class,

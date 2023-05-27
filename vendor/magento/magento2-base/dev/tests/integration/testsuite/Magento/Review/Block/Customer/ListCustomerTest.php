@@ -127,6 +127,9 @@ class ListCustomerTest extends TestCase
     public function testCustomerWithoutReviews(): void
     {
         $this->customerSession->setCustomerId(1);
-        $this->assertStringContainsString((string)__('You have submitted no reviews.'), strip_tags($this->block->toHtml()));
+        $this->assertStringContainsString(
+            (string)__('You have submitted no reviews.'),
+            strip_tags($this->block->toHtml())
+        );
     }
 }

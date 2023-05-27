@@ -6,14 +6,14 @@
 -->
 <div class="admin__field admin__field-group-additional" css="$data.additionalClasses" visible="visible">
     <label class="admin__field-label" if="$data.label" visible="$data.labelVisible">
-        <span text="label"/>
+        <span text="label"></span>
     </label>
 
     <div class="admin__field-control">
-        <render args="elementTmpl"/>
+        <render args="elementTmpl"></render>
     </div>
 
     <div class="admin__field-note" if="$data.notice">
-        <span html="notice"/>
+        <span><strong translate="'NOTE'"></strong>: <translate args="notice"></translate></span>
     </div>
 </div>

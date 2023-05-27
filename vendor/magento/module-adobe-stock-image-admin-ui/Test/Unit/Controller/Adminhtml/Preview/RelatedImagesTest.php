@@ -21,8 +21,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * RelatedImages test.
- * Test for RelatedImages class
+ * Test for controller providing Adobe Stock asset related images
  */
 class RelatedImagesTest extends TestCase
 {
@@ -66,13 +65,13 @@ class RelatedImagesTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
-        $this->getRelatedImages = $this->getMockForAbstractClass(GetRelatedImagesInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
+        $this->getRelatedImages = $this->createMock(GetRelatedImagesInterface::class);
         $this->context = $this->createMock(ActionContext::class);
-        $this->request = $this->getMockForAbstractClass(RequestInterface::class);
+        $this->request = $this->createMock(RequestInterface::class);
         $this->context->expects($this->once())
             ->method('getRequest')
-            ->willReturn($this->request);
+            ->will($this->returnValue($this->request));
         $this->resultFactory = $this->createMock(ResultFactory::class);
         $this->context->expects($this->once())
             ->method('getResultFactory')

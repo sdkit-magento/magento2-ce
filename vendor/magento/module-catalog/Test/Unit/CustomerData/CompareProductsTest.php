@@ -17,8 +17,12 @@ use Magento\Catalog\Model\Product\Url;
 use Magento\Catalog\Model\ResourceModel\Product\Compare\Item\Collection;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
+use Magento\Store\Model\Website;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use Magento\Store\Model\StoreManagerInterface;
 
-class CompareProductsTest extends \PHPUnit\Framework\TestCase
+class CompareProductsTest extends TestCase
 {
     /**
      * @var CompareProducts
@@ -26,17 +30,17 @@ class CompareProductsTest extends \PHPUnit\Framework\TestCase
     private $model;
 
     /**
-     * @var Compare|\PHPUnit\Framework\MockObject\MockObject
+     * @var Compare|MockObject
      */
     private $helperMock;
 
     /**
-     * @var Url|\PHPUnit\Framework\MockObject\MockObject
+     * @var Url|MockObject
      */
     private $productUrlMock;
 
     /**
-     * @var Output|\PHPUnit\Framework\MockObject\MockObject
+     * @var Output|MockObject
      */
     private $outputHelperMock;
 
@@ -46,9 +50,19 @@ class CompareProductsTest extends \PHPUnit\Framework\TestCase
     private $objectManagerHelper;
 
     /**
-     * @var ScopeConfigInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var ScopeConfigInterface|MockObject
      */
     private $scopeConfigMock;
+
+    /**
+     * @var StoreManagerInterface
+     */
+    private $storeManagerMock;
+
+    /**
+     * @var Website|MockObject
+     */
+    private $websiteMock;
 
     /**
      * @var array
@@ -75,6 +89,18 @@ class CompareProductsTest extends \PHPUnit\Framework\TestCase
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
 
+        $this->storeManagerMock = $this->getMockBuilder(
+            StoreManagerInterface::class
+        )->disableOriginalConstructor()
+            ->getMockForAbstractClass();
+
+        $this->websiteMock = $this->getMockBuilder(
+            Website::class
+        )->onlyMethods(
+            ['getId',]
+        )->disableOriginalConstructor()
+            ->getMock();
+
         $this->objectManagerHelper = new ObjectManagerHelper($this);
 
         $this->model = $this->objectManagerHelper->getObject(
@@ -83,7 +109,9 @@ class CompareProductsTest extends \PHPUnit\Framework\TestCase
                 'helper' => $this->helperMock,
                 'productUrl' => $this->productUrlMock,
                 'outputHelper' => $this->outputHelperMock,
-                'scopeConfig'  => $this->scopeConfigMock
+                'scopeConfig'  => $this->scopeConfigMock,
+                'storeManager' => $this->storeManagerMock
+
             ]
         );
     }
@@ -92,9 +120,9 @@ class CompareProductsTest extends \PHPUnit\Framework\TestCase
      * Prepare compare items collection.
      *
      * @param array $items
-     * @return \PHPUnit\Framework\MockObject\MockObject
+     * @return MockObject
      */
-    private function getItemCollectionMock(array $items) : \PHPUnit\Framework\MockObject\MockObject
+    private function getItemCollectionMock(array $items) : MockObject
     {
         $itemCollectionMock = $this->getMockBuilder(Collection::class)
             ->disableOriginalConstructor()
@@ -152,9 +180,9 @@ class CompareProductsTest extends \PHPUnit\Framework\TestCase
      * Prepare mock of product object.
      *
      * @param array $data
-     * @return \PHPUnit\Framework\MockObject\MockObject
+     * @return MockObject
      */
-    private function getProductMock(array $data) : \PHPUnit\Framework\MockObject\MockObject
+    private function getProductMock(array $data) : MockObject
     {
         $product = $this->getMockBuilder(Product::class)
             ->disableOriginalConstructor()
@@ -194,7 +222,8 @@ class CompareProductsTest extends \PHPUnit\Framework\TestCase
         $this->helperMock->expects($this->once())
             ->method('getListUrl')
             ->willReturn('http://list.url');
-
+        $this->storeManagerMock->expects($this->any())->method('getWebsite')->willReturn($this->websiteMock);
+        $this->websiteMock->expects($this->any())->method('getId')->willReturn(1);
         $this->assertEquals(
             [
                 'count' => $count,
@@ -222,7 +251,8 @@ class CompareProductsTest extends \PHPUnit\Framework\TestCase
                         'remove_url' => 'http://remove.url/3',
                         'productScope' => null
                     ]
-                ]
+                ],
+                'websiteId' => 1
             ],
             $this->model->getSectionData()
         );
@@ -243,12 +273,16 @@ class CompareProductsTest extends \PHPUnit\Framework\TestCase
             ->method('getListUrl')
             ->willReturn('http://list.url');
 
+        $this->storeManagerMock->expects($this->any())->method('getWebsite')->willReturn($this->websiteMock);
+        $this->websiteMock->expects($this->any())->method('getId')->willReturn(1);
+
         $this->assertEquals(
             [
                 'count' => $count,
                 'countCaption' =>  __('%1 items', $count),
                 'listUrl' => 'http://list.url',
-                'items' => []
+                'items' => [],
+                'websiteId' => 1
             ],
             $this->model->getSectionData()
         );
@@ -261,6 +295,9 @@ class CompareProductsTest extends \PHPUnit\Framework\TestCase
         $this->helperMock->expects($this->once())
             ->method('getItemCount')
             ->willReturn($count);
+
+        $this->storeManagerMock->expects($this->any())->method('getWebsite')->willReturn($this->websiteMock);
+        $this->websiteMock->expects($this->any())->method('getId')->willReturn(1);
 
         $items = $this->prepareProductsWithCorrespondingMocks(
             [
@@ -294,7 +331,8 @@ class CompareProductsTest extends \PHPUnit\Framework\TestCase
                         'remove_url' => 'http://remove.url/12345',
                         'productScope' => null
                     ]
-                ]
+                ],
+                'websiteId' => 1
             ],
             $this->model->getSectionData()
         );

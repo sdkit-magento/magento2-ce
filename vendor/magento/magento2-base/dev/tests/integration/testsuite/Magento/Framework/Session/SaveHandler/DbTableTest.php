@@ -211,10 +211,7 @@ class DbTableTest extends \PHPUnit\Framework\TestCase
      */
     public function testReadEncoded($sessionData)
     {
-        $sessionRecord = [
-            self::COLUMN_SESSION_ID => $this->_encryptor->hash(self::SESSION_ID),
-            self::COLUMN_SESSION_DATA => $sessionData
-        ];
+        $sessionRecord = [self::COLUMN_SESSION_ID => $this->_encryptor->hash(self::SESSION_ID), self::COLUMN_SESSION_DATA => $sessionData];
         $this->_connection->insertOnDuplicate($this->_sessionTable, $sessionRecord, [self::COLUMN_SESSION_DATA]);
 
         $sessionData = $this->_model->read(self::SESSION_ID);

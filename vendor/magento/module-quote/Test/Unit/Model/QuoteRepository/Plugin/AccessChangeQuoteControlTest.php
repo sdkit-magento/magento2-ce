@@ -3,18 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Magento\Quote\Test\Unit\Model\QuoteRepository\Plugin;
 
 use Magento\Authorization\Model\UserContextInterface;
-use Magento\Quote\Model\ChangeQuoteControl;
-use Magento\Quote\Model\QuoteRepository\Plugin\AccessChangeQuoteControl;
-use Magento\Quote\Model\Quote;
+use Magento\Framework\Exception\StateException;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use Magento\Quote\Model\ChangeQuoteControl;
+use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteRepository;
-use \PHPUnit\Framework\MockObject\MockObject as MockObject;
+use Magento\Quote\Model\QuoteRepository\Plugin\AccessChangeQuoteControl;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class AccessChangeQuoteControlTest extends \PHPUnit\Framework\TestCase
+class AccessChangeQuoteControlTest extends TestCase
 {
     /**
      * @var AccessChangeQuoteControl
@@ -50,7 +53,7 @@ class AccessChangeQuoteControlTest extends \PHPUnit\Framework\TestCase
 
         $this->quoteMock = $this->getMockBuilder(Quote::class)
             ->disableOriginalConstructor()
-            ->setMethods(['getCustomerId'])
+            ->addMethods(['getCustomerId'])
             ->getMock();
 
         $this->quoteRepositoryMock = $this->getMockBuilder(QuoteRepository::class)
@@ -61,17 +64,10 @@ class AccessChangeQuoteControlTest extends \PHPUnit\Framework\TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $objectManagerHelper = new ObjectManager($this);
-        $this->accessChangeQuoteControl = $objectManagerHelper->getObject(
-            AccessChangeQuoteControl::class,
-            ['changeQuoteControl' => $this->changeQuoteControlMock]
-        );
+        $this->accessChangeQuoteControl = new AccessChangeQuoteControl($this->changeQuoteControlMock);
     }
 
-    /**
-     * User with role Customer and customer_id matches context user_id.
-     */
-    public function testBeforeSaveForCustomer()
+    public function testBeforeSaveForCustomerWithCustomerIdMatchinQuoteUserIdIsAllowed()
     {
         $this->quoteMock->method('getCustomerId')
             ->willReturn(1);
@@ -82,20 +78,13 @@ class AccessChangeQuoteControlTest extends \PHPUnit\Framework\TestCase
         $this->changeQuoteControlMock->method('isAllowed')
             ->willReturn(true);
 
-        $result = $this->accessChangeQuoteControl->beforeSave($this->quoteRepositoryMock, $this->quoteMock);
-
-        $this->assertNull($result);
+        $this->accessChangeQuoteControl->beforeSave($this->quoteRepositoryMock, $this->quoteMock);
     }
 
-    /**
-     * The user_id and customer_id from the quote are different.
-     *
-     */
-    public function testBeforeSaveException()
+    public function testBeforeSaveThrowsExceptionForCustomerWithCustomerIdNotMatchingQuoteUserId()
     {
-        $this->expectException(\Magento\Framework\Exception\StateException::class);
+        $this->expectException(StateException::class);
         $this->expectExceptionMessage('Invalid state change requested');
-
         $this->quoteMock->method('getCustomerId')
             ->willReturn(2);
 
@@ -108,10 +97,7 @@ class AccessChangeQuoteControlTest extends \PHPUnit\Framework\TestCase
         $this->accessChangeQuoteControl->beforeSave($this->quoteRepositoryMock, $this->quoteMock);
     }
 
-    /**
-     * User with role Admin and customer_id not much with user_id.
-     */
-    public function testBeforeSaveForAdmin()
+    public function testBeforeSaveForAdminUserRoleIsAllowed()
     {
         $this->quoteMock->method('getCustomerId')
             ->willReturn(2);
@@ -122,15 +108,10 @@ class AccessChangeQuoteControlTest extends \PHPUnit\Framework\TestCase
         $this->changeQuoteControlMock->method('isAllowed')
             ->willReturn(true);
 
-        $result = $this->accessChangeQuoteControl->beforeSave($this->quoteRepositoryMock, $this->quoteMock);
-
-        $this->assertNull($result);
+        $this->accessChangeQuoteControl->beforeSave($this->quoteRepositoryMock, $this->quoteMock);
     }
 
-    /**
-     * User with role Guest and customer_id === null.
-     */
-    public function testBeforeSaveForGuest()
+    public function testBeforeSaveForGuestIsAllowed()
     {
         $this->quoteMock->method('getCustomerId')
             ->willReturn(null);
@@ -141,20 +122,13 @@ class AccessChangeQuoteControlTest extends \PHPUnit\Framework\TestCase
         $this->changeQuoteControlMock->method('isAllowed')
             ->willReturn(true);
 
-        $result = $this->accessChangeQuoteControl->beforeSave($this->quoteRepositoryMock, $this->quoteMock);
-
-        $this->assertNull($result);
+        $this->accessChangeQuoteControl->beforeSave($this->quoteRepositoryMock, $this->quoteMock);
     }
 
-    /**
-     * User with role Guest and customer_id !== null.
-     *
-     */
-    public function testBeforeSaveForGuestException()
+    public function testBeforeSaveThrowsExceptionForGuestDoesNotEquals()
     {
-        $this->expectException(\Magento\Framework\Exception\StateException::class);
+        $this->expectException(StateException::class);
         $this->expectExceptionMessage('Invalid state change requested');
-
         $this->quoteMock->method('getCustomerId')
             ->willReturn(1);
 
@@ -167,15 +141,10 @@ class AccessChangeQuoteControlTest extends \PHPUnit\Framework\TestCase
         $this->accessChangeQuoteControl->beforeSave($this->quoteRepositoryMock, $this->quoteMock);
     }
 
-    /**
-     * User with unknown role.
-     *
-     */
-    public function testBeforeSaveForUnknownUserTypeException()
+    public function testBeforeSaveThrowsExceptionForUnknownUserType()
     {
-        $this->expectException(\Magento\Framework\Exception\StateException::class);
+        $this->expectException(StateException::class);
         $this->expectExceptionMessage('Invalid state change requested');
-
         $this->quoteMock->method('getCustomerId')
             ->willReturn(2);
 

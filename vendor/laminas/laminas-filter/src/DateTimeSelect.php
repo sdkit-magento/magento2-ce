@@ -1,13 +1,22 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
+use function is_array;
+use function ksort;
+use function vsprintf;
+
+/**
+ * @psalm-type Options = array{
+ *     null_on_empty?: bool,
+ *     null_on_all_empty?: bool,
+ *     ...
+ * }
+ * @template TOptions of Options
+ * @template-extends AbstractDateDropdown<TOptions>
+ */
 class DateTimeSelect extends AbstractDateDropdown
 {
     /**
@@ -17,9 +26,7 @@ class DateTimeSelect extends AbstractDateDropdown
      */
     protected $format = '%6$s-%4$s-%1$s %2$s:%3$s:%5$s';
 
-    /**
-     * @var int
-     */
+    /** @var int */
     protected $expectedInputs = 6;
 
     /**
@@ -34,7 +41,8 @@ class DateTimeSelect extends AbstractDateDropdown
             return $value;
         }
 
-        if ($this->isNullOnEmpty()
+        if (
+            $this->isNullOnEmpty()
             && (
                 empty($value['year'])
                 || empty($value['month'])
@@ -47,7 +55,8 @@ class DateTimeSelect extends AbstractDateDropdown
             return;
         }
 
-        if ($this->isNullOnAllEmpty()
+        if (
+            $this->isNullOnAllEmpty()
             && (
                 empty($value['year'])
                 && empty($value['month'])

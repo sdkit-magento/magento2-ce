@@ -3,8 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Cms\Test\Unit\Controller\Adminhtml\Wysiwyg;
 
+use Exception;
 use Magento\Backend\App\Action\Context;
 use Magento\Cms\Controller\Adminhtml\Wysiwyg\Directive;
 use Magento\Cms\Model\Template\Filter;
@@ -13,14 +16,16 @@ use Magento\Framework\App\RequestInterface;
 use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Controller\Result\Raw;
 use Magento\Framework\Controller\Result\RawFactory;
-use Magento\Framework\Filesystem\Driver\File;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\Framework\Filesystem\DriverInterface;
 use Magento\Framework\Image\Adapter\AdapterInterface;
 use Magento\Framework\Image\AdapterFactory;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Framework\Url\DecoderInterface;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -37,70 +42,73 @@ class DirectiveTest extends TestCase
     protected $wysiwygDirective;
 
     /**
-     * @var Context|PHPUnit\Framework\MockObject\MockObject
+     * @var Context|MockObject
      */
     protected $actionContextMock;
 
     /**
-     * @var RequestInterface|PHPUnit\Framework\MockObject\MockObject
+     * @var RequestInterface|MockObject
      */
     protected $requestMock;
 
     /**
-     * @var DecoderInterface|PHPUnit\Framework\MockObject\MockObject
+     * @var DecoderInterface|MockObject
      */
     protected $urlDecoderMock;
 
     /**
-     * @var ObjectManagerInterface|PHPUnit\Framework\MockObject\MockObject
+     * @var ObjectManagerInterface|MockObject
      */
     protected $objectManagerMock;
 
     /**
-     * @var Filter|PHPUnit\Framework\MockObject\MockObject
+     * @var Filter|MockObject
      */
     protected $templateFilterMock;
 
     /**
-     * @var AdapterFactory|PHPUnit\Framework\MockObject\MockObject
+     * @var AdapterFactory|MockObject
      */
     protected $imageAdapterFactoryMock;
 
     /**
-     * @var AdapterInterface|PHPUnit\Framework\MockObject\MockObject
+     * @var AdapterInterface|MockObject
      */
     protected $imageAdapterMock;
 
     /**
-     * @var ResponseInterface|PHPUnit\Framework\MockObject\MockObject
+     * @var ResponseInterface|MockObject
      */
     protected $responseMock;
 
     /**
-     * @var File|PHPUnit\Framework\MockObject\MockObject
-     */
-    protected $fileMock;
-
-    /**
-     * @var Config|PHPUnit\Framework\MockObject\MockObject
+     * @var Config|MockObject
      */
     protected $wysiwygConfigMock;
 
     /**
-     * @var LoggerInterface|PHPUnit\Framework\MockObject\MockObject
+     * @var LoggerInterface|MockObject
      */
     protected $loggerMock;
 
     /**
-     * @var RawFactory|PHPUnit\Framework\MockObject\MockObject
+     * @var RawFactory|MockObject
      */
     protected $rawFactoryMock;
 
     /**
-     * @var Raw|PHPUnit\Framework\MockObject\MockObject
+     * @var Raw|MockObject
      */
     protected $rawMock;
 
+    /**
+     * @var DriverInterface|MockObject
+     */
+    private $driverMock;
+
+    /**
+     * @inheritdoc
+     */
     protected function setUp(): void
     {
         $this->actionContextMock = $this->getMockBuilder(Context::class)
@@ -123,9 +131,8 @@ class DirectiveTest extends TestCase
             ->getMock();
         $this->imageAdapterMock = $this->getMockBuilder(AdapterInterface::class)
             ->disableOriginalConstructor()
-            ->setMethods(
+            ->onlyMethods(
                 [
-                    'getMimeType',
                     'getColorAt',
                     'getImage',
                     'watermark',
@@ -139,15 +146,13 @@ class DirectiveTest extends TestCase
                     'rotate'
                 ]
             )
+            ->addMethods(['getMimeType'])
             ->getMockForAbstractClass();
         $this->responseMock = $this->getMockBuilder(ResponseInterface::class)
             ->disableOriginalConstructor()
-            ->setMethods(['setHeader', 'setBody', 'sendResponse'])
+            ->onlyMethods(['sendResponse'])
+            ->addMethods(['setHeader', 'setBody'])
             ->getMockForAbstractClass();
-        $this->fileMock = $this->getMockBuilder(File::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['fileGetContents'])
-            ->getMock();
         $this->wysiwygConfigMock = $this->getMockBuilder(Config::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -155,7 +160,7 @@ class DirectiveTest extends TestCase
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
         $this->rawFactoryMock = $this->getMockBuilder(RawFactory::class)
-            ->setMethods(['create'])
+            ->onlyMethods(['create'])
             ->disableOriginalConstructor()
             ->getMock();
         $this->rawMock = $this->getMockBuilder(Raw::class)
@@ -171,6 +176,17 @@ class DirectiveTest extends TestCase
         $this->actionContextMock->expects($this->any())
             ->method('getObjectManager')
             ->willReturn($this->objectManagerMock);
+        $this->driverMock = $this->getMockBuilder(DriverInterface::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $directoryWrite = $this->getMockBuilder(WriteInterface::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $directoryWrite->expects($this->any())->method('getDriver')->willReturn($this->driverMock);
+        $filesystemMock = $this->getMockBuilder(Filesystem::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $filesystemMock->expects($this->any())->method('getDirectoryWrite')->willReturn($directoryWrite);
 
         $objectManager = new ObjectManager($this);
         $this->wysiwygDirective = $objectManager->getObject(
@@ -179,16 +195,20 @@ class DirectiveTest extends TestCase
                 'context' => $this->actionContextMock,
                 'urlDecoder' => $this->urlDecoderMock,
                 'resultRawFactory' => $this->rawFactoryMock,
-                'file' => $this->fileMock,
-                'imageAdapterFactory' => $this->imageAdapterFactoryMock
+                'adapterFactory' => $this->imageAdapterFactoryMock,
+                'logger' => $this->loggerMock,
+                'config' => $this->wysiwygConfigMock,
+                'filter' => $this->templateFilterMock,
+                'filesystem' => $filesystemMock
             ]
         );
     }
 
     /**
+     * @return void
      * @covers \Magento\Cms\Controller\Adminhtml\Wysiwyg\Directive::execute
      */
-    public function testExecute()
+    public function testExecute(): void
     {
         $mimeType = 'image/jpeg';
         $imageBody = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -197,21 +217,21 @@ class DirectiveTest extends TestCase
         $this->imageAdapterMock->expects($this->once())
             ->method('open')
             ->with(self::IMAGE_PATH);
-        $this->imageAdapterMock->expects($this->once())
+        $this->imageAdapterMock->expects($this->atLeastOnce())
             ->method('getMimeType')
             ->willReturn($mimeType);
-        $this->rawMock->expects($this->once())
+        $this->rawMock->expects($this->atLeastOnce())
             ->method('setHeader')
             ->with('Content-Type', $mimeType)
             ->willReturnSelf();
-        $this->rawMock->expects($this->once())
+        $this->rawMock->expects($this->atLeastOnce())
             ->method('setContents')
             ->with($imageBody)
             ->willReturnSelf();
-        $this->imageAdapterMock->expects($this->never())
+        $this->imageAdapterMock->expects($this->once())
             ->method('getImage')
             ->willReturn($imageBody);
-        $this->fileMock->expects($this->once())
+        $this->driverMock->expects($this->once())
             ->method('fileGetContents')
             ->willReturn($imageBody);
         $this->rawFactoryMock->expects($this->any())
@@ -228,51 +248,49 @@ class DirectiveTest extends TestCase
     }
 
     /**
+     * @return void
      * @covers \Magento\Cms\Controller\Adminhtml\Wysiwyg\Directive::execute
      */
-    public function testExecuteException()
+    public function testExecuteException(): void
     {
-        $exception = new \Exception('epic fail');
+        $exception = new Exception('epic fail');
         $placeholderPath = 'pub/static/adminhtml/Magento/backend/en_US/Magento_Cms/images/wysiwyg_skin_image.png';
         $mimeType = 'image/png';
         $imageBody = '0123456789abcdefghijklmnopqrstuvwxyz';
         $this->prepareExecuteTest();
 
-        $this->imageAdapterMock->expects($this->at(0))
-            ->method('open')
-            ->with(self::IMAGE_PATH)
-            ->willThrowException($exception);
         $this->wysiwygConfigMock->expects($this->once())
             ->method('getSkinImagePlaceholderPath')
             ->willReturn($placeholderPath);
-        $this->imageAdapterMock->expects($this->at(1))
+        $this->imageAdapterMock
             ->method('open')
-            ->with($placeholderPath);
-        $this->imageAdapterMock->expects($this->once())
+            ->withConsecutive([self::IMAGE_PATH])
+            ->willThrowException($exception);
+        $this->imageAdapterMock->expects($this->atLeastOnce())
             ->method('getMimeType')
             ->willReturn($mimeType);
-        $this->rawMock->expects($this->once())
+        $this->rawMock->expects($this->atLeastOnce())
             ->method('setHeader')
             ->with('Content-Type', $mimeType)
             ->willReturnSelf();
-        $this->rawMock->expects($this->once())
+        $this->rawMock->expects($this->atLeastOnce())
             ->method('setContents')
             ->with($imageBody)
             ->willReturnSelf();
-        $this->imageAdapterMock->expects($this->never())
+        $this->imageAdapterMock->expects($this->any())
             ->method('getImage')
             ->willReturn($imageBody);
-        $this->fileMock->expects($this->once())
+        $this->driverMock->expects($this->once())
             ->method('fileGetContents')
             ->willReturn($imageBody);
         $this->loggerMock->expects($this->once())
-            ->method('critical')
+            ->method('warning')
             ->with($exception);
         $this->rawFactoryMock->expects($this->any())
             ->method('create')
             ->willReturn($this->rawMock);
 
-        $this->imageAdapterFactoryMock->expects($this->exactly(2))
+        $this->imageAdapterFactoryMock->expects($this->exactly(1))
             ->method('create')
             ->willReturn($this->imageAdapterMock);
 
@@ -282,7 +300,10 @@ class DirectiveTest extends TestCase
         );
     }
 
-    protected function prepareExecuteTest()
+    /**
+     * @return void
+     */
+    protected function prepareExecuteTest(): void
     {
         $directiveParam = 'e3ttZWRpYSB1cmw9Ind5c2l3eWcvYnVubnkuanBnIn19';
         $directive = '{{media url="wysiwyg/image.jpg"}}';
@@ -295,22 +316,61 @@ class DirectiveTest extends TestCase
             ->method('decode')
             ->with($directiveParam)
             ->willReturn($directive);
-        $this->objectManagerMock->expects($this->once())
-            ->method('create')
-            ->with(Filter::class)
-            ->willReturn($this->templateFilterMock);
+
         $this->templateFilterMock->expects($this->once())
             ->method('filter')
             ->with($directive)
             ->willReturn(self::IMAGE_PATH);
-        $this->objectManagerMock->expects($this->any())
-            ->method('get')
-            ->willReturnMap(
-                [
-                    [AdapterFactory::class, $this->imageAdapterFactoryMock],
-                    [Config::class, $this->wysiwygConfigMock],
-                    [LoggerInterface::class, $this->loggerMock]
-                ]
-            );
+
+        $this->imageAdapterFactoryMock->expects($this->once())
+            ->method('create')
+            ->willReturn($this->imageAdapterMock);
+    }
+
+    /**
+     * Test Execute With Deleted Image
+     *
+     * @return void
+     * @covers \Magento\Cms\Controller\Adminhtml\Wysiwyg\Directive::execute
+     */
+    public function testExecuteWithDeletedImage(): void
+    {
+        $exception = new Exception('epic fail');
+        $placeholderPath = 'pub/static/adminhtml/Magento/backend/en_US/Magento_Cms/images/wysiwyg_skin_image.png';
+        $this->prepareExecuteTest();
+
+        $this->imageAdapterMock->expects($this->any())
+            ->method('open')
+            ->with(self::IMAGE_PATH)
+            ->willThrowException($exception);
+
+        $this->wysiwygConfigMock->expects($this->once())
+            ->method('getSkinImagePlaceholderPath')
+            ->willReturn($placeholderPath);
+
+        $this->imageAdapterMock->expects($this->any())
+            ->method('open')
+            ->with($placeholderPath)
+            ->willThrowException($exception);
+
+        $this->loggerMock->expects($this->once())
+            ->method('warning')
+            ->with($exception);
+
+        $this->rawMock->expects($this->once())
+            ->method('setHeader')
+            ->with('Content-Type', null)
+            ->willReturnSelf();
+
+        $this->rawMock->expects($this->once())
+            ->method('setContents')
+            ->with(null)
+            ->willReturnSelf();
+
+        $this->rawFactoryMock->expects($this->any())
+            ->method('create')
+            ->willReturn($this->rawMock);
+
+        $this->wysiwygDirective->execute();
     }
 }

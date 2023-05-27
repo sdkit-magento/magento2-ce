@@ -28,7 +28,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
 
     private $setFactory;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->objectManager = Bootstrap::getObjectManager();
 
@@ -78,17 +78,22 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             asort($expectedSkuList);
             asort($resultSkuList);
 
+            $expectedSkuList = array_values($expectedSkuList);
+            $resultSkuList = array_values($resultSkuList);
+
             $this->assertEquals($expectedSkuList, $resultSkuList, sprintf('%s failed', $variationName));
         }
     }
 
     /**
+     *
      * @magentoDbIsolation disabled
      */
     public function testExceptionUndefinedRuleOperator()
     {
-        $this->expectExceptionMessage("Undefined rule operator \"====\" passed in. Valid operators are: ==,!=,>=,<=,>,<,{},!{},(),!()");
         $this->expectException(\Magento\Framework\Exception\InputException::class);
+        $this->expectExceptionMessage('Undefined rule operator "====" passed in. Valid operators are: ==,!=,>=,<=,>,<,{},!{},(),!()');
+
         $conditions = [
             'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
             'aggregator' => 'all',
@@ -111,12 +116,14 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     *
      * @magentoDbIsolation disabled
      */
     public function testExceptionUndefinedRuleAggregator()
     {
-        $this->expectExceptionMessage("Undefined rule aggregator \"olo-lo\" passed in. Valid operators are: all,any");
         $this->expectException(\Magento\Framework\Exception\InputException::class);
+        $this->expectExceptionMessage('Undefined rule aggregator "olo-lo" passed in. Valid operators are: all,any');
+
         $conditions = [
             'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
             'aggregator' => 'olo-lo',
@@ -240,7 +247,8 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
                     'simple-product-9',
                     'simple-product-10',
                     'simple-product-11',
-                    'simple-product-12'
+                    'simple-product-12',
+                    'simple-product-13',
                 ]
             ],
 
@@ -265,7 +273,8 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
                     'simple-product-9',
                     'simple-product-10',
                     'simple-product-11',
-                    'simple-product-12'
+                    'simple-product-12',
+                    'simple-product-13',
                 ]
             ],
 
@@ -379,7 +388,8 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
                     'simple-product-9',
                     'simple-product-10',
                     'simple-product-11',
-                    'simple-product-12'
+                    'simple-product-12',
+                    'simple-product-13',
                 ]
             ],
 
@@ -409,7 +419,8 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
                     'simple-product-9',
                     'simple-product-10',
                     'simple-product-11',
-                    'simple-product-12'
+                    'simple-product-12',
+                    'simple-product-13',
                 ]
             ],
 
@@ -417,12 +428,25 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             'variation 22' => [
                 'condition' => $this->getConditionsForVariation22(),
                 'expected-sku' => [
-                    'simple-product-1',
-                    'simple-product-2',
+                    'simple-product-7',
+                    'simple-product-8',
+                    'simple-product-13',
+                ]
+            ],
+
+            // test filter by multiple sku and "is not one of" condition
+            'variation 23' => [
+                'condition' => $this->getConditionsForVariation23(),
+                'expected-sku' => [
                     'simple-product-3',
                     'simple-product-4',
+                    'simple-product-6',
                     'simple-product-7',
-                    'simple-product-8'
+                    'simple-product-8',
+                    'simple-product-9',
+                    'simple-product-11',
+                    'simple-product-12',
+                    'simple-product-13',
                 ]
             ],
         ];
@@ -1043,6 +1067,25 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
                             'attribute' => 'category_ids'
                         ]
                     ]
+                ]
+            ]
+        ];
+
+        return $this->getCombineConditionFromArray($conditions);
+    }
+
+    private function getConditionsForVariation23()
+    {
+        $conditions = [
+            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'aggregator' => 'all',
+            'value' => 1,
+            'conditions' => [
+                [
+                    'type' => \Magento\CatalogRule\Model\Rule\Condition\Product::class,
+                    'operator' => '!()',
+                    'value' => 'simple-product-1, simple-product-2, simple-product-5, simple-product-10',
+                    'attribute' => 'sku'
                 ]
             ]
         ];

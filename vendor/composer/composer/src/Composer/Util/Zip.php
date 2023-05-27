@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Composer.
@@ -19,12 +19,8 @@ class Zip
 {
     /**
      * Gets content of the root composer.json inside a ZIP archive.
-     *
-     * @param string $pathToZip
-     *
-     * @return string|null
      */
-    public static function getComposerJson($pathToZip)
+    public static function getComposerJson(string $pathToZip): ?string
     {
         if (!extension_loaded('zip')) {
             throw new \RuntimeException('The Zip Util requires PHP\'s zip extension');
@@ -35,18 +31,13 @@ class Zip
             return null;
         }
 
-        if (0 == $zip->numFiles) {
+        if (0 === $zip->numFiles) {
             $zip->close();
 
             return null;
         }
 
         $foundFileIndex = self::locateFile($zip, 'composer.json');
-        if (false === $foundFileIndex) {
-            $zip->close();
-
-            return null;
-        }
 
         $content = null;
         $configurationFileName = $zip->getNameIndex($foundFileIndex);
@@ -64,20 +55,16 @@ class Zip
     /**
      * Find a file by name, returning the one that has the shortest path.
      *
-     * @param  \ZipArchive       $zip
-     * @param  string            $filename
      * @throws \RuntimeException
-     *
-     * @return int
      */
-    private static function locateFile(\ZipArchive $zip, $filename)
+    private static function locateFile(\ZipArchive $zip, string $filename): int
     {
         // return root composer.json if it is there and is a file
         if (false !== ($index = $zip->locateName($filename)) && $zip->getFromIndex($index) !== false) {
             return $index;
         }
 
-        $topLevelPaths = array();
+        $topLevelPaths = [];
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $name = $zip->getNameIndex($i);
             $dirname = dirname($name);

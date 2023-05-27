@@ -9,17 +9,17 @@ declare(strict_types=1);
 namespace Magento\AdobeStockImageAdminUi\Test\Unit\Controller\Adminhtml\License;
 
 use Exception;
+use Magento\AdobeStockClientApi\Api\ClientInterface;
 use Magento\AdobeStockClientApi\Api\Data\LicenseConfirmationInterface;
 use Magento\AdobeStockImageAdminUi\Controller\Adminhtml\License\Confirmation;
+use Magento\Backend\App\Action\Context as ActionContext;
 use Magento\Framework\App\RequestInterface;
+use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Controller\ResultFactory;
+use Magento\Framework\Phrase;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Magento\AdobeStockClientApi\Api\ClientInterface;
 use Psr\Log\LoggerInterface;
-use Magento\Framework\Phrase;
-use Magento\Framework\Controller\Result\Json;
-use Magento\Backend\App\Action\Context as ActionContext;
 
 /**
  * License confirmation test.
@@ -66,13 +66,13 @@ class ConfirmationTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->clientInterfaceMock = $this->getMockForAbstractClass(ClientInterface::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->clientInterfaceMock = $this->createMock(ClientInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->context = $this->createMock(ActionContext::class);
-        $this->request = $this->getMockForAbstractClass(RequestInterface::class);
+        $this->request = $this->createMock(RequestInterface::class);
         $this->context->expects($this->once())
             ->method('getRequest')
-            ->willReturn($this->request);
+            ->will($this->returnValue($this->request));
         $this->resultFactory = $this->createMock(ResultFactory::class);
         $this->context->expects($this->once())
             ->method('getResultFactory')
@@ -103,9 +103,9 @@ class ConfirmationTest extends TestCase
     public function testExecute(): void
     {
         /** @var LicenseConfirmationInterface|MockObject $confirmation */
-        $confirmation = $this->getMockForAbstractClass(LicenseConfirmationInterface::class);
+        $confirmation = $this->createMock(LicenseConfirmationInterface::class);
         $confirmation->expects($this->once())->method('getMessage')->willReturn('message');
-        $confirmation->expects($this->once())->method('getCanLicense')->willReturn(true);
+        $confirmation->expects($this->once())->method('isCanLicense')->willReturn(true);
 
         $data = [
             'success' => true,

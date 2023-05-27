@@ -24,7 +24,7 @@ class InventoryTransferValidatorTest extends TestCase
      */
     private $defaultSourceProvider;
 
-    protected function setUp(): void
+    public function setUp(): void
     {
         parent::setUp();
         $this->bulkInventoryTransferValidator =
@@ -33,7 +33,7 @@ class InventoryTransferValidatorTest extends TestCase
     }
 
     /**
-     * @magentoDataFixture ../../../../app/code/Magento/InventoryApi/Test/_files/sources.php
+     * @magentoDataFixture Magento_InventoryApi::Test/_files/sources.php
      */
     public function testNotExistingSources()
     {
@@ -66,7 +66,7 @@ class InventoryTransferValidatorTest extends TestCase
     }
 
     /**
-     * @magentoDataFixture ../../../../app/code/Magento/InventoryApi/Test/_files/sources.php
+     * @magentoDataFixture Magento_InventoryApi::Test/_files/sources.php
      */
     public function testExistingSources()
     {
@@ -86,7 +86,7 @@ class InventoryTransferValidatorTest extends TestCase
     }
 
     /**
-     * @magentoDataFixture ../../../../app/code/Magento/InventoryApi/Test/_files/sources.php
+     * @magentoDataFixture Magento_InventoryApi::Test/_files/sources.php
      */
     public function testNonSenseTransfer()
     {

@@ -32,7 +32,7 @@ define(['underscore'], function (_) {
         /**
          * Returns a list of sections which should be invalidated for given URL.
          * @param {String} url - URL which was requested.
-         * @return {Array} - List of sections to invalidate.
+         * @return {Object} - List of sections to invalidate.
          */
         getAffectedSections: function (url) {
             var route = canonize(url),
@@ -50,16 +50,16 @@ define(['underscore'], function (_) {
                     return route.indexOf(section) === 0;
                 });
 
-            return _.union(_.toArray(actions), _.toArray(sections['*']));
+            return _.union(_.toArray(actions), sections['*']);
         },
 
         /**
          * Filters the list of given sections to the ones defined as client side.
-         * @param {Array} allSections - List of sections to check.
-         * @return {Array} - List of filtered sections.
+         * @param {Object} allSections - List of sections to check.
+         * @return {Object} - List of filtered sections.
          */
         filterClientSideSections: function (allSections) {
-            return _.difference(_.toArray(allSections), clientSideSections);
+            return _.difference(allSections, clientSideSections);
         },
 
         /**

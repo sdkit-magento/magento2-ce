@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Magento\Framework\View\Element;
 
@@ -30,30 +31,24 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
     /**
      * Cache group Tag
      */
-    const CACHE_GROUP = \Magento\Framework\App\Cache\Type\Block::TYPE_IDENTIFIER;
+    public const CACHE_GROUP = \Magento\Framework\App\Cache\Type\Block::TYPE_IDENTIFIER;
 
     /**
      * Prefix for cache key of block
      */
-    const CACHE_KEY_PREFIX = 'BLOCK_';
+    public const CACHE_KEY_PREFIX = 'BLOCK_';
 
     /**
-     * Design
-     *
      * @var \Magento\Framework\View\DesignInterface
      */
     protected $_design;
 
     /**
-     * Session
-     *
      * @var \Magento\Framework\Session\SessionManagerInterface
      */
     protected $_session;
 
     /**
-     * SID Resolver
-     *
      * @var \Magento\Framework\Session\SidResolverInterface
      * @deprecated 102.0.5 Not used anymore.
      */
@@ -81,15 +76,11 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
     protected $jsLayout = [];
 
     /**
-     * Request
-     *
      * @var \Magento\Framework\App\RequestInterface
      */
     protected $_request;
 
     /**
-     * Url Builder
-     *
      * @var \Magento\Framework\UrlInterface
      */
     protected $_urlBuilder;
@@ -124,29 +115,21 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
     protected $_viewConfig;
 
     /**
-     * Cache State
-     *
      * @var \Magento\Framework\App\Cache\StateInterface
      */
     protected $_cacheState;
 
     /**
-     * Logger
-     *
      * @var \Psr\Log\LoggerInterface
      */
     protected $_logger;
 
     /**
-     * Escaper
-     *
      * @var \Magento\Framework\Escaper
      */
     protected $_escaper;
 
     /**
-     * Filter manager
-     *
      * @var \Magento\Framework\Filter\FilterManager
      */
     protected $filterManager;
@@ -165,7 +148,10 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
      * The property is used to define content-scope of block. Can be private or public.
      * If it isn't defined then application considers it as false.
      *
+     * @see https://devdocs.magento.com/guides/v2.4/extension-dev-guide/cache/page-caching/private-content.html
      * @var bool
+     * @deprecated
+     * @since 103.0.1
      */
     protected $_isScopePrivate = false;
 
@@ -823,7 +809,7 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
         $showTime = false,
         $timezone = null
     ) {
-        $date = $date instanceof \DateTimeInterface ? $date : new \DateTime($date);
+        $date = $date instanceof \DateTimeInterface ? $date : new \DateTime($date ?? 'now');
         return $this->_localeDate->formatDateTime(
             $date,
             $format,
@@ -846,7 +832,7 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
         $format = \IntlDateFormatter::SHORT,
         $showDate = false
     ) {
-        $time = $time instanceof \DateTimeInterface ? $time : new \DateTime($time);
+        $time = $time instanceof \DateTimeInterface ? $time : new \DateTime($time ?? 'now');
         return $this->_localeDate->formatDateTime(
             $time,
             $showDate ? $format : \IntlDateFormatter::NONE,
@@ -875,10 +861,14 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
      */
     public static function extractModuleName($className)
     {
+        if (!$className) {
+            return '';
+        }
+
         $namespace = substr(
             $className,
             0,
-            strpos($className, '\\' . 'Block' . '\\')
+            (int)strpos($className, '\\' . 'Block' . '\\')
         );
         return str_replace('\\', '_', $namespace);
     }
@@ -889,6 +879,7 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
      * @param string|array $data
      * @param array|null $allowedTags
      * @return string
+     * @deprecated 103.0.0 Use $escaper directly in templates and in blocks.
      */
     public function escapeHtml($data, $allowedTags = null)
     {
@@ -901,6 +892,7 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
      * @param string $string
      * @return string
      * @since 101.0.0
+     * @deprecated 103.0.0 Use $escaper directly in templates and in blocks.
      */
     public function escapeJs($string)
     {
@@ -914,6 +906,7 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
      * @param boolean $escapeSingleQuote
      * @return string
      * @since 101.0.0
+     * @deprecated 103.0.0 Use $escaper directly in templates and in blocks.
      */
     public function escapeHtmlAttr($string, $escapeSingleQuote = true)
     {
@@ -926,6 +919,7 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
      * @param string $string
      * @return string
      * @since 101.0.0
+     * @deprecated 103.0.0 Use $escaper directly in templates and in blocks.
      */
     public function escapeCss($string)
     {
@@ -942,10 +936,9 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
      */
     public function stripTags($data, $allowableTags = null, $allowHtmlEntities = false)
     {
-        return $this->filterManager->stripTags(
-            $data,
-            ['allowableTags' => $allowableTags, 'escape' => $allowHtmlEntities]
-        );
+        $params = ['allowableTags' => $allowableTags, 'escape' => $allowHtmlEntities];
+
+        return $data ? $this->filterManager->stripTags($data, $params) : '';
     }
 
     /**
@@ -953,6 +946,7 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
      *
      * @param string $string
      * @return string
+     * @deprecated 103.0.0 Use $escaper directly in templates and in blocks.
      */
     public function escapeUrl($string)
     {
@@ -987,10 +981,11 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
     }
 
     /**
-     * Escape quotes in java scripts
+     * Escape single quotes/apostrophes ('), or other specified $quote character in javascript
      *
-     * @param string|array $data
+     * @param string|string[]|array $data
      * @param string $quote
+     *
      * @return string|array
      * @deprecated 101.0.0
      */
@@ -1179,6 +1174,8 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
      * Returns true if scope is private, false otherwise
      *
      * @return bool
+     * @deprecated
+     * @since 103.0.1
      */
     public function isScopePrivate()
     {

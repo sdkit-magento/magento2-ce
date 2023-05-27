@@ -1,10 +1,6 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter\Encrypt;
 
@@ -17,8 +13,15 @@ use Laminas\Filter\Exception;
 use Laminas\Stdlib\ArrayUtils;
 use Traversable;
 
+use function array_key_exists;
+use function is_array;
+use function is_string;
+use function sprintf;
+
 /**
  * Encryption adapter for Laminas\Crypt\BlockCipher
+ *
+ * @deprecated Since 2.24.0. This adapter will be removed in 3.0
  */
 class BlockCipher implements EncryptionAlgorithmInterface
 {
@@ -53,8 +56,6 @@ class BlockCipher implements EncryptionAlgorithmInterface
     protected $compression;
 
     /**
-     * Class constructor
-     *
      * @param  string|array|Traversable $options Encryption Options
      * @throws Exception\RuntimeException
      * @throws Exception\InvalidArgumentException
@@ -62,10 +63,10 @@ class BlockCipher implements EncryptionAlgorithmInterface
     public function __construct($options)
     {
         $cipherPluginManager = CryptBlockCipher::getSymmetricPluginManager();
-        $cipherType = $cipherPluginManager->has('openssl') ? 'openssl' : 'mcrypt';
+        $cipherType          = $cipherPluginManager->has('openssl') ? 'openssl' : 'mcrypt';
         try {
             $this->blockCipher = CryptBlockCipher::factory($cipherType, $this->encryption);
-        } catch (SymmetricException\RuntimeException $e) {
+        } catch (SymmetricException\RuntimeException) {
             throw new Exception\RuntimeException(sprintf(
                 'The BlockCipher cannot be used without the %s extension',
                 $cipherType
@@ -102,7 +103,7 @@ class BlockCipher implements EncryptionAlgorithmInterface
      * Sets new encryption options
      *
      * @param  string|array $options Encryption options
-     * @return self
+     * @return $this
      * @throws Exception\InvalidArgumentException
      */
     public function setEncryption($options)
@@ -126,7 +127,7 @@ class BlockCipher implements EncryptionAlgorithmInterface
         if (isset($options['algorithm'])) {
             try {
                 $this->blockCipher->setCipherAlgorithm($options['algorithm']);
-            } catch (CryptException\InvalidArgumentException $e) {
+            } catch (CryptException\InvalidArgumentException) {
                 throw new Exception\InvalidArgumentException(
                     "The algorithm '{$options['algorithm']}' is not supported"
                 );
@@ -136,7 +137,7 @@ class BlockCipher implements EncryptionAlgorithmInterface
         if (isset($options['hash'])) {
             try {
                 $this->blockCipher->setHashAlgorithm($options['hash']);
-            } catch (CryptException\InvalidArgumentException $e) {
+            } catch (CryptException\InvalidArgumentException) {
                 throw new Exception\InvalidArgumentException("The algorithm '{$options['hash']}' is not supported");
             }
         }
@@ -168,7 +169,7 @@ class BlockCipher implements EncryptionAlgorithmInterface
      * Set the inizialization vector
      *
      * @param  string $vector
-     * @return self
+     * @return $this
      * @throws Exception\InvalidArgumentException
      */
     public function setVector($vector)
@@ -186,7 +187,7 @@ class BlockCipher implements EncryptionAlgorithmInterface
      * Set the encryption key
      *
      * @param  string $key
-     * @return self
+     * @return $this
      * @throws Exception\InvalidArgumentException
      */
     public function setKey($key)
@@ -224,7 +225,7 @@ class BlockCipher implements EncryptionAlgorithmInterface
      * Sets an internal compression for values to encrypt
      *
      * @param  string|array $compression
-     * @return self
+     * @return $this
      */
     public function setCompression($compression)
     {

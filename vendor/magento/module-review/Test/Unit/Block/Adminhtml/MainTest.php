@@ -7,22 +7,24 @@ declare(strict_types=1);
 
 namespace Magento\Review\Test\Unit\Block\Adminhtml;
 
-use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
-use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Customer\Helper\View as ViewHelper;
-use Magento\Customer\Api\Data\CustomerInterface;
-use Magento\Framework\App\RequestInterface;
-use Magento\Review\Block\Adminhtml\Main as MainBlock;
-use Magento\Framework\DataObject;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Helper\View as ViewHelper;
+use Magento\Framework\App\RequestInterface;
+use Magento\Framework\DataObject;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
+use Magento\Review\Block\Adminhtml\Main as MainBlock;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Unit Test For Main Block
  *
  * Class \Magento\Review\Test\Unit\Block\Adminhtml\MainTest
  */
-class MainTest extends \PHPUnit\Framework\TestCase
+class MainTest extends TestCase
 {
     /**
      * @var MainBlock
@@ -30,26 +32,29 @@ class MainTest extends \PHPUnit\Framework\TestCase
     protected $model;
 
     /**
-     * @var RequestInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var RequestInterface|MockObject
      */
     protected $request;
 
     /**
-     * @var CustomerRepositoryInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var CustomerRepositoryInterface|MockObject
      */
     protected $customerRepository;
 
     /**
-     * @var ViewHelper|\PHPUnit\Framework\MockObject\MockObject
+     * @var ViewHelper|MockObject
      */
     protected $customerViewHelper;
 
     /**
-     * @var CollectionFactory|\PHPUnit\Framework\MockObject\MockObject
+     * @var CollectionFactory|MockObject
      */
     protected $collectionFactory;
 
-    public function testConstruct()
+    /**
+     * @return void
+     */
+    public function testConstruct(): void
     {
         $this->customerRepository = $this
             ->getMockForAbstractClass(CustomerRepositoryInterface::class);
@@ -66,14 +71,10 @@ class MainTest extends \PHPUnit\Framework\TestCase
             ->with($dummyCustomer)
             ->willReturn(new DataObject());
         $this->request = $this->getMockForAbstractClass(RequestInterface::class);
-        $this->request->expects($this->at(0))
+        $this->request
             ->method('getParam')
-            ->with('customerId', false)
-            ->willReturn('customer id');
-        $this->request->expects($this->at(1))
-            ->method('getParam')
-            ->with('productId', false)
-            ->willReturn(false);
+            ->withConsecutive(['customerId', false], ['productId', false])
+            ->willReturnOnConsecutiveCalls('customer id', false);
         $productCollection = $this->getMockBuilder(Collection::class)
             ->disableOriginalConstructor()
             ->getMock();

@@ -1,20 +1,22 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-crypt for the canonical source repository
- * @copyright https://github.com/laminas/laminas-crypt/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-crypt/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Crypt;
+
+use function function_exists;
+use function hash_algos;
+use function hash_hmac;
+use function hash_hmac_algos;
+use function in_array;
+use function mb_strlen;
+use function strtolower;
 
 /**
  * PHP implementation of the RFC 2104 Hash based Message Authentication Code
  */
 class Hmac
 {
-    const OUTPUT_STRING = false;
-    const OUTPUT_BINARY = true;
+    public const OUTPUT_STRING = false;
+    public const OUTPUT_BINARY = true;
 
     /**
      * Last algorithm supported
@@ -41,7 +43,7 @@ class Hmac
             throw new Exception\InvalidArgumentException('Provided key is null or empty');
         }
 
-        if (!$hash || ($hash !== static::$lastAlgorithmSupported && !static::isSupported($hash))) {
+        if (! $hash || ($hash !== static::$lastAlgorithmSupported && ! static::isSupported($hash))) {
             throw new Exception\InvalidArgumentException(
                 "Hash algorithm is not supported on this PHP installation; provided '{$hash}'"
             );
@@ -59,7 +61,7 @@ class Hmac
      */
     public static function getOutputSize($hash, $output = self::OUTPUT_STRING)
     {
-        return strlen(static::compute('key', $hash, 'data', $output));
+        return mb_strlen(static::compute('key', $hash, 'data', $output), '8bit');
     }
 
     /**
@@ -69,7 +71,7 @@ class Hmac
      */
     public static function getSupportedAlgorithms()
     {
-        return hash_algos();
+        return function_exists('hash_hmac_algos') ? hash_hmac_algos() : hash_algos();
     }
 
     /**
@@ -84,7 +86,8 @@ class Hmac
             return true;
         }
 
-        if (in_array(strtolower($algorithm), hash_algos(), true)) {
+        $algos = static::getSupportedAlgorithms();
+        if (in_array(strtolower($algorithm), $algos, true)) {
             static::$lastAlgorithmSupported = $algorithm;
             return true;
         }

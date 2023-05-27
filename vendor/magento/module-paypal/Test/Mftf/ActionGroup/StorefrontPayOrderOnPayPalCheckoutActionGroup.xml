@@ -16,10 +16,9 @@
             <argument name="productName" type="string"/>
         </arguments>
         <click selector="{{PayPalPaymentSection.cartIcon}}" stepKey="openCart"/>
-        <waitForElementVisible selector="{{PayPalPaymentSection.itemName(productName)}}" stepKey="waitForCartLoad"/>
+        <waitForPageLoad stepKey="waitForCartLoad"/>
         <seeElement selector="{{PayPalPaymentSection.itemName(productName)}}" stepKey="seeProductName"/>
-        <conditionalClick selector="{{PayPalPaymentSection.acceptCookies}}" dependentSelector="{{PayPalPaymentSection.acceptCookies}}" visible="true" stepKey="acceptCookiesIfAppeared"/>
-        <click selector="{{PayPalPaymentSection.PayPalSubmitBtn}}" stepKey="clickPayPalSubmitBtn"/>
+        <click selector="{{CheckoutPaymentSection.PayPalBtn}}" stepKey="clickPayPalBtn"/>
         <switchToPreviousTab stepKey="switchToPreviousTab"/>
         <waitForPageLoad stepKey="waitForPageLoad"/>
     </actionGroup>

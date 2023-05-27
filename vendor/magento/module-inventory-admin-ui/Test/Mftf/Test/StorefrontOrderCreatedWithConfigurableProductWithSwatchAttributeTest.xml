@@ -17,6 +17,7 @@
             <severity value="CRITICAL"/>
             <group value="msi"/>
             <group value="multi_mode"/>
+            <group value="pr_exclude"/>
         </annotations>
 
         <before>
@@ -30,7 +31,7 @@
                 <requiredEntity createDataKey="createSource1"/>
             </createData>
 
-            <actionGroup ref="LoginAsAdmin" stepKey="loginAsAdmin1"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="loginAsAdmin1"/>
         </before>
         <after>
             <!--Assign Default Stock to Default Website.-->
@@ -38,7 +39,7 @@
                 <argument name="stockName" value="{{_defaultStock.name}}"/>
                 <argument name="websiteName" value="{{_defaultWebsite.name}}"/>
             </actionGroup>
-            <actionGroup ref="logout" stepKey="logoutOfAdmin1"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logoutOfAdmin1"/>
             <deleteData createDataKey="simpleCategory1" stepKey="deleteCategory1"/>
         </after>
 
@@ -118,15 +119,16 @@
             <argument name="product" value="ConfigurableMsiProduct"/>
         </actionGroup>
 
-        <seeElement selector="//div[contains(@id, 'option-label-visual_swatch_')][@option-label='{{visualSwatchColor1.name}}']" stepKey="seeRedOption1"/>
-        <seeElement selector="//div[contains(@id, 'option-label-visual_swatch_')][@option-label='{{visualSwatchColor2.name}}']" stepKey="seeBlueOption1"/>
+        <seeElement selector="//div[contains(@id, 'option-label-visual_swatch_')][@data-option-label='{{visualSwatchColor1.name}}']" stepKey="seeRedOption1"/>
+        <seeElement selector="//div[contains(@id, 'option-label-visual_swatch_')][@data-option-label='{{visualSwatchColor2.name}}']" stepKey="seeBlueOption1"/>
 
-        <click selector="div[id*='option-label-visual_swatch_'][option-label='{{visualSwatchColor1.name}}']" stepKey="clickOnRedOption1"/>
+        <click selector="div[id*='option-label-visual_swatch_'][data-option-label='{{visualSwatchColor1.name}}']" stepKey="clickOnRedOption1"/>
         <waitForPageLoad stepKey="waitForPageLoad11"/>
         <see selector=".swatch-attribute-selected-option" userInput="{{visualSwatchColor1.name}}" stepKey="seeOptionName1"/>
 
         <fillField selector="#qty" userInput="5" stepKey="fillQtyField1"/>
 
+        <waitForElementClickable selector="{{StorefrontProductActionSection.addToCart}}" stepKey="waitForAddToCartButton"/>
         <click selector="{{StorefrontProductActionSection.addToCart}}" stepKey="clickOnAddToCart1"/>
         <waitForPageLoad stepKey="waitForPageLoad12"/>
         <waitForElementVisible selector="{{StorefrontMessagesSection.success}}" stepKey="waitForSuccessMessage"/>
@@ -153,10 +155,10 @@
         <fillField selector="#shipping-new-address-form input[name=telephone]" userInput="{{CustomerAddressSimple.telephone}}" stepKey="enterTelephone"/>
         <waitForPageLoad stepKey="waitForPageLoad21"/>
 
-        <click selector=".continue" stepKey="clickOnNext1"/>
-        <waitForPageLoad stepKey="waitForPageLoad22"/>
+        <actionGroup ref="StorefrontCheckoutClickNextButtonActionGroup" stepKey="clickOnNext1"/>
+        <comment userInput="BIC workaround" stepKey="waitForPageLoad22"/>
 
-        <click selector="{{CheckoutPaymentSection.placeOrder}}" stepKey="clickPlaceOrder1"/>
+        <actionGroup ref="ClickPlaceOrderActionGroup" stepKey="clickPlaceOrder1"/>
         <seeElement selector="{{CheckoutSuccessMainSection.success}}" stepKey="seeOrderNumber1"/>
         <grabTextFrom selector="{{CheckoutSuccessMainSection.orderNumber}}" stepKey="grabOrderNumber1"/>
 

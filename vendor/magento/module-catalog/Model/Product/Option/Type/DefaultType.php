@@ -8,12 +8,18 @@ namespace Magento\Catalog\Model\Product\Option\Type;
 
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Model\Product\Option;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Configuration\Item\Option\OptionInterface;
+use Magento\Catalog\Model\Product\Configuration\Item\ItemInterface;
+use Magento\Catalog\Model\Product\Option\Value;
 
 /**
  * Catalog product option default type
  *
  * @api
  * @author     Magento Core Team <core@magentocommerce.com>
+ * @SuppressWarnings(PHPMD.CookieAndSessionMisuse)
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @since 100.0.2
  */
@@ -22,14 +28,14 @@ class DefaultType extends \Magento\Framework\DataObject
     /**
      * Option Instance
      *
-     * @var \Magento\Catalog\Model\Product\Option
+     * @var Option
      */
     protected $_option;
 
     /**
      * Product Instance
      *
-     * @var \Magento\Catalog\Model\Product
+     * @var Product
      */
     protected $_product;
 
@@ -41,15 +47,11 @@ class DefaultType extends \Magento\Framework\DataObject
     protected $_productOptions = [];
 
     /**
-     * Core store config
-     *
      * @var \Magento\Framework\App\Config\ScopeConfigInterface
      */
     protected $_scopeConfig;
 
     /**
-     * Checkout session
-     *
      * @var \Magento\Checkout\Model\Session
      */
     protected $_checkoutSession;
@@ -74,7 +76,7 @@ class DefaultType extends \Magento\Framework\DataObject
     /**
      * Option Instance setter
      *
-     * @param \Magento\Catalog\Model\Product\Option $option
+     * @param Option $option
      * @return $this
      */
     public function setOption($option)
@@ -87,7 +89,7 @@ class DefaultType extends \Magento\Framework\DataObject
      * Option Instance getter
      *
      * @throws \Magento\Framework\Exception\LocalizedException
-     * @return \Magento\Catalog\Model\Product\Option
+     * @return Option
      */
     public function getOption()
     {
@@ -100,7 +102,7 @@ class DefaultType extends \Magento\Framework\DataObject
     /**
      * Product Instance setter
      *
-     * @param \Magento\Catalog\Model\Product $product
+     * @param Product $product
      * @return $this
      */
     public function setProduct($product)
@@ -113,11 +115,11 @@ class DefaultType extends \Magento\Framework\DataObject
      * Product Instance getter
      *
      * @throws \Magento\Framework\Exception\LocalizedException
-     * @return \Magento\Catalog\Model\Product
+     * @return Product
      */
     public function getProduct()
     {
-        if ($this->_product instanceof \Magento\Catalog\Model\Product) {
+        if ($this->_product instanceof Product) {
             return $this->_product;
         }
         throw new LocalizedException(__('The product instance type in options group is incorrect.'));
@@ -126,15 +128,12 @@ class DefaultType extends \Magento\Framework\DataObject
     /**
      * Getter for Configuration Item Option
      *
-     * @return \Magento\Catalog\Model\Product\Configuration\Item\Option\OptionInterface
+     * @return OptionInterface
      * @throws LocalizedException
      */
     public function getConfigurationItemOption()
     {
-        if ($this->_getData(
-            'configuration_item_option'
-        ) instanceof \Magento\Catalog\Model\Product\Configuration\Item\Option\OptionInterface
-        ) {
+        if ($this->_getData('configuration_item_option') instanceof OptionInterface) {
             return $this->_getData('configuration_item_option');
         }
 
@@ -149,15 +148,12 @@ class DefaultType extends \Magento\Framework\DataObject
     /**
      * Getter for Configuration Item
      *
-     * @return \Magento\Catalog\Model\Product\Configuration\Item\ItemInterface
+     * @return ItemInterface
      * @throws \Magento\Framework\Exception\LocalizedException
      */
     public function getConfigurationItem()
     {
-        if ($this->_getData(
-            'configuration_item'
-        ) instanceof \Magento\Catalog\Model\Product\Configuration\Item\ItemInterface
-        ) {
+        if ($this->_getData('configuration_item') instanceof ItemInterface) {
             return $this->_getData('configuration_item');
         }
 
@@ -341,7 +337,11 @@ class DefaultType extends \Magento\Framework\DataObject
     {
         $option = $this->getOption();
 
-        return $this->_getChargeableOptionPrice($option->getPrice(), $option->getPriceType() == 'percent', $basePrice);
+        return $this->_getChargeableOptionPrice(
+            $option->getPrice(),
+            $option->getPriceType() === Value::TYPE_PERCENT,
+            $basePrice
+        );
     }
 
     /**
@@ -368,14 +368,14 @@ class DefaultType extends \Magento\Framework\DataObject
             $options = $this->getProduct()->getOptions();
             if ($options != null) {
                 foreach ($options as $_option) {
-                    /* @var $option \Magento\Catalog\Model\Product\Option */
+                    /* @var $option Option */
                     $this->_productOptions[$this->getProduct()->getId()][$_option->getTitle()] = [
                         'option_id' => $_option->getId(),
                     ];
                     if ($_option->getGroupByType() == ProductCustomOptionInterface::OPTION_GROUP_SELECT) {
                         $optionValues = [];
                         foreach ($_option->getValues() as $_value) {
-                            /* @var $value \Magento\Catalog\Model\Product\Option\Value */
+                            /* @var $value Value */
                             $optionValues[$_value->getTitle()] = $_value->getId();
                         }
                         $this->_productOptions[$this

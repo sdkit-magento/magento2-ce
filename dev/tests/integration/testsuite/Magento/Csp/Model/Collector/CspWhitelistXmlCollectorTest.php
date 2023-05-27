@@ -56,15 +56,17 @@ class CspWhitelistXmlCollectorTest extends TestCase
                 $this->assertEquals(
                     [
                         'B2yPHKaXnvFWtRChIbabYmUBFZdVfKKXHbWtWidDVF8=' => 'sha256',
-                        'B3yPHKaXnvFWtRChIbabYmUBFZdVfKKXHbWtWidDVF8=' => 'sha256',
-                        'B4yPHKaXnvFWtRChIbabYmUBFZdVfKKXHbWtWidDVF8=' => 'sha256'
+                        'B2yPHKaXnvFWtRChIbabYmUBFZdVfKKXHbWtWidDVF9=' => 'sha256'
                     ],
                     $policy->getHashes()
                 );
                 $objectSrcChecked = true;
             } elseif ($policy->getId() === 'media-src') {
                 $this->assertInstanceOf(FetchPolicy::class, $policy);
-                $this->assertEquals(['https://magento.com', 'https://devdocs.magento.com'], $policy->getHostSources());
+                $this->assertEquals(
+                    ['*.adobe.com', 'https://magento.com', 'https://devdocs.magento.com'],
+                    $policy->getHostSources()
+                );
                 $this->assertEmpty($policy->getHashes());
                 $mediaSrcChecked = true;
             }
@@ -108,8 +110,7 @@ class CspWhitelistXmlCollectorTest extends TestCase
                 $this->assertEquals(
                     [
                         'B2yPHKaXnvFWtRChIbabYmUBFZdVfKKXHbWtWidDVF8=' => 'sha256',
-                        'B3yPHKaXnvFWtRChIbabYmUBFZdVfKKXHbWtWidDVF8=' => 'sha256',
-                        'B4yPHKaXnvFWtRChIbabYmUBFZdVfKKXHbWtWidDVF8=' => 'sha256'
+                        'B2yPHKaXnvFWtRChIbabYmUBFZdVfKKXHbWtWidDVF9=' => 'sha256'
                     ],
                     $policy->getHashes()
                 );
@@ -118,9 +119,9 @@ class CspWhitelistXmlCollectorTest extends TestCase
                 $this->assertInstanceOf(FetchPolicy::class, $policy);
                 $this->assertEquals(
                     [
+                        '*.adobe.com',
                         'https://admin.magento.com',
                         'https://devdocs.magento.com',
-                        '*.adobe.com',
                         'example.magento.com'
                     ],
                     $policy->getHostSources()

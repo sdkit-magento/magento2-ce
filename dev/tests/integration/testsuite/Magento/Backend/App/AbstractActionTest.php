@@ -5,6 +5,8 @@
  */
 namespace Magento\Backend\App;
 
+use Magento\TestFramework\Bootstrap;
+
 /**
  * Test class for \Magento\Backend\App\AbstractAction.
  * @magentoAppArea adminhtml
@@ -91,7 +93,7 @@ class AbstractActionTest extends \Magento\TestFramework\TestCase\AbstractBackend
             ->get(\Magento\Framework\Acl\Builder::class)
             ->getAcl();
         if ($isLimitedAccess) {
-            $acl->deny(null, $resource);
+            $acl->deny(Bootstrap::ADMIN_ROLE_ID, $resource);
         }
 
         $this->dispatch('backend/admin/dashboard');
@@ -105,7 +107,7 @@ class AbstractActionTest extends \Magento\TestFramework\TestCase\AbstractBackend
         if ($isLimitedAccess) {
             $this->assertNotContains($blockName, array_keys($actualBlocks));
         } else {
-            $this->assertContains($blockName,array_keys($actualBlocks));
+            $this->assertContains($blockName, array_keys($actualBlocks));
         }
     }
 

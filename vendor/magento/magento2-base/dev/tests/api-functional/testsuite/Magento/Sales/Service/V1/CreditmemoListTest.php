@@ -10,22 +10,22 @@ use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
- * Class CreditmemoListTest for Magento sales webapi
+ * Class CreditmemoListTest
  */
 class CreditmemoListTest extends WebapiAbstract
 {
     /**
-     * Resource path constant
+     * Resource path
      */
     const RESOURCE_PATH = '/V1/creditmemos';
 
     /**
-     * Service read name constant
+     * Service read name
      */
     const SERVICE_READ_NAME = 'salesCreditmemoRepositoryV1';
 
     /**
-     * Service version constant
+     * Service version
      */
     const SERVICE_VERSION = 'V1';
 

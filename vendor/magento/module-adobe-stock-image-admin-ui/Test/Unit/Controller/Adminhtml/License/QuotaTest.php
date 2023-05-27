@@ -13,7 +13,7 @@ use Magento\AdobeStockClientApi\Api\Data\UserQuotaInterface;
 use Magento\AdobeStockImageAdminUi\Controller\Adminhtml\License\Quota;
 use Magento\Backend\App\Action\Context as ActionContext;
 use Magento\Framework\Controller\Result\Json;
-use Magento\Framework\Phrase;
+use Magento\Framework\Controller\ResultFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -58,10 +58,10 @@ class QuotaTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->clientInterfaceMock = $this->getMockForAbstractClass(ClientInterface::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->clientInterfaceMock = $this->createMock(ClientInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->context = $this->createMock(ActionContext::class);
-        $this->resultFactory = $this->createMock(\Magento\Framework\Controller\ResultFactory::class);
+        $this->resultFactory = $this->createMock(ResultFactory::class);
         $this->context->expects($this->once())
             ->method('getResultFactory')
             ->willReturn($this->resultFactory);
@@ -82,7 +82,7 @@ class QuotaTest extends TestCase
     public function testExecute(): void
     {
         /** @var UserQuotaInterface|MockObject $quota */
-        $quota = $this->getMockForAbstractClass(UserQuotaInterface::class);
+        $quota = $this->createMock(UserQuotaInterface::class);
         $quota->expects($this->once())->method('getImages')->willReturn(2);
         $quota->expects($this->once())->method('getCredits')->willReturn(1);
 

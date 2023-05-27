@@ -1,10 +1,6 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter\File;
 
@@ -13,16 +9,41 @@ use Laminas\Filter\Exception;
 use Laminas\Stdlib\ArrayUtils;
 use Traversable;
 
+use function basename;
+use function count;
+use function file_exists;
+use function is_array;
+use function is_dir;
+use function is_scalar;
+use function is_string;
+use function pathinfo;
+use function realpath;
+use function rename;
+use function sprintf;
+use function strlen;
+use function uniqid;
+use function unlink;
+
+use const DIRECTORY_SEPARATOR;
+
+/**
+ * @psalm-type Options = array{
+ *     file?: array{source?: string, target?: string, overwrite?: bool, randomize?: bool},
+ *     ...
+ * }
+ * @template TOptions of Options
+ * @template-extends Filter\AbstractFilter<TOptions>
+ */
 class Rename extends Filter\AbstractFilter
 {
     /**
      * Internal array of array(source, target, overwrite)
+     *
+     * @var list<array{source: string, target: string, overwrite: bool, randomize: bool}>
      */
     protected $files = [];
 
     /**
-     * Class constructor
-     *
      * Options argument may be either a string, a Laminas\Config\Config object, or an array.
      * If an array or Laminas\Config\Config object, it accepts the following keys:
      * 'source'    => Source filename or directory which will be renamed
@@ -51,7 +72,7 @@ class Rename extends Filter\AbstractFilter
     /**
      * Returns the files to rename and their new name and location
      *
-     * @return array
+     * @return list<array{source: string, target: string, overwrite: bool, randomize: bool}>
      */
     public function getFile()
     {
@@ -67,7 +88,7 @@ class Rename extends Filter\AbstractFilter
      * 'overwrite' => Shall existing files be overwritten?
      * 'randomize' => Shall target files have a random postfix attached?
      *
-     * @param  string|array $options Old file or directory to be rewritten
+     * @param  string|array{source?: string, target?: string, overwrite?: bool, randomize?: bool} $options
      * @return self
      */
     public function setFile($options)
@@ -87,7 +108,7 @@ class Rename extends Filter\AbstractFilter
      * 'overwrite' => Shall existing files be overwritten?
      * 'randomize' => Shall target files have a random postfix attached?
      *
-     * @param  string|array $options Old file or directory to be rewritten
+     * @param  string|array{source?: string, target?: string, overwrite?: bool, randomize?: bool} $options $options
      * @return Rename
      * @throws Exception\InvalidArgumentException
      */
@@ -173,8 +194,8 @@ class Rename extends Filter\AbstractFilter
             }
 
             $isFileUpload = true;
-            $uploadData = $value;
-            $value      = $value['tmp_name'];
+            $uploadData   = $value;
+            $value        = $value['tmp_name'];
         }
 
         $file = $this->getNewName($value, true);
@@ -191,8 +212,8 @@ class Rename extends Filter\AbstractFilter
         if ($result !== true) {
             throw new Exception\RuntimeException(
                 sprintf(
-                    "File '%s' could not be renamed. " .
-                    "An error occurred while processing the file.",
+                    "File '%s' could not be renamed. "
+                    . "An error occurred while processing the file.",
                     $value
                 )
             );
@@ -326,9 +347,9 @@ class Rename extends Filter\AbstractFilter
         }
 
         if ($rename['randomize']) {
-            $info = pathinfo($rename['target']);
-            $newTarget = $info['dirname'] . DIRECTORY_SEPARATOR .
-                $info['filename'] . uniqid('_', false);
+            $info      = pathinfo($rename['target']);
+            $newTarget = $info['dirname'] . DIRECTORY_SEPARATOR
+                . $info['filename'] . uniqid('_', false);
             if (isset($info['extension'])) {
                 $newTarget .= '.' . $info['extension'];
             }

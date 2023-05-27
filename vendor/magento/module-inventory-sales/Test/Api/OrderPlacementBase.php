@@ -57,7 +57,7 @@ abstract class OrderPlacementBase extends WebapiAbstract
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->objectManager = Bootstrap::getObjectManager();
     }
@@ -199,7 +199,7 @@ abstract class OrderPlacementBase extends WebapiAbstract
                             [
                                 'option_id' => $bundleProductOption->getId(),
                                 'option_qty' => 2,
-                                'option_selections' => [0 => $bundleProductOption->getId()]
+                                'option_selections' => [0 => $bundleProductOption->getProductLinks()[0]->getId()]
                             ],
                         ],
                     ],

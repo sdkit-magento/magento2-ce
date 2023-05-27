@@ -11,6 +11,7 @@ namespace Magento\Newsletter\Test\Unit\Model\Queue;
 use Magento\Email\Model\Template;
 use Magento\Email\Model\Template\Filter;
 use Magento\Framework\App\TemplateTypesInterface;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Mail\EmailMessageInterface;
 use Magento\Framework\Mail\EmailMessageInterfaceFactory;
 use Magento\Framework\Mail\Message;
@@ -28,7 +29,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Class TransportBuilderTest
+ * @covers \Magento\Newsletter\Model\Queue\TransportBuilder
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
@@ -37,40 +38,40 @@ class TransportBuilderTest extends TestCase
     /**
      * @var string
      */
-    protected $builderClassName = TransportBuilder::class;
+    private $builderClassName = TransportBuilder::class;
 
     /**
      * @var TransportBuilder
      */
-    protected $builder;
+    private $builder;
 
     /**
-     * @var FactoryInterface|PHPUnit\Framework\MockObject\MockObject
+     * @var FactoryInterface|MockObject
      */
-    protected $templateFactoryMock;
+    private $templateFactoryMock;
 
     /**
-     * @var Message|PHPUnit\Framework\MockObject\MockObject
+     * @var Message|MockObject
      */
-    protected $messageMock;
+    private $messageMock;
 
     /**
-     * @var ObjectManagerInterface|PHPUnit\Framework\MockObject\MockObject
+     * @var ObjectManagerInterface|MockObject
      */
-    protected $objectManagerMock;
+    private $objectManagerMock;
 
     /**
-     * @var SenderResolverInterface|PHPUnit\Framework\MockObject\MockObject
+     * @var SenderResolverInterface|MockObject
      */
-    protected $senderResolverMock;
+    private $senderResolverMock;
 
     /**
-     * @var PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
-    protected $mailTransportFactoryMock;
+    private $mailTransportFactoryMock;
 
     /**
-     * @var MessageInterfaceFactory|PHPUnit\Framework\MockObject\MockObject
+     * @var MessageInterfaceFactory|MockObject
      */
     private $messageFactoryMock;
 
@@ -126,7 +127,7 @@ class TransportBuilderTest extends TestCase
      * @param string $bodyText
      * @return void
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function testGetTransport(
         $templateType = TemplateTypesInterface::TYPE_HTML,
@@ -159,13 +160,13 @@ class TransportBuilderTest extends TestCase
 
         $template = $this->createMock(Template::class);
         $template->expects($this->once())->method('setVars')
-            ->with($this->equalTo($vars))->willReturnSelf();
+            ->with($vars)->willReturnSelf();
         $template->expects($this->once())->method('setOptions')
-            ->with($this->equalTo($options))->willReturnSelf();
+            ->with($options)->willReturnSelf();
         $template->expects($this->once())->method('getSubject')
             ->willReturn('Email Subject');
         $template->expects($this->once())->method('setData')
-            ->with($this->equalTo($data))->willReturnSelf();
+            ->with($data)->willReturnSelf();
         $template->expects($this->once())->method('getProcessedTemplate')
             ->with($vars)->willReturn($bodyText);
         $template->expects($this->once())->method('setTemplateFilter')
@@ -173,7 +174,7 @@ class TransportBuilderTest extends TestCase
 
         $this->templateFactoryMock->expects($this->once())
             ->method('get')
-            ->with($this->equalTo('identifier'))
+            ->with('identifier')
             ->willReturn($template);
 
         $this->builder->setTemplateIdentifier(

@@ -3,18 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Magento\Variable\Test\Unit\Model\Variable;
 
 use Magento\Backend\Model\UrlInterface;
+use Magento\Framework\DataObject;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Framework\View\Asset\Repository;
 use Magento\Variable\Model\ResourceModel\Variable\Collection;
 use Magento\Variable\Model\ResourceModel\Variable\CollectionFactory;
 use Magento\Variable\Model\Source\Variables;
 use Magento\Variable\Model\Variable\Config;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
      * @var Config
@@ -22,12 +26,12 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
     private $model;
 
     /**
-     * @var Repository|\PHPUnit\Framework\MockObject\MockObject
+     * @var Repository|MockObject
      */
     private $assetRepoMock;
 
     /**
-     * @var UrlInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var UrlInterface|MockObject
      */
     private $urlMock;
 
@@ -42,17 +46,17 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
     private $jsPluginSourceUrl = 'js-plugin-source';
 
     /**
-     * @var Variables|\PHPUnit\Framework\MockObject\MockObject
+     * @var Variables|MockObject
      */
     private $storeVariablesMock;
 
     /**
-     * @var CollectionFactory|\PHPUnit\Framework\MockObject\MockObject
+     * @var CollectionFactory|MockObject
      */
     private $customVarsCollectionFactoryMock;
 
     /**
-     * @var Collection|\PHPUnit\Framework\MockObject\MockObject
+     * @var Collection|MockObject
      */
     private $customVarsCollectionMock;
 
@@ -117,7 +121,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
 
         $customKey = 'key';
         $customVal = 'val';
-        $configObject = new \Magento\Framework\DataObject();
+        $configObject = new DataObject();
         $configObject->setPlugins([[$customKey => $customVal]]);
         $variablePluginConfig = $this->model->getWysiwygPluginSettings($configObject)['plugins'];
         $customPluginConfig = $variablePluginConfig[0];

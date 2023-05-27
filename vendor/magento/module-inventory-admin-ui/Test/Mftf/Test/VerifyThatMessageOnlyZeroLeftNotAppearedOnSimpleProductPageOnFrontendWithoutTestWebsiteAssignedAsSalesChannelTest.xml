@@ -11,9 +11,12 @@
     <test name="VerifyThatMessageOnlyZeroLeftNotAppearedOnSimpleProductPageOnFrontendWithoutTestWebsiteAssignedAsSalesChannelTest"
           extends="VerifyThatMessageOnlyZeroLeftNotAppearedOnSimpleProductPageOnFrontendTest">
         <annotations>
+            <stories value="Verify that message 'Only 0 left' not appeared on Simple product page on frontend without Test Website assigned as Sales Channel"/>
+            <title value="Verify that message 'Only 0 left' not appeared on Simple product page on frontend without Test Website assigned as Sales Channel"/>
             <description
                     value="Verify that message 'Only 0 left' not appeared on Simple product page on frontend without Test Website assigned as Sales Channel"/>
             <testCaseId value="https://app.hiptest.com/projects/69435/test-plan/folders/908790/scenarios/3041088"/>
+            <severity value="MAJOR"/>
             <group value="msi"/>
             <group value="multi_mode"/>
         </annotations>
@@ -40,6 +43,7 @@
             <magentoCLI
                     command="config:set {{StorefrontEnableAddStoreCodeToUrls.path}} {{StorefrontEnableAddStoreCodeToUrls.value}}"
                     stepKey="setAddStoreCodeToUrl" after="fillConfigValue"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </before>
         <after>
             <!--Delete website created in the before block -->
@@ -49,6 +53,7 @@
             <magentoCLI
                     command="config:set {{StorefrontDisableAddStoreCodeToUrls.path}} {{StorefrontDisableAddStoreCodeToUrls.value}}"
                     stepKey="setOffAddStoreCodeToUrl" after="deleteStock"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </after>
         <!-- Add this product to second website -->
         <click selector="{{ProductInWebsitesSection.sectionHeader}}" stepKey="openProductInWebsitesSection1"

@@ -47,16 +47,17 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
             \Magento\TestFramework\Application::class,
             ['getTempDir', 'getInitParams', 'reinitialize', 'run']
         );
-        $this->_bootstrap = $this->createPartialMock(
-            \Magento\TestFramework\Bootstrap::class,
-            ['getApplication', 'getDbVendorName']
-        );
+        $this->_bootstrap = $this->getMockBuilder(\Magento\TestFramework\Bootstrap::class)
+            ->disableOriginalConstructor()
+            ->addMethods(['getDbVendorName'])
+            ->onlyMethods(['getApplication'])
+            ->getMock();
         $this->_bootstrap->expects(
             $this->any()
         )->method(
             'getApplication'
-        )->will(
-            $this->returnValue($this->_application)
+        )->willReturn(
+            $this->_application
         );
         $this->_object = new \Magento\TestFramework\Helper\Bootstrap($this->_bootstrap);
     }
@@ -68,10 +69,13 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
         $this->_object = null;
     }
 
+    /**
+     */
     public function testGetInstanceEmptyProhibited()
     {
-        $this->expectExceptionMessage("Helper instance is not defined yet.");
         $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectExceptionMessage('Helper instance is not defined yet.');
+
         \Magento\TestFramework\Helper\Bootstrap::getInstance();
     }
 
@@ -91,12 +95,12 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @depends testSetInstanceFirstAllowed
-     *
      */
     public function testSetInstanceChangeProhibited()
     {
-        $this->expectExceptionMessage("Helper instance cannot be redefined.");
         $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectExceptionMessage('Helper instance cannot be redefined.');
+
         \Magento\TestFramework\Helper\Bootstrap::setInstance($this->_object);
     }
 
@@ -132,14 +136,14 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
 
         if ($expectedCanTest) {
             $actualHeaders = xdebug_get_headers();
-            $this->assertContains($expectedHeader,$actualHeaders);
-            $this->assertContains($expectedCookie,$actualHeaders);
+            $this->assertContains($expectedHeader, $actualHeaders);
+            $this->assertContains($expectedCookie, $actualHeaders);
         }
     }
 
     public function testGetAppTempDir()
     {
-        $this->_application->expects($this->once())->method('getTempDir')->will($this->returnValue(__DIR__));
+        $this->_application->expects($this->once())->method('getTempDir')->willReturn(__DIR__);
         $this->assertEquals(__DIR__, $this->_object->getAppTempDir());
     }
 
@@ -149,8 +153,8 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
             $this->once()
         )->method(
             'getInitParams'
-        )->will(
-            $this->returnValue($this->_fixtureInitParams)
+        )->willReturn(
+            $this->_fixtureInitParams
         );
         $this->assertEquals($this->_fixtureInitParams, $this->_object->getAppInitParams());
     }

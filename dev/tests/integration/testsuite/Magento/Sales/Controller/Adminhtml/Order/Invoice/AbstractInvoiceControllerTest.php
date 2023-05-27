@@ -11,7 +11,7 @@ use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Request\Http;
 use Magento\Sales\Api\Data\InvoiceInterface;
 use Magento\Sales\Api\Data\OrderInterface;
-use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\OrderRepository;
 use Magento\Sales\Model\ResourceModel\Order\Invoice\CollectionFactory;
 use Magento\TestFramework\Mail\Template\TransportBuilderMock;
 use Magento\TestFramework\TestCase\AbstractBackendController;
@@ -27,7 +27,7 @@ abstract class AbstractInvoiceControllerTest extends AbstractBackendController
     /** @var string */
     protected $resource = 'Magento_Sales::sales_invoice';
 
-    /** @var OrderRepositoryInterface */
+    /** @var OrderRepository */
     private $orderRepository;
 
     /** @var SearchCriteriaBuilder */
@@ -44,7 +44,7 @@ abstract class AbstractInvoiceControllerTest extends AbstractBackendController
         parent::setUp();
 
         $this->transportBuilder = $this->_objectManager->get(TransportBuilderMock::class);
-        $this->orderRepository = $this->_objectManager->get(OrderRepositoryInterface::class);
+        $this->orderRepository = $this->_objectManager->get(OrderRepository::class);
         $this->searchCriteriaBuilder = $this->_objectManager->get(SearchCriteriaBuilder::class);
         $this->invoiceCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
     }
@@ -65,12 +65,12 @@ abstract class AbstractInvoiceControllerTest extends AbstractBackendController
     }
 
     /**
-     * Get first order invoice
+     * Get firs order invoice
      *
-     * @param OrderInterface $order
+     * @param OrderInterface|int $order
      * @return InvoiceInterface
      */
-    protected function getInvoiceByOrder(OrderInterface $order): InvoiceInterface
+    protected function getInvoiceByOrder($order): InvoiceInterface
     {
         $invoiceCollection = $this->invoiceCollectionFactory->create();
 
@@ -97,15 +97,21 @@ abstract class AbstractInvoiceControllerTest extends AbstractBackendController
      * @param array $items
      * @param string $commentText
      * @param bool $doShipment
+     * @param bool $sendEmail
      * @return array
      */
-    protected function hydratePost(array $items, string $commentText = '', $doShipment = false): array
-    {
+    protected function hydratePost(
+        array $items,
+        string $commentText = '',
+        $doShipment = false,
+        $sendEmail = false
+    ): array {
         return [
             'invoice' => [
                 'items' => $items,
                 'comment_text' => $commentText,
-                'do_shipment' => $doShipment
+                'do_shipment' => $doShipment,
+                'send_email' => $sendEmail
             ],
         ];
     }

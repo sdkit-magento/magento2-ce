@@ -16,18 +16,16 @@
             <severity value="CRITICAL"/>
             <group value="msi"/>
             <group value="multi_mode"/>
-            <skip>
-                <issueId value="https://github.com/magento/inventory/issues/522"/>
-            </skip>
+            <group value="pr_exclude"/>
         </annotations>
 
         <before>
             <!--Create test data.-->
             <createData entity="SimpleSubCategory" stepKey="category"/>
-            <createData entity="SimpleProduct" stepKey="product">
+            <createData entity="ABC_dfj_SimpleProduct" stepKey="product">
                 <requiredEntity createDataKey="category"/>
             </createData>
-            <createData entity="ApiBundleProduct" stepKey="bundleProduct"/>
+            <createData entity="AdvancedSearchBundleProduct" stepKey="bundleProduct"/>
             <createData entity="BasicMsiStockWithMainWebsite1" stepKey="stock"/>
             <createData entity="FullSource1" stepKey="source"/>
             <createData entity="SourceStockLinked1" stepKey="sourceStockLink">
@@ -35,14 +33,17 @@
                 <requiredEntity createDataKey="source"/>
             </createData>
             <!--Assign created source to product.-->
-            <actionGroup ref="LoginAsAdmin" stepKey="loginToAdminArea"/>
-            <amOnPage url="{{AdminProductEditPage.url($$product.id$$)}}" stepKey="openProduct1EditPageToAssignSource"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="loginToAdminArea"/>
+            <amOnPage url="{{AdminProductEditPage.url($product.id$)}}" stepKey="openProduct1EditPageToAssignSource"/>
+            <actionGroup ref="UnassignSourceFromProductActionGroup" stepKey="unassignDefaultSourceFromProduct">
+                <argument name="sourceCode" value="{{_defaultSource.name}}"/>
+            </actionGroup>
             <actionGroup ref="AdminAssignSourceToProductAndSetSourceQuantityActionGroup" stepKey="assignSourceToProduct">
                 <argument name="sourceCode" value="$source.source[source_code]$"/>
             </actionGroup>
-            <actionGroup ref="AdminFormSaveAndClose" stepKey="saveProduct"/>
+            <actionGroup ref="AdminFormSaveAndCloseActionGroup" stepKey="saveProduct"/>
             <!--Add simple product to bundle.-->
-            <amOnPage url="{{AdminProductEditPage.url($$bundleProduct.id$$)}}" stepKey="openProductEditPageToAssignOption"/>
+            <amOnPage url="{{AdminProductEditPage.url($bundleProduct.id$)}}" stepKey="openProductEditPageToAssignOption"/>
             <conditionalClick selector="{{AdminProductFormBundleSection.bundleItemsToggle}}" dependentSelector="{{AdminProductFormBundleSection.bundleItemsToggle}}" visible="false" stepKey="conditionallyOpenSectionBundleItems"/>
             <click selector="{{AdminProductFormBundleSection.addOption}}" stepKey="clickAddOption"/>
             <waitForElementVisible selector="{{AdminProductFormBundleSection.bundleOptionXTitle('0')}}" stepKey="waitForBundleOptions"/>
@@ -52,29 +53,39 @@
             <click selector="{{AdminProductFormBundleSection.addProductsToOption}}" stepKey="clickAddProductsToOption"/>
             <waitForPageLoad stepKey="waitForPageLoadAfterBundleProducts"/>
             <actionGroup ref="FilterProductGridBySkuActionGroup" stepKey="filterBundleProductOptions">
-                <argument name="product" value="$$product$$"/>
+                <argument name="product" value="$product$"/>
             </actionGroup>
             <checkOption selector="{{AdminAddProductsToOptionPanel.firstCheckbox}}" stepKey="selectFirstGridRow"/>
             <click selector="{{AdminAddProductsToOptionPanel.addSelectedProducts}}" stepKey="clickAddSelectedBundleProducts"/>
             <fillField selector="{{AdminProductFormBundleSection.bundleOptionXProductYQuantity('0', '0')}}" userInput="5" stepKey="fillProductDefaultQty"/>
-            <actionGroup ref="AdminFormSaveAndClose" stepKey="saveAndCloseCreatedGroupedProduct"/>
+            <actionGroup ref="AdminFormSaveAndCloseActionGroup" stepKey="saveBundleProduct"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </before>
         <after>
             <!--Delete test data.-->
             <deleteData createDataKey="product" stepKey="deleteProduct"/>
             <deleteData createDataKey="bundleProduct" stepKey="deleteBundleProduct"/>
             <deleteData createDataKey="category" stepKey="deleteCategory"/>
+            <!--Clear Admin Products Grid Filter -->
+            <actionGroup ref="ClearProductsFilterActionGroup" stepKey="clearProductFilter"/>
             <!--Assign Default Stock to Default Website.-->
             <actionGroup ref="AssignWebsiteToStockActionGroup" stepKey="assignMainWebsiteToDefaultStock">
                 <argument name="stockName" value="{{_defaultStock.name}}"/>
                 <argument name="websiteName" value="{{_defaultWebsite.name}}"/>
             </actionGroup>
             <deleteData createDataKey="stock" stepKey="deleteStock"/>
+            <!--Clear stock grid filter -->
+            <amOnPage url="{{AdminManageStockPage.url}}" stepKey="navigateToStockList"/>
+            <actionGroup ref="AdminGridFilterResetActionGroup" stepKey="resetStockGridFilter"/>
             <!--Disable created source.-->
             <actionGroup ref="DisableSourceActionGroup" stepKey="disableSource">
                 <argument name="sourceCode" value="$source.source[source_code]$"/>
             </actionGroup>
-            <actionGroup ref="logout" stepKey="logoutOfAdmin"/>
+            <!--Clear source grid filter -->
+            <amOnPage url="{{AdminManageSourcePage.url}}" stepKey="navigateToSourceList"/>
+            <actionGroup ref="AdminGridFilterResetActionGroup" stepKey="resetSourceGridFilter"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logoutOfAdmin"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </after>
 
         <!--Advanced search product by name.-->

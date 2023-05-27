@@ -1,15 +1,20 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter\File;
 
 use Laminas\Filter\Exception;
 use Laminas\Filter\StringToLower;
+
+use function assert;
+use function file_exists;
+use function file_get_contents;
+use function file_put_contents;
+use function is_array;
+use function is_scalar;
+use function is_string;
+use function is_writable;
 
 class LowerCase extends StringToLower
 {
@@ -18,8 +23,8 @@ class LowerCase extends StringToLower
      *
      * Does a lowercase on the content of the given file
      *
-     * @param  string|array $value Full path of file to change or $_FILES data array
-     * @return string|array The given $value
+     * @param  mixed $value Full path of file to change or $_FILES data array
+     * @return string|mixed The given $value
      * @throws Exception\InvalidArgumentException
      * @throws Exception\RuntimeException
      */
@@ -37,9 +42,11 @@ class LowerCase extends StringToLower
             }
 
             $isFileUpload = true;
-            $uploadData = $value;
-            $value      = $value['tmp_name'];
+            $uploadData   = $value;
+            $value        = $value['tmp_name'];
         }
+
+        assert(is_string($value));
 
         if (! file_exists($value)) {
             throw new Exception\InvalidArgumentException("File '$value' not found");

@@ -27,7 +27,7 @@ class CartBundleTest extends AbstractCartTest
     /**
      * @inheritdoc
      */
-    protected function setUp(): void
+    public function setUp(): void
     {
         parent::setUp();
 

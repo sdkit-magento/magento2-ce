@@ -43,10 +43,13 @@ class MongoDbTest extends \PHPUnit\Framework\TestCase
         }
     }
 
+    /**
+     */
     public function testConstructorException()
     {
-        $this->expectExceptionMessage("'db' option is not specified");
         $this->expectException(\Zend_Cache_Exception::class);
+        $this->expectExceptionMessage('\'db\' option is not specified');
+
         new \Magento\Framework\Cache\Backend\MongoDb();
     }
 
@@ -200,7 +203,7 @@ class MongoDbTest extends \PHPUnit\Framework\TestCase
         $actualData = $this->_model->load($cacheId);
         $this->assertEquals($data, $actualData);
         $actualMetadata = $this->_model->getMetadatas($cacheId);
-        $this->arrayHasKey('tags', $actualMetadata);
+        $this->arrayHasKey('tags');
         $this->assertEquals($tags, $actualMetadata['tags']);
     }
 

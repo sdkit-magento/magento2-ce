@@ -85,8 +85,6 @@ class ModuleList implements ModuleListInterface
 
     /**
      * @inheritdoc
-     *
-     * @see has()
      */
     public function getOne($name)
     {
@@ -137,6 +135,8 @@ class ModuleList implements ModuleListInterface
      * Loads configuration data only
      *
      * @return void
+     * @throws \Magento\Framework\Exception\FileSystemException
+     * @throws \Magento\Framework\Exception\RuntimeException
      */
     private function loadConfigData()
     {

@@ -3,15 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Vault\Test\Unit\Model;
 
 use Magento\Customer\Model\Session;
 use Magento\Vault\Api\Data\PaymentTokenInterface;
 use Magento\Vault\Model\CustomerTokenManagement;
 use Magento\Vault\Model\PaymentTokenManagement;
-use PHPUnit\Framework\MockObject\MockObject as MockObject;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class CustomerTokenManagementTest extends \PHPUnit\Framework\TestCase
+class CustomerTokenManagementTest extends TestCase
 {
     /**
      * @var PaymentTokenManagement|MockObject

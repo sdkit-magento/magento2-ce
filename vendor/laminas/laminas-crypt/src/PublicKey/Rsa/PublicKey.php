@@ -1,24 +1,29 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-crypt for the canonical source repository
- * @copyright https://github.com/laminas/laminas-crypt/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-crypt/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Crypt\PublicKey\Rsa;
+
+use function file_get_contents;
+use function is_readable;
+use function is_string;
+use function openssl_error_string;
+use function openssl_pkey_get_details;
+use function openssl_pkey_get_public;
+use function openssl_public_decrypt;
+use function openssl_public_encrypt;
+use function strpos;
+
+use const OPENSSL_PKCS1_OAEP_PADDING;
+use const OPENSSL_PKCS1_PADDING;
 
 /**
  * RSA public key
  */
 class PublicKey extends AbstractKey
 {
-    const CERT_START = '-----BEGIN CERTIFICATE-----';
+    public const CERT_START = '-----BEGIN CERTIFICATE-----';
 
-    /**
-     * @var string
-     */
-    protected $certificateString = null;
+    /** @var string */
+    protected $certificateString;
 
     /**
      * Create public key instance public key from PEM formatted key file
@@ -30,7 +35,7 @@ class PublicKey extends AbstractKey
      */
     public static function fromFile($pemOrCertificateFile)
     {
-        if (!is_readable($pemOrCertificateFile)) {
+        if (! is_readable($pemOrCertificateFile)) {
             throw new Exception\InvalidArgumentException(
                 "File '{$pemOrCertificateFile}' is not readable"
             );
@@ -72,6 +77,7 @@ class PublicKey extends AbstractKey
      * attack.
      *
      * @see http://archiv.infsec.ethz.ch/education/fs08/secsem/bleichenbacher98.pdf
+     *
      * @param  string $data
      * @param  string $padding
      * @throws Exception\InvalidArgumentException
@@ -85,7 +91,7 @@ class PublicKey extends AbstractKey
         }
 
         $encrypted = '';
-        $result = openssl_public_encrypt($data, $encrypted, $this->getOpensslKeyResource(), $padding);
+        $result    = openssl_public_encrypt($data, $encrypted, $this->getOpensslKeyResource(), $padding);
         if (false === $result) {
             throw new Exception\RuntimeException(
                 'Can not encrypt; openssl ' . openssl_error_string()
@@ -106,7 +112,7 @@ class PublicKey extends AbstractKey
      */
     public function decrypt($data, $padding = OPENSSL_PKCS1_PADDING)
     {
-        if (!is_string($data)) {
+        if (! is_string($data)) {
             throw new Exception\InvalidArgumentException('The data to decrypt must be a string');
         }
         if ('' === $data) {
@@ -114,7 +120,7 @@ class PublicKey extends AbstractKey
         }
 
         $decrypted = '';
-        $result = openssl_public_decrypt($data, $decrypted, $this->getOpensslKeyResource(), $padding);
+        $result    = openssl_public_decrypt($data, $decrypted, $this->getOpensslKeyResource(), $padding);
         if (false === $result) {
             throw new Exception\RuntimeException(
                 'Can not decrypt; openssl ' . openssl_error_string()
@@ -142,9 +148,9 @@ class PublicKey extends AbstractKey
      */
     public function toString()
     {
-        if (!empty($this->certificateString)) {
+        if (! empty($this->certificateString)) {
             return $this->certificateString;
-        } elseif (!empty($this->pemString)) {
+        } elseif (! empty($this->pemString)) {
             return $this->pemString;
         }
         throw new Exception\RuntimeException('No public key string representation is available');

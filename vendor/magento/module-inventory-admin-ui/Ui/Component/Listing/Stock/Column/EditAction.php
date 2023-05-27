@@ -21,7 +21,7 @@ class EditAction extends \Magento\Backend\Ui\Component\Listing\Column\EditAction
     /**
      * @var AuthorizationInterface
      */
-    private $authorizationObject;
+    private $authorization;
 
     /**
      * @param ContextInterface $context
@@ -29,7 +29,7 @@ class EditAction extends \Magento\Backend\Ui\Component\Listing\Column\EditAction
      * @param UrlInterface $urlBuilder
      * @param array $components
      * @param array $data
-     * @param AuthorizationInterface|null $authorizationObject
+     * @param AuthorizationInterface|null $authorization
      */
     public function __construct(
         ContextInterface $context,
@@ -37,30 +37,29 @@ class EditAction extends \Magento\Backend\Ui\Component\Listing\Column\EditAction
         UrlInterface $urlBuilder,
         array $components = [],
         array $data = [],
-        ?AuthorizationInterface $authorizationObject = null
+        ?AuthorizationInterface $authorization = null
     ) {
-        $this->authorizationObject = $authorizationObject ?? ObjectManager::getInstance()
-                ->get(AuthorizationInterface::class);
+        $this->authorization = $authorization ?? ObjectManager::getInstance()->get(AuthorizationInterface::class);
         parent::__construct($context, $uiComponentFactory, $urlBuilder, $components, $data);
     }
 
     /**
      * @inheritDoc
      */
-    public function prepareDataSource(array $sourceData)
+    public function prepareDataSource(array $dataSource)
     {
-        $sourceData = parent::prepareDataSource($sourceData);
-        $actionsTitle = $this->getData('name');
+        $dataSource = parent::prepareDataSource($dataSource);
+        $actionsName = $this->getData('name');
 
-        if (isset($sourceData['data']['items'])) {
-            foreach ($sourceData['data']['items'] as &$item) {
-                if (!empty($item[$actionsTitle]['edit'])) {
-                    $item[$actionsTitle]['edit']['hidden'] =
-                        !$this->authorizationObject->isAllowed('Magento_InventoryApi::stock_edit');
+        if (isset($dataSource['data']['items'])) {
+            foreach ($dataSource['data']['items'] as &$item) {
+                if (!empty($item[$actionsName]['edit'])) {
+                    $item[$actionsName]['edit']['hidden'] =
+                        !$this->authorization->isAllowed('Magento_InventoryApi::stock_edit');
                 }
             }
         }
 
-        return $sourceData;
+        return $dataSource;
     }
 }

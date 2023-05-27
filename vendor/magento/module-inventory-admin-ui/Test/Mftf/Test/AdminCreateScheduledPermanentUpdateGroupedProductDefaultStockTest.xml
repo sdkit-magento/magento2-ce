@@ -57,10 +57,11 @@
             <actionGroup ref="DisableSourceActionGroup" stepKey="disableSource" before="amOnLogoutPage">
                 <argument name="sourceCode" value="$source.source[source_code]$"/>
             </actionGroup>
+            <magentoCron groups="index" stepKey="reindex"/>
         </after>
 
         <!--Verify grouped product on storefront.-->
-        <amOnPage url="{{StorefrontCategoryPage.url($createCategory.name$)}}" stepKey="navigateToCategoryPage"/>
+        <amOnPage url="{{StorefrontCategoryPage.url($createCategory.custom_attributes[url_key]$)}}" stepKey="navigateToCategoryPage"/>
         <waitForPageLoad stepKey="waitForCategory"/>
         <see userInput="$groupedProduct.name$" stepKey="assertProductPresent"/>
         <see userInput="$product.price$" stepKey="assertProductPricePresent"/>

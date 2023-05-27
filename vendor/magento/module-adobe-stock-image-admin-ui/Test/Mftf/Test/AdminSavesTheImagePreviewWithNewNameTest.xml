@@ -18,15 +18,20 @@
             <group value="adobe_stock_integration"/>
         </annotations>
         <before>
-            <actionGroup ref="LoginActionGroup" stepKey="login"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="login"/>
         </before>
         <after>
             <actionGroup ref="AdminDeleteSelectedAdobeStockImagePreviewActionGroup" stepKey="removeSavedPreview"/>
-            <actionGroup ref="logout" stepKey="logout"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logout"/>
         </after>
-        <actionGroup ref="AdminOpenMediaGalleryForPageNoEditorActionGroup" stepKey="openMediaGalleryForPage"/>
+        <actionGroup ref="AdminOpenCreateNewCMSPageActionGroup" stepKey="openNewPage"/>
+        <actionGroup ref="AdminOpenMediaGalleryFromPageNoEditorActionGroup" stepKey="openMediaGalleryForPage"/>
         <actionGroup ref="AdminAdobeStockOpenPanelFromMediaGalleryActionGroup" stepKey="openAdobeStockPopup"/>
-        <actionGroup ref="AdminAdobeStockExpandImagePreviewActionGroup" stepKey="expandsFirstImageInGrid"/>
+        <actionGroup ref="ResetAdminDataGridToDefaultViewActionGroup" stepKey="resetAdminDataGridToDefaultView"/>
+        <conditionalClick selector="{{AdminAdobeStockImagePreviewSection.close}}" dependentSelector="{{AdminAdobeStockImagePreviewSection.close}}" visible="true" stepKey="expandsFirstImageInGrid"/>
+        <waitForPageLoad stepKey="waitForImagePreviewToClose"/>
+        <click selector="{{AdminAdobeStockSection.selectAnImage('2')}}" stepKey="clickOnThumbnail"/>
+        <waitForPageLoad stepKey="waitForImagePreviewToExpand"/>
         <actionGroup ref="AdminAdobeStockSavePreviewActionGroup" stepKey="openTheSaveImagePreviewPopup"/>
         <actionGroup ref="AdminSaveAdobeStockImagePreviewActionGroup" stepKey="saveImagePreview"/>
         <actionGroup ref="AssertAdminImageIsVisibleInMediaGalleryActionGroup" stepKey="checkIfTheSavedImagesIsAvailable"/>

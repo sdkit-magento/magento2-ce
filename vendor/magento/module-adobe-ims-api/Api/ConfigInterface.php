@@ -53,11 +53,10 @@ interface ConfigInterface
     /**
      * Return logout url for AdobeSdk.
      *
-     * @param string $accessToken
      * @param string $redirectUrl
      * @return string
      */
-    public function getLogoutUrl(string $accessToken, string $redirectUrl = ''): string;
+    public function getLogoutUrl(string $redirectUrl = ''): string;
 
     /**
      * Return image url for AdobeSdk.
@@ -65,11 +64,4 @@ interface ConfigInterface
      * @return string
      */
     public function getProfileImageUrl(): string;
-
-    /**
-     * Returns default profile image.
-     *
-     * @return string
-     */
-    public function getDefaultProfileImage(): string;
 }

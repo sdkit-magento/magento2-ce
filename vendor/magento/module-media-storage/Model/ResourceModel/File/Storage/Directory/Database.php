@@ -6,7 +6,9 @@
 namespace Magento\MediaStorage\Model\ResourceModel\File\Storage\Directory;
 
 /**
- * Class responsible for database directory media storage CRUD operations.
+ * Class Database
+ *
+ * @deprecated Database Media Storage is deprecated
  */
 class Database extends \Magento\MediaStorage\Model\ResourceModel\File\Storage\AbstractStorage
 {
@@ -44,13 +46,13 @@ class Database extends \Magento\MediaStorage\Model\ResourceModel\File\Storage\Ab
         )->addColumn(
             'name',
             \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
-            255,
-            ['default' => null],
+            100,
+            ['nullable' => false],
             'Directory Name'
         )->addColumn(
             'path',
             \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
-            512,
+            255,
             ['default' => null],
             'Path to the \Directory'
         )->addColumn(
@@ -101,9 +103,7 @@ class Database extends \Magento\MediaStorage\Model\ResourceModel\File\Storage\Ab
     {
         $connection = $this->getConnection();
 
-        // phpcs:ignore Magento2.Functions.DiscouragedFunction
         $name = basename($path);
-        // phpcs:ignore Magento2.Functions.DiscouragedFunction
         $path = dirname($path);
         if ($path == '.') {
             $path = '';
@@ -137,9 +137,7 @@ class Database extends \Magento\MediaStorage\Model\ResourceModel\File\Storage\Ab
     {
         $connection = $this->getConnection();
 
-        // phpcs:ignore Magento2.Functions.DiscouragedFunction
         $name = basename($path);
-        // phpcs:ignore Magento2.Functions.DiscouragedFunction
         $path = dirname($path);
         if ($path == '.') {
             $path = '';

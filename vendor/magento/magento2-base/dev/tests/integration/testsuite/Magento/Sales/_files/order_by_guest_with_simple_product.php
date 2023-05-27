@@ -10,8 +10,9 @@ use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\PaymentInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Quote\Model\GetQuoteByReservedOrderId;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
-require __DIR__ . '/../../Checkout/_files/quote_with_address_saved.php';
+Resolver::getInstance()->requireDataFixture('Magento/Checkout/_files/quote_with_address_saved.php');
 
 $objectManager = Bootstrap::getObjectManager();
 /** @var CartRepositoryInterface $quoteRepository */

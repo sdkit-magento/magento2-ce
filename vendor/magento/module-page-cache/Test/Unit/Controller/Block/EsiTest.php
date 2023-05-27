@@ -4,87 +4,127 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Magento\PageCache\Test\Unit\Controller\Block;
+
+use Magento\Framework\App\Action\Context;
+use Magento\Framework\App\Request\Http;
+use Magento\Framework\App\View;
+use Magento\Framework\Serialize\Serializer\Base64Json;
+use Magento\Framework\Serialize\Serializer\Json;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use Magento\Framework\Translate\InlineInterface;
+use Magento\Framework\View\Element\AbstractBlock;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\Layout\LayoutCacheKeyInterface;
+use Magento\Framework\Validator\Regex;
+use Magento\Framework\Validator\RegexFactory;
+use Magento\PageCache\Controller\Block;
+use Magento\PageCache\Controller\Block\Esi;
+use Magento\PageCache\Test\Unit\Block\Controller\StubBlock;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class EsiTest extends \PHPUnit\Framework\TestCase
+class EsiTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\App\Request\Http|\PHPUnit\Framework\MockObject\MockObject
+     * @var Http|MockObject
      */
     protected $requestMock;
 
     /**
-     * @var \Magento\Framework\App\Response\Http|\PHPUnit\Framework\MockObject\MockObject
+     * @var \Magento\Framework\App\Response\Http|MockObject
      */
     protected $responseMock;
 
     /**
-     * @var \Magento\Framework\App\View|\PHPUnit\Framework\MockObject\MockObject
+     * @var View|MockObject
      */
     protected $viewMock;
 
     /**
-     * @var \Magento\PageCache\Controller\Block
+     * @var Block
      */
     protected $action;
 
     /**
-     * @var \Magento\Framework\View\Layout|\PHPUnit\Framework\MockObject\MockObject
+     * @var Layout|MockObject
      */
     protected $layoutMock;
 
     /**
-     * @var \Magento\Framework\View\Layout\LayoutCacheKeyInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var LayoutCacheKeyInterface|MockObject
      */
     protected $layoutCacheKeyMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|\Magento\Framework\Translate\InlineInterface
+     * @var MockObject|InlineInterface
      */
     protected $translateInline;
+
+    /**
+     * Validation pattern for handles array
+     */
+    private const VALIDATION_RULE_PATTERN = '/^[a-z0-9]+[a-z0-9_]*$/i';
 
     /**
      * Set up before test
      */
     protected function setUp(): void
     {
-        $this->layoutMock = $this->getMockBuilder(\Magento\Framework\View\Layout::class)
-            ->disableOriginalConstructor()->getMock();
+        $this->layoutMock = $this->getMockBuilder(Layout::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
         $this->layoutCacheKeyMock = $this->getMockForAbstractClass(
-            \Magento\Framework\View\Layout\LayoutCacheKeyInterface::class
+            LayoutCacheKeyInterface::class
         );
 
         $contextMock =
-            $this->getMockBuilder(\Magento\Framework\App\Action\Context::class)
-                ->disableOriginalConstructor()->getMock();
+            $this->getMockBuilder(Context::class)
+                ->disableOriginalConstructor()
+                ->getMock();
 
-        $this->requestMock = $this->getMockBuilder(\Magento\Framework\App\Request\Http::class)
-            ->disableOriginalConstructor()->getMock();
+        $this->requestMock = $this->getMockBuilder(Http::class)
+            ->disableOriginalConstructor()
+            ->getMock();
         $this->responseMock = $this->getMockBuilder(\Magento\Framework\App\Response\Http::class)
-            ->disableOriginalConstructor()->getMock();
-        $this->viewMock = $this->getMockBuilder(\Magento\Framework\App\View::class)
-            ->disableOriginalConstructor()->getMock();
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->viewMock = $this->getMockBuilder(View::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
         $contextMock->expects($this->any())->method('getRequest')->willReturn($this->requestMock);
         $contextMock->expects($this->any())->method('getResponse')->willReturn($this->responseMock);
         $contextMock->expects($this->any())->method('getView')->willReturn($this->viewMock);
 
-        $this->translateInline = $this->createMock(\Magento\Framework\Translate\InlineInterface::class);
+        $this->translateInline = $this->getMockForAbstractClass(InlineInterface::class);
 
-        $helperObjectManager = new \Magento\Framework\TestFramework\Unit\Helper\ObjectManager($this);
+        $regexFactoryMock = $this->getMockBuilder(RegexFactory::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['create'])
+            ->getMock();
+
+        $regexObject = new Regex(self::VALIDATION_RULE_PATTERN);
+
+        $regexFactoryMock->expects($this->any())->method('create')
+            ->willReturn($regexObject);
+
+        $helperObjectManager = new ObjectManager($this);
         $this->action = $helperObjectManager->getObject(
-            \Magento\PageCache\Controller\Block\Esi::class,
+            Esi::class,
             [
                 'context' => $contextMock,
                 'translateInline' => $this->translateInline,
-                'jsonSerializer' => new \Magento\Framework\Serialize\Serializer\Json(),
-                'base64jsonSerializer' => new \Magento\Framework\Serialize\Serializer\Base64Json(),
-                'layoutCacheKey' => $this->layoutCacheKeyMock
+                'jsonSerializer' => new Json(),
+                'base64jsonSerializer' => new Base64Json(),
+                'layoutCacheKey' => $this->layoutCacheKeyMock,
+                'regexValidatorFactory' => $regexFactoryMock
             ]
         );
     }
@@ -101,14 +141,17 @@ class EsiTest extends \PHPUnit\Framework\TestCase
         $html = 'some-html';
         $mapData = [['blocks', '', json_encode([$block])], ['handles', '', base64_encode(json_encode($handles))]];
 
-        $blockInstance1 = $this->createPartialMock($blockClass, ['toHtml']);
+        $blockInstance1 = $this->getMockBuilder($blockClass)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['toHtml'])
+            ->getMock();
 
         $blockInstance1->expects($this->once())->method('toHtml')->willReturn($html);
         $blockInstance1->setTtl(360);
 
         $this->requestMock->expects($this->any())->method('getParam')->willReturnMap($mapData);
 
-        $this->viewMock->expects($this->once())->method('loadLayout')->with($this->equalTo($handles));
+        $this->viewMock->expects($this->once())->method('loadLayout')->with($handles);
 
         $this->viewMock->expects($this->once())->method('getLayout')->willReturn($this->layoutMock);
 
@@ -119,7 +162,7 @@ class EsiTest extends \PHPUnit\Framework\TestCase
 
         $this->layoutMock->expects($this->once())
             ->method('getBlock')
-            ->with($this->equalTo($block))
+            ->with($block)
             ->willReturn($blockInstance1);
 
         if ($shouldSetHeaders) {
@@ -138,7 +181,7 @@ class EsiTest extends \PHPUnit\Framework\TestCase
 
         $this->responseMock->expects($this->once())
             ->method('appendBody')
-            ->with($this->equalTo($html));
+            ->with($html);
 
         $this->action->execute();
     }
@@ -149,8 +192,8 @@ class EsiTest extends \PHPUnit\Framework\TestCase
     public function executeDataProvider()
     {
         return [
-            [\Magento\PageCache\Test\Unit\Block\Controller\StubBlock::class, true],
-            [\Magento\Framework\View\Element\AbstractBlock::class, false],
+            [StubBlock::class, true],
+            [AbstractBlock::class, false],
         ];
     }
 

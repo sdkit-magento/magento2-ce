@@ -35,7 +35,7 @@
                 <requiredEntity createDataKey="createSource1"/>
             </createData>
 
-            <actionGroup ref="LoginAsAdmin" stepKey="loginAsAdmin1"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="loginAsAdmin1"/>
         </before>
         <after>
             <!--Assign Default Stock to Default Website.-->
@@ -43,7 +43,7 @@
                 <argument name="stockName" value="{{_defaultStock.name}}"/>
                 <argument name="websiteName" value="{{_defaultWebsite.name}}"/>
             </actionGroup>
-            <actionGroup ref="logout" stepKey="logoutOfAdmin1"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logoutOfAdmin1"/>
         </after>
 
         <amOnPage url="{{AdminProductIndexPage.url}}" stepKey="adminProductIndexPageAdd"/>
@@ -66,9 +66,9 @@
         <fillField selector="{{AdminProductSourcesGrid.rowQty('1')}}" userInput="100"
                    stepKey="fillSourceQtyField2"/>
 
-        <actionGroup ref="AdminFormSaveAndClose" stepKey="saveAndClose"/>
+        <actionGroup ref="AdminFormSaveAndCloseActionGroup" stepKey="saveAndClose"/>
 
-        <amOnPage url="{{StorefrontCategoryPage.url($$simpleCategory1.name$$)}}" stepKey="navigateToCategory"/>
+        <amOnPage url="{{StorefrontCategoryPage.url($$simpleCategory1.custom_attributes[url_key]$$)}}" stepKey="navigateToCategory"/>
         <waitForPageLoad time="30" stepKey="waitForPageLoad1"/>
         <click selector="{{StorefrontCategoryMainSection.specifiedProductItemInfo($$simpleProduct1.product[name]$$)}}" stepKey="openProductPage"/>
         <waitForPageLoad time="30" stepKey="waitForPageLoad2"/>
@@ -96,11 +96,11 @@
         <waitForPageLoad stepKey="waitForPageLoad21"/>
 
         <click selector="{{CheckoutShippingMethodsSection.firstShippingMethod}}" stepKey="selectFirstShippingMethod3"/>
-        <waitForPageLoad stepKey="waitForPageLoad22"/>
-        <click selector="{{CheckoutShippingMethodsSection.next}}" stepKey="clickNext3"/>
-        <waitForPageLoad stepKey="waitForPageLoad23"/>
-        <click selector="{{CheckoutPaymentSection.placeOrder}}" stepKey="clickPlaceOrder3"/>
-        <waitForPageLoad stepKey="waitForPageLoad24"/>
+        <comment userInput="BIC workaround" stepKey="waitForPageLoad22"/>
+        <actionGroup ref="StorefrontCheckoutClickNextButtonActionGroup" stepKey="clickNext3"/>
+        <comment userInput="BIC workaround" stepKey="waitForPageLoad23"/>
+        <actionGroup ref="ClickPlaceOrderActionGroup" stepKey="clickPlaceOrder3"/>
+        <comment userInput="BIC workaround" stepKey="waitForPageLoad24"/>
         <see selector="{{CheckoutSuccessMainSection.successTitle}}" userInput="Thank you for your purchase!" stepKey="waitForLoadSuccessPage3"/>
         <grabTextFrom selector="{{CheckoutSuccessMainSection.orderNumber}}" stepKey="grabOrderNumber"/>
 
@@ -124,7 +124,7 @@
         <waitForPageLoad stepKey="waitForPageLoad30"/>
         <seeElement selector="{{AdminOrderShipmentsTabSection.gridRow('1')}}" stepKey="seeShipmentInGrid"/>
 
-        <amOnPage url="{{StorefrontCategoryPage.url($$simpleCategory1.name$$)}}" stepKey="navigateToCategoryPage2"/>
+        <amOnPage url="{{StorefrontCategoryPage.url($$simpleCategory1.custom_attributes[url_key]$$)}}" stepKey="navigateToCategoryPage2"/>
         <see selector=".empty" userInput="We can't find products matching the selection." stepKey="seeErrorMessage1"/>
     </test>
 </tests>

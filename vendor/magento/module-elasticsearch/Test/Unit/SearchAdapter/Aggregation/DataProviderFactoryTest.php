@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Magento\Elasticsearch\Test\Unit\SearchAdapter\Aggregation;
 
@@ -11,11 +12,14 @@ use Magento\Elasticsearch\SearchAdapter\Dynamic\DataProvider;
 use Magento\Elasticsearch\SearchAdapter\QueryContainer;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Search\Dynamic\DataProviderInterface;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class DataProviderFactoryTest extends \PHPUnit\Framework\TestCase
+class DataProviderFactoryTest extends TestCase
 {
     /**
-     * @var ObjectManagerInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var ObjectManagerInterface|MockObject
      */
     private $objectManager;
 
@@ -26,8 +30,8 @@ class DataProviderFactoryTest extends \PHPUnit\Framework\TestCase
 
     protected function setUp(): void
     {
-        $objectManager = new \Magento\Framework\TestFramework\Unit\Helper\ObjectManager($this);
-        $this->objectManager = $this->getMockBuilder(\Magento\Framework\ObjectManagerInterface::class)
+        $objectManager = new ObjectManager($this);
+        $this->objectManager = $this->getMockBuilder(ObjectManagerInterface::class)
             ->setMethods(['create'])
             ->getMockForAbstractClass();
         $this->factory = $objectManager->getObject(
@@ -60,7 +64,7 @@ class DataProviderFactoryTest extends \PHPUnit\Framework\TestCase
         /** @var DataProviderInterface $dataProvider */
         $dataProvider = $this->getMockBuilder(DataProviderInterface::class)
             ->getMockForAbstractClass();
-        /** @var \PHPUnit\Framework\MockObject\MockObject $queryContainerMock */
+        /** @var MockObject $queryContainerMock */
         $queryContainerMock = $this->getMockBuilder(QueryContainer::class)
             ->setMethods(['getQuery'])
             ->disableOriginalConstructor()
@@ -75,7 +79,7 @@ class DataProviderFactoryTest extends \PHPUnit\Framework\TestCase
         $dataProvider = $this->getMockBuilder(DataProvider::class)
             ->disableOriginalConstructor()
             ->getMock();
-        /** @var \PHPUnit\Framework\MockObject\MockObject $queryContainer */
+        /** @var MockObject $queryContainer */
         $queryContainer = $this->getMockBuilder(QueryContainer::class)
             ->setMethods(['getQuery'])
             ->disableOriginalConstructor()
@@ -87,15 +91,13 @@ class DataProviderFactoryTest extends \PHPUnit\Framework\TestCase
             ->getMock();
         $this->objectManager->expects($this->once())
             ->method('create')
-            ->with($this->isType('string'), ['queryContainer' => $queryContainer])
+            ->with($this->isType('string'), ['queryContainer' => $queryContainer, 'aggregationFieldName' => null])
             ->willReturn($recreatedDataProvider);
         $result = $this->factory->create($dataProvider, $queryContainer);
         $this->assertNotSame($dataProvider, $result);
         $this->assertSame($recreatedDataProvider, $result);
     }
 
-    /**
-     */
     public function testCreateContainerAwareDataProviderWithoutQuery()
     {
         $this->expectException(\LogicException::class);

@@ -318,6 +318,7 @@ class CustomerMetadataTest extends WebapiAbstract
         }
         return [$expectedResult, $actualResult];
     }
+    // phpcs:enable
 
     /**
      * Check specific attribute validation rules in set of multiple attributes

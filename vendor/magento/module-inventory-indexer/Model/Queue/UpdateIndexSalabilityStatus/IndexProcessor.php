@@ -8,16 +8,14 @@ declare(strict_types=1);
 namespace Magento\InventoryIndexer\Model\Queue\UpdateIndexSalabilityStatus;
 
 use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\StateException;
 use Magento\InventoryIndexer\Indexer\InventoryIndexer;
+use Magento\InventoryIndexer\Model\Queue\GetSalabilityDataForUpdate;
 use Magento\InventoryIndexer\Model\Queue\ReservationData;
 use Magento\InventoryIndexer\Model\ResourceModel\UpdateIsSalable;
 use Magento\InventoryMultiDimensionalIndexerApi\Model\Alias;
 use Magento\InventoryMultiDimensionalIndexerApi\Model\IndexNameBuilder;
 use Magento\InventoryMultiDimensionalIndexerApi\Model\IndexStructureInterface;
-use Magento\InventorySalesApi\Api\IsProductSalableInterface;
-use Magento\InventorySalesApi\Model\GetStockItemDataInterface;
 
 /**
  * Update 'is salable' index data processor.
@@ -35,39 +33,31 @@ class IndexProcessor
     private $indexStructure;
 
     /**
-     * @var IsProductSalableInterface
-     */
-    private $isProductSalable;
-
-    /**
-     * @var GetStockItemDataInterface
-     */
-    private $getStockItemData;
-
-    /**
      * @var UpdateIsSalable
      */
     private $updateIsSalable;
 
     /**
+     * @var GetSalabilityDataForUpdate
+     */
+    private $getSalabilityDataForUpdate;
+
+    /**
      * @param IndexNameBuilder $indexNameBuilder
      * @param IndexStructureInterface $indexStructure
-     * @param GetStockItemDataInterface $getStockItemData
      * @param UpdateIsSalable $updateIsSalable
-     * @param IsProductSalableInterface $isProductSalable
+     * @param GetSalabilityDataForUpdate $getSalabilityDataForUpdate
      */
     public function __construct(
         IndexNameBuilder $indexNameBuilder,
         IndexStructureInterface $indexStructure,
-        GetStockItemDataInterface $getStockItemData,
         UpdateIsSalable $updateIsSalable,
-        IsProductSalableInterface $isProductSalable
+        GetSalabilityDataForUpdate $getSalabilityDataForUpdate
     ) {
         $this->indexNameBuilder = $indexNameBuilder;
         $this->indexStructure = $indexStructure;
-        $this->isProductSalable = $isProductSalable;
-        $this->getStockItemData = $getStockItemData;
         $this->updateIsSalable = $updateIsSalable;
+        $this->getSalabilityDataForUpdate = $getSalabilityDataForUpdate;
     }
 
     /**
@@ -77,6 +67,7 @@ class IndexProcessor
      * @param int $stockId
      * @return bool[]
      * @throws StateException
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function execute(ReservationData $reservationData, int $stockId): array
     {
@@ -89,12 +80,7 @@ class IndexProcessor
             $this->indexStructure->create($mainIndexName, ResourceConnection::DEFAULT_CONNECTION);
         }
 
-        $salabilityData = [];
-        foreach ($reservationData->getSkus() as $sku) {
-            $salabilityData[$sku] = $this->isProductSalable->execute($sku, $reservationData->getStock());
-        }
-
-        $dataForUpdate = $this->getDataForUpdate($salabilityData, $stockId);
+        $dataForUpdate = $this->getSalabilityDataForUpdate->execute($reservationData);
         $this->updateIsSalable->execute(
             $mainIndexName,
             $dataForUpdate,
@@ -102,46 +88,5 @@ class IndexProcessor
         );
 
         return $dataForUpdate;
-    }
-
-    /**
-     * Build data for index update.
-     *
-     * @param array $salabilityData
-     * @param int $stockId
-     *
-     * @return bool[] - ['sku' => bool]
-     */
-    private function getDataForUpdate(array $salabilityData, int $stockId): array
-    {
-        $data = [];
-        foreach ($salabilityData as $sku => $isSalable) {
-            $currentStatus = $this->getIndexSalabilityStatus($sku, $stockId);
-            if ($isSalable != $currentStatus && $currentStatus !== null) {
-                $data[$sku] = $isSalable;
-            }
-        }
-
-        return $data;
-    }
-
-    /**
-     * Get current index is_salable value.
-     *
-     * @param string $sku
-     * @param int $stockId
-     *
-     * @return bool|null
-     */
-    private function getIndexSalabilityStatus(string $sku, int $stockId): ?bool
-    {
-        try {
-            $data = $this->getStockItemData->execute($sku, $stockId);
-            $isSalable = $data ? (bool)$data[GetStockItemDataInterface::IS_SALABLE] : false;
-        } catch (LocalizedException $e) {
-            $isSalable = null;
-        }
-
-        return $isSalable;
     }
 }

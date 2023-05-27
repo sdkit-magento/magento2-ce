@@ -93,7 +93,7 @@ class Adapter implements AdapterInterface, Profiler\ProfilerAwareInterface
     }
 
     /**
-     * @return self Provides a fluent interface
+     * @return $this Provides a fluent interface
      */
     public function setProfiler(Profiler\ProfilerInterface $profiler)
     {
@@ -210,7 +210,7 @@ class Adapter implements AdapterInterface, Profiler\ProfilerAwareInterface
      * Create statement
      *
      * @param  string $initialSql
-     * @param  ParameterContainer $initialParameters
+     * @param  null|ParameterContainer|array $initialParameters
      * @return Driver\StatementInterface
      */
     public function createStatement($initialSql = null, $initialParameters = null)

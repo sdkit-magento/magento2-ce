@@ -4,14 +4,13 @@
  * See COPYING.txt for license details.
  */
 
-declare(strict_types=1);
-
 namespace Magento\TestFramework\Annotation;
 
 use Magento\Framework\DB\Adapter\SqlVersionProvider;
 use Magento\TestFramework\Deploy\CliCommand;
 use Magento\TestFramework\Deploy\TestModuleManager;
 use Magento\TestFramework\TestCase\MutableDataInterface;
+use PHPUnit\Util\Test as TestUtil;
 
 /**
  * Handler for applying reinstallMagento annotation.
@@ -21,13 +20,16 @@ class DataProviderFromFile
     /**
      * @var string
      */
-    const FALLBACK_VALUE = 'default';
+    public const FALLBACK_VALUE = 'default';
 
     /**
      * @var array
      */
-    const POSSIBLE_SUFFIXES = [
-        SqlVersionProvider::MARIA_DB_10_VERSION => 'mariadb10',
+    public const POSSIBLE_SUFFIXES = [
+        SqlVersionProvider::MYSQL_8_0_VERSION => 'mysql8',
+        SqlVersionProvider::MARIA_DB_10_4_VERSION => 'mariadb10',
+        SqlVersionProvider::MARIA_DB_10_6_VERSION => 'mariadb106',
+        SqlVersionProvider::MYSQL_8_0_29_VERSION => 'mysql829'
     ];
 
     /**
@@ -57,7 +59,10 @@ class DataProviderFromFile
      */
     public function startTest(\PHPUnit\Framework\TestCase $test)
     {
-        $annotations = $test->getAnnotations();
+        $annotations = TestUtil::parseTestMethodAnnotations(
+            get_class($test),
+            $test->getName(false)
+        );
         //This annotation can be declared only on method level
         if (isset($annotations['method']['dataProviderFromFile']) && $test instanceof MutableDataInterface) {
             $test->setData(
@@ -84,7 +89,7 @@ class DataProviderFromFile
     /**
      * Load different db version files for different databases.
      *
-     * @param string $path The path of the initial file.
+     * @param string $path The path of the inital file.
      *
      * @return array
      */
@@ -94,11 +99,13 @@ class DataProviderFromFile
         $pathWithoutExtension = $this->removeFileExtension($path);
 
         foreach (glob($pathWithoutExtension . '.*') as $file) {
-            preg_match('/\.([\D]*[\d]*(?:\.[\d]+){0,2})/', $file, $splitParts);
+            /* Search database string in file name like mysql8 with
+               possibility to use version until patch level. */
+            preg_match('/\.([\D]*[\d]*(?:\.[\d]+){0,2})/', $file, $splitedParts);
             $dbKey = self::FALLBACK_VALUE;
 
-            if (count($splitParts) > 1) {
-                $database = array_pop($splitParts);
+            if (count($splitedParts) > 1) {
+                $database = array_pop($splitedParts);
 
                 if ($this->isValidDatabaseSuffix($database)) {
                     $dbKey = $database;

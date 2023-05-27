@@ -3,14 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-declare(strict_types=1);
 
 use Magento\Catalog\_files\MultiselectSourceMock;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
-/**
- * Create multiselect attribute
- */
-require __DIR__ . '/multiselect_attribute_with_source_model.php';
+Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/multiselect_attribute_with_source_model.php');
 
 /** Create product with options and multiselect attribute */
 

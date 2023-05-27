@@ -30,7 +30,8 @@
             <createData entity="SimpleSubCategory" stepKey="simpleCategory1"/>
             <createData entity="SimpleMsiProduct" stepKey="simpleProduct1"/>
 
-            <actionGroup ref="LoginAsAdmin" stepKey="loginAsAdmin1"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="loginAsAdmin1"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </before>
         <after>
             <!--Assign Default Stock to Default Website.-->
@@ -38,7 +39,12 @@
                 <argument name="stockName" value="{{_defaultStock.name}}"/>
                 <argument name="websiteName" value="{{_defaultWebsite.name}}"/>
             </actionGroup>
-            <actionGroup ref="logout" stepKey="logoutOfAdmin1"/>
+            <actionGroup ref="DisableAllSourcesActionGroup" stepKey="disableAllSources"/>
+            <deleteData createDataKey="createStock1" stepKey="deleteStock"/>
+            <deleteData createDataKey="simpleCategory1" stepKey="deleteCategory"/>
+            <deleteData createDataKey="simpleProduct1" stepKey="deleteProduct"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logoutOfAdmin1"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </after>
 
         <actionGroup ref="AdminGoToProductGridFilterResultsByInputEditProduct" stepKey="goToProductGridFilterResultsByInputEditProduct1">
@@ -53,10 +59,10 @@
         </actionGroup>
         <fillField selector="{{AdminProductSourcesGrid.rowQty('1')}}" userInput="100" stepKey="fillTestSourceQtyField1"/>
 
-        <actionGroup ref="AdminFormSaveAndClose" stepKey="saveAndCloseCreatedVirtualProduct1"/>
+        <actionGroup ref="AdminFormSaveAndCloseActionGroup" stepKey="saveAndCloseCreatedVirtualProduct1"/>
 
-        <amOnPage url="{{StorefrontHomePage.url}}" stepKey="goToHomePage1"/>
-        <waitForPageLoad time="30" stepKey="waitForPageLoad1"/>
+        <actionGroup ref="StorefrontOpenHomePageActionGroup" stepKey="goToHomePage1"/>
+        <comment userInput="BIC workaround" stepKey="waitForPageLoad1"/>
 
         <fillField userInput="$$simpleProduct1.product[name]$$" selector="{{StorefrontQuickSearchSection.searchPhrase}}" stepKey="fillSearchBar1"/>
         <waitForPageLoad time="30" stepKey="waitForPageLoad2"/>

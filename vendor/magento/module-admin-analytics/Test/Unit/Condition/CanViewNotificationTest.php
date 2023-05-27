@@ -3,47 +3,43 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\AdminAnalytics\Test\Unit\Condition;
 
 use Magento\AdminAnalytics\Model\Condition\CanViewNotification;
 use Magento\AdminAnalytics\Model\ResourceModel\Viewer\Logger;
 use Magento\AdminAnalytics\Model\Viewer\Log;
+use Magento\Framework\App\CacheInterface;
 use Magento\Framework\App\ProductMetadataInterface;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
-use Magento\Framework\App\CacheInterface;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-/**
- * Test of CanViewNotification
- */
-class CanViewNotificationTest extends \PHPUnit\Framework\TestCase
+class CanViewNotificationTest extends TestCase
 {
     /** @var CanViewNotification */
     private $canViewNotification;
 
-    /** @var  Logger|\PHPUnit\Framework\MockObject\MockObject */
+    /** @var  Logger|MockObject */
     private $viewerLoggerMock;
 
-    /** @var ProductMetadataInterface|\PHPUnit\Framework\MockObject\MockObject */
+    /** @var ProductMetadataInterface|MockObject */
     private $productMetadataMock;
 
-    /** @var  Log|\PHPUnit\Framework\MockObject\MockObject */
+    /** @var  Log|MockObject */
     private $logMock;
 
-    /** @var  $cacheStorageMock \PHPUnit\Framework\MockObject\MockObject|CacheInterface */
+    /** @var MockObject|CacheInterface $cacheStorageMock */
     private $cacheStorageMock;
 
     protected function setUp(): void
     {
         $this->cacheStorageMock = $this->getMockBuilder(CacheInterface::class)
             ->getMockForAbstractClass();
-        $this->logMock = $this->getMockBuilder(Log::class)
-            ->getMock();
-        $this->viewerLoggerMock = $this->getMockBuilder(Logger::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->productMetadataMock = $this->getMockBuilder(ProductMetadataInterface::class)
-            ->disableOriginalConstructor()
-            ->getMockForAbstractClass();
+        $this->logMock = $this->createMock(Log::class);
+        $this->viewerLoggerMock = $this->createMock(Logger::class);
+        $this->productMetadataMock = $this->getMockForAbstractClass(ProductMetadataInterface::class);
         $objectManager = new ObjectManager($this);
         $this->canViewNotification = $objectManager->getObject(
             CanViewNotification::class,

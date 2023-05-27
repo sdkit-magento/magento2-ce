@@ -1,13 +1,17 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter\Word;
 
+/**
+ * @psalm-type Options = array{
+ *     separator?: string,
+ *     ...
+ * }
+ * @template TOptions of Options
+ * @extends CamelCaseToSeparator<TOptions>
+ */
 class CamelCaseToUnderscore extends CamelCaseToSeparator
 {
     public function __construct()

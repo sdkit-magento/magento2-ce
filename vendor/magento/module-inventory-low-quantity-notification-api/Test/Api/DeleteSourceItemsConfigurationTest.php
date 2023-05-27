@@ -20,6 +20,7 @@ class DeleteSourceItemsConfigurationTest extends WebapiAbstract
     const SERVICE_NAME_GET = 'inventoryLowQuantityNotificationApiGetSourceItemConfigurationV1';
 
     /**
+     * @magentoApiDataFixture ../../../../app/code/Magento/InventoryApi/Test/_files/products.php
      * @magentoApiDataFixture ../../../../app/code/Magento/InventoryApi/Test/_files/sources.php
      * @magentoApiDataFixture ../../../../app/code/Magento/InventoryApi/Test/_files/source_items.php
      * @magentoApiDataFixture ../../../../app/code/Magento/InventoryLowQuantityNotificationApi/Test/_files/source_item_configuration.php
@@ -86,7 +87,7 @@ class DeleteSourceItemsConfigurationTest extends WebapiAbstract
             ? $this->_webApiCall($serviceInfo)
             : $this->_webApiCall($serviceInfo, ['sourceCode' => $sourceCode, 'sku' => $sku]);
 
-        self::assertIsArray($sourceItemConfiguration);
+        self::assertInternalType('array', $sourceItemConfiguration);
         self::assertNotEmpty($sourceItemConfiguration);
 
         return $sourceItemConfiguration;

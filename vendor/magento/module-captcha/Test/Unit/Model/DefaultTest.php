@@ -20,6 +20,7 @@ use Magento\Framework\Session\Storage;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManager;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -50,14 +51,14 @@ class DefaultTest extends TestCase
         'case_sensitive' => '0',
         'shown_to_logged_in_user' => ['contact_us' => 1],
         'always_for' => [
-            'user_create',
-            'user_forgotpassword',
-            'contact_us',
+            'user_create' => '1',
+            'user_forgotpassword' => '1',
+            'contact_us' => '1'
         ],
     ];
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $_dirMock;
 
@@ -78,27 +79,27 @@ class DefaultTest extends TestCase
     protected $_object;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $_objectManager;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $_storeManager;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $session;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|LogFactory
+     * @var MockObject|LogFactory
      */
     protected $_resLogFactory;
 
     /**
-     * @var UserContextInterface|\PHPUnit_Framework_MockObject_MockObject
+     * @var UserContextInterface|MockObject
      */
     private $userContextMock;
 
@@ -242,7 +243,7 @@ class DefaultTest extends TestCase
     {
         $this->assertEquals(
             $this->_object->getImgSrc(),
-            'http://localhost/pub/media/captcha/base/' . $this->_object->getId() . '.png'
+            'http://localhost/media/captcha/base/' . $this->_object->getId() . '.png'
         );
     }
 
@@ -335,7 +336,7 @@ class DefaultTest extends TestCase
         )->method(
             'getImgUrl'
         )->willReturn(
-            'http://localhost/pub/media/captcha/base/'
+            'http://localhost/media/captcha/base/'
         );
 
         return $helper;
@@ -385,8 +386,12 @@ class DefaultTest extends TestCase
      */
     protected function _getStoreStub()
     {
-        $store = $this->createPartialMock(Store::class, ['isAdmin', 'getBaseUrl']);
-        $store->expects($this->any())->method('getBaseUrl')->willReturn('http://localhost/pub/media/');
+        $store = $this->getMockBuilder(Store::class)
+            ->addMethods(['isAdmin'])
+            ->onlyMethods(['getBaseUrl'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $store->expects($this->any())->method('getBaseUrl')->willReturn('http://localhost/media/');
         $store->expects($this->any())->method('isAdmin')->willReturn(false);
         return $store;
     }

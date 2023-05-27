@@ -14,8 +14,6 @@ use Magento\AdobeImsApi\Api\Data\TokenResponseInterfaceFactory;
 use Magento\Framework\HTTP\Client\Curl;
 use Magento\Framework\HTTP\Client\CurlFactory;
 use Magento\Framework\Serialize\Serializer\Json;
-use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
-use Magento\Framework\UrlInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -25,27 +23,22 @@ use PHPUnit\Framework\TestCase;
 class GetTokenTest extends TestCase
 {
     /**
-     * @var ObjectManager
-     */
-    private $objectManager;
-
-    /**
-     * @var ConfigInterface|MockObject $config
+     * @var ConfigInterface|MockObject
      */
     private $configMock;
 
     /**
-     * @var CurlFactory|MockObject $curlFactoryMock
+     * @var CurlFactory|MockObject
      */
     private $curlFactoryMock;
 
     /**
-     * @var Json|MockObject $jsonMock
+     * @var Json|MockObject
      */
     private $jsonMock;
 
     /**
-     * @var TokenResponseInterfaceFactory|MockObject $tokenResponseFactoryMock
+     * @var TokenResponseInterfaceFactory|MockObject
      */
     private $tokenResponseFactoryMock;
 
@@ -55,27 +48,19 @@ class GetTokenTest extends TestCase
     private $getToken;
 
     /**
-     * @var UrlInterface|MockObject
-     */
-    private $url;
-
-    /**
      * Prepare test objects.
      */
     protected function setUp(): void
     {
-        $this->objectManager = new ObjectManager($this);
-        $this->configMock = $this->getMockForAbstractClass(ConfigInterface::class);
+        $this->configMock = $this->createMock(ConfigInterface::class);
         $this->curlFactoryMock = $this->createMock(CurlFactory::class);
         $this->jsonMock = $this->createMock(Json::class);
         $this->tokenResponseFactoryMock = $this->createMock(TokenResponseInterfaceFactory::class);
-        $this->url = $this->getMockForAbstractClass(UrlInterface::class);
         $this->getToken = new GetToken(
             $this->configMock,
             $this->curlFactoryMock,
             $this->jsonMock,
-            $this->tokenResponseFactoryMock,
-            $this->url
+            $this->tokenResponseFactoryMock
         );
     }
 
@@ -103,22 +88,17 @@ class GetTokenTest extends TestCase
         $curl->expects($this->once())
             ->method('post')
             ->willReturn(null);
+
+        $data = ['access_token' => 'string'];
+
         $this->jsonMock->expects($this->once())
             ->method('unserialize')
-            ->willReturn(['string']);
+            ->willReturn($data);
         $tokenResponse = $this->createMock(TokenResponse::class);
         $this->tokenResponseFactoryMock->expects($this->once())
             ->method('create')
+            ->with(['data' => $data])
             ->willReturn($tokenResponse);
-        $tokenResponse->expects($this->once())
-            ->method('addData')
-            ->willReturn($tokenResponse);
-        $tokenResponse->expects($this->once())
-            ->method('getAccessToken')
-            ->willReturn('string');
-        $tokenResponse->expects($this->once())
-            ->method('getRefreshToken')
-            ->willReturn('string');
         $this->assertEquals($tokenResponse, $this->getToken->execute('code'));
     }
 }

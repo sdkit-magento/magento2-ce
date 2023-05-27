@@ -8,9 +8,10 @@ declare(strict_types=1);
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
-require __DIR__ . '/../../Customer/_files/customer_with_addresses_rollback.php';
-require __DIR__ . '/../../../Magento/Catalog/_files/products_rollback.php';
+Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer_with_addresses_rollback.php');
+Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/products_rollback.php');
 
 $objectManager = Bootstrap::getObjectManager();
 $searchCriteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);

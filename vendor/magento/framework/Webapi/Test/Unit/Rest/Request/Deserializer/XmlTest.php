@@ -3,29 +3,38 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Framework\Webapi\Test\Unit\Rest\Request\Deserializer;
 
-class XmlTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\State;
+use Magento\Framework\Webapi\Exception;
+use Magento\Framework\Webapi\Rest\Request\Deserializer\Xml;
+use Magento\Framework\Xml\Parser;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+class XmlTest extends TestCase
 {
-    /** @var \PHPUnit\Framework\MockObject\MockObject */
+    /** @var MockObject */
     protected $_xmlParserMock;
 
-    /** @var \Magento\Framework\Webapi\Rest\Request\Deserializer\Xml */
+    /** @var Xml */
     protected $_xmlDeserializer;
 
-    /** @var \PHPUnit\Framework\MockObject\MockObject */
+    /** @var MockObject */
     protected $_appStateMock;
 
     protected function setUp(): void
     {
         /** Prepare mocks for SUT constructor. */
         $this->_xmlParserMock = $this->createPartialMock(
-            \Magento\Framework\Xml\Parser::class,
+            Parser::class,
             ['xmlToArray', 'loadXML']
         );
-        $this->_appStateMock = $this->createMock(\Magento\Framework\App\State::class);
+        $this->_appStateMock = $this->createMock(State::class);
         /** Initialize SUT. */
-        $this->_xmlDeserializer = new \Magento\Framework\Webapi\Rest\Request\Deserializer\Xml(
+        $this->_xmlDeserializer = new Xml(
             $this->_xmlParserMock,
             $this->_appStateMock
         );
@@ -63,9 +72,6 @@ class XmlTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    /**
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
-     */
     public function testHandleErrors()
     {
         $this->markTestSkipped('Skipped in #27500 due to testing protected/private methods and properties');
@@ -74,23 +80,23 @@ class XmlTest extends \PHPUnit\Framework\TestCase
         $firstErrorMessage = "No document type declaration. ";
         $this->_xmlDeserializer->handleErrors(null, $firstErrorMessage, null, null);
         /** Assert that first error message was added */
-/*        $this->assertAttributeEquals(
+        $this->assertAttributeEquals(
             $firstErrorMessage,
             '_errorMessage',
             $this->_xmlDeserializer,
             'Error message was not set to xml deserializer.'
-        );*/
+        );
         /** Add error message */
         $secondErrorMessage = "Strings should be wrapped in double quotes.";
         $expectedMessages = $firstErrorMessage . $secondErrorMessage;
         $this->_xmlDeserializer->handleErrors(null, $secondErrorMessage, null, null);
         /** Assert that both error messages were added */
-/*        $this->assertAttributeEquals(
+        $this->assertAttributeEquals(
             $expectedMessages,
             '_errorMessage',
             $this->_xmlDeserializer,
             'Error messages were not set to xml deserializer.'
-        );*/
+        );
     }
 
     public function testDeserializeMagentoWebapiExceptionDeveloperModeOn()
@@ -107,12 +113,12 @@ class XmlTest extends \PHPUnit\Framework\TestCase
         try {
             $this->_xmlDeserializer->deserialize($invalidXml);
             $this->fail("Exception is expected to be raised");
-        } catch (\Magento\Framework\Webapi\Exception $e) {
+        } catch (Exception $e) {
             $exceptionMessage = 'Decoding Error: End tag for "key1" was omitted.';
-            $this->assertInstanceOf(\Magento\Framework\Webapi\Exception::class, $e, 'Exception type is invalid');
+            $this->assertInstanceOf(Exception::class, $e, 'Exception type is invalid');
             $this->assertEquals($exceptionMessage, $e->getMessage(), 'Exception message is invalid');
             $this->assertEquals(
-                \Magento\Framework\Webapi\Exception::HTTP_BAD_REQUEST,
+                Exception::HTTP_BAD_REQUEST,
                 $e->getHttpCode(),
                 'HTTP code is invalid'
             );
@@ -133,11 +139,11 @@ class XmlTest extends \PHPUnit\Framework\TestCase
         try {
             $this->_xmlDeserializer->deserialize($invalidXml);
             $this->fail("Exception is expected to be raised");
-        } catch (\Magento\Framework\Webapi\Exception $e) {
-            $this->assertInstanceOf(\Magento\Framework\Webapi\Exception::class, $e, 'Exception type is invalid');
+        } catch (Exception $e) {
+            $this->assertInstanceOf(Exception::class, $e, 'Exception type is invalid');
             $this->assertEquals('Decoding error.', $e->getMessage(), 'Exception message is invalid');
             $this->assertEquals(
-                \Magento\Framework\Webapi\Exception::HTTP_BAD_REQUEST,
+                Exception::HTTP_BAD_REQUEST,
                 $e->getHttpCode(),
                 'HTTP code is invalid'
             );

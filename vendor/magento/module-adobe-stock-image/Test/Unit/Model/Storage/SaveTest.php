@@ -84,7 +84,7 @@ class SaveTest extends TestCase
         $this->mediaDirectoryMock->expects($this->once())
             ->method('isExist')
             ->withAnyParameters()
-            ->willReturn([]);
+            ->will($this->returnValue([]));
         $this->httpsDriverMock->expects($this->once())
             ->method('fileGetContents')
             ->willReturn('content');
@@ -94,10 +94,7 @@ class SaveTest extends TestCase
             ->withAnyParameters()
             ->willReturn($this->isType('integer'));
 
-        $this->assertSame(
-            '/240_F_272299924_HjNOJkyyhzFVKRcSQ2TaArR7Ka6nTXRa.jpg',
-            $this->save->execute($imageUrl, '/240_F_272299924_HjNOJkyyhzFVKRcSQ2TaArR7Ka6nTXRa.jpg')
-        );
+        $this->save->execute($imageUrl, '/240_F_272299924_HjNOJkyyhzFVKRcSQ2TaArR7Ka6nTXRa.jpg');
     }
 
     /**
@@ -114,7 +111,7 @@ class SaveTest extends TestCase
         $this->mediaDirectoryMock->expects($this->once())
             ->method('isExist')
             ->withAnyParameters()
-            ->willReturn(['240_F_272299924_HjNOJkyyhzFVKRcSQ2TaArR7Ka6nTXRa.jpg']);
+            ->will($this->returnValue(['240_F_272299924_HjNOJkyyhzFVKRcSQ2TaArR7Ka6nTXRa.jpg']));
 
         $this->httpsDriverMock->expects($this->never())
              ->method('fileGetContents');

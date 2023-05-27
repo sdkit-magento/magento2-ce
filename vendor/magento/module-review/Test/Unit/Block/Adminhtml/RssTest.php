@@ -3,18 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Magento\Review\Test\Unit\Block\Adminhtml;
 
+use Magento\Catalog\Model\ResourceModel\Product;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
+use Magento\Framework\UrlInterface;
+use Magento\Review\Block\Adminhtml\Rss;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test RSS adminhtml block
  */
-class RssTest extends \PHPUnit\Framework\TestCase
+class RssTest extends TestCase
 {
     /**
-     * @var \Magento\Review\Block\Adminhtml\Rss
+     * @var Rss
      */
     protected $block;
 
@@ -24,17 +32,17 @@ class RssTest extends \PHPUnit\Framework\TestCase
     protected $objectManagerHelper;
 
     /**
-     * @var \Magento\Store\Model\StoreManagerInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var StoreManagerInterface|MockObject
      */
     protected $storeManagerInterface;
 
     /**
-     * @var \Magento\Review\Model\Rss|\PHPUnit\Framework\MockObject\MockObject
+     * @var \Magento\Review\Model\Rss|MockObject
      */
     protected $rss;
 
     /**
-     * @var \Magento\Framework\UrlInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var UrlInterface|MockObject
      */
     protected $urlBuilder;
 
@@ -43,12 +51,12 @@ class RssTest extends \PHPUnit\Framework\TestCase
      */
     protected function setUp(): void
     {
-        $this->storeManagerInterface = $this->createMock(\Magento\Store\Model\StoreManagerInterface::class);
+        $this->storeManagerInterface = $this->getMockForAbstractClass(StoreManagerInterface::class);
         $this->rss = $this->createPartialMock(\Magento\Review\Model\Rss::class, ['__wakeUp', 'getProductCollection']);
-        $this->urlBuilder = $this->createMock(\Magento\Framework\UrlInterface::class);
+        $this->urlBuilder = $this->getMockForAbstractClass(UrlInterface::class);
         $this->objectManagerHelper = new ObjectManagerHelper($this);
         $this->block = $this->objectManagerHelper->getObject(
-            \Magento\Review\Block\Adminhtml\Rss::class,
+            Rss::class,
             [
                 'storeManager' => $this->storeManagerInterface,
                 'rssModel' => $this->rss,
@@ -69,21 +77,20 @@ class RssTest extends \PHPUnit\Framework\TestCase
             'link' => $rssUrl,
             'charset' => 'UTF-8',
             'entries' => [
-                    'title' => 'Product: "Product Name" reviewed by: Product Nick',
-                    'link' => 'http://product.magento.com',
-                    'description' => [
-                            'rss_url' => $rssUrl,
-                            'name' => 'Product Name',
-                            'summary' => 'Product Title',
-                            'review' => 'Product Detail',
-                            'store' => 'Store Name',
+                'title' => 'Product: "Product Name" reviewed by: Product Nick',
+                'link' => 'http://product.magento.com',
+                'description' => [
+                    'rss_url' => $rssUrl,
+                    'name' => 'Product Name',
+                    'summary' => 'Product Title',
+                    'review' => 'Product Detail',
+                    'store' => 'Store Name',
 
-                        ],
                 ],
+            ],
         ];
-        $productModel = $this->createPartialMock(
-            \Magento\Catalog\Model\ResourceModel\Product::class,
-            [
+        $productModel = $this->getMockBuilder(Product::class)
+            ->addMethods([
                 'getStoreId',
                 'getId',
                 'getReviewId',
@@ -92,9 +99,10 @@ class RssTest extends \PHPUnit\Framework\TestCase
                 'getTitle',
                 'getNickname',
                 'getProductUrl'
-            ]
-        );
-        $storeModel = $this->createMock(\Magento\Store\Model\Store::class);
+            ])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $storeModel = $this->createMock(Store::class);
         $this->storeManagerInterface->expects($this->once())->method('getStore')->willReturn($storeModel);
         $storeModel->expects($this->once())->method('getName')
             ->willReturn($rssData['entries']['description']['store']);

@@ -58,6 +58,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     public function testSetClassTypeFilterWithWrongType()
     {
         $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+
         $collection = $this->_objectManager->create(
             \Magento\Tax\Model\ResourceModel\Calculation\Rule\Collection::class
         );

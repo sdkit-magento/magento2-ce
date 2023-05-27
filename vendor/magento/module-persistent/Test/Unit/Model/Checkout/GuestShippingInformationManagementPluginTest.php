@@ -38,6 +38,7 @@ class GuestShippingInformationManagementPluginTest extends TestCase
      * @var QuoteManager|MockObject
      */
     private $quoteManager;
+
     /**
      * @var GuestShippingInformationManagementPlugin
      */
@@ -79,7 +80,7 @@ class GuestShippingInformationManagementPluginTest extends TestCase
         bool $isCartConverted
     ): void {
         $subject = $this->createMock(GuestShippingInformationManagement::class);
-        $result = $this->getMockForAbstractClass(PaymentDetailsInterface::class);
+        $result = $this->createMock(PaymentDetailsInterface::class);
         $result->method('getPaymentMethods')
             ->willReturn($paymentMethods);
         $this->customerSession->method('isLoggedIn')

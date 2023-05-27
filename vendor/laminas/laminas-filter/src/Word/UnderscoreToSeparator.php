@@ -1,19 +1,22 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter\Word;
 
+/**
+ * @psalm-type Options = array{
+ *     search_separator?: string,
+ *     replacement_separator?: string,
+ *     ...
+ * }
+ * @template TOptions of Options
+ * @template-extends SeparatorToSeparator<TOptions>
+ */
 class UnderscoreToSeparator extends SeparatorToSeparator
 {
     /**
-     * Constructor
-     *
-     * @param  string $replacementSeparator Space by default
+     * @param string $replacementSeparator Space by default
      */
     public function __construct($replacementSeparator = ' ')
     {

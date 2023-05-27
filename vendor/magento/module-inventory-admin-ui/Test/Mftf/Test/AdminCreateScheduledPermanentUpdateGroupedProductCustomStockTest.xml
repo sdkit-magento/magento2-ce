@@ -37,7 +37,7 @@
             <actionGroup ref="AdminAssignSourceToProductAndSetSourceQuantityActionGroup" stepKey="assignSourceToProduct">
                 <argument name="sourceCode" value="$source.source[source_code]$"/>
             </actionGroup>
-            <actionGroup ref="AdminFormSaveAndClose" stepKey="saveAndCloseProduct"/>
+            <actionGroup ref="AdminFormSaveAndCloseActionGroup" stepKey="saveAndCloseProduct"/>
             <!--Assign virtual to grouped product.-->
             <amOnPage url="{{AdminProductEditPage.url($$groupedProduct.id$$)}}" stepKey="openGroupedProductEditPage"/>
             <click selector="{{AdminProductFormGroupedProductsSection.addProductsToGroup}}" stepKey="clickAddProductsToGroup"/>
@@ -47,7 +47,7 @@
             </actionGroup>
             <checkOption selector="{{AdminAddProductsToGroupPanel.firstCheckbox}}" stepKey="checkProductFilterResult"/>
             <click selector="{{AdminAddProductsToGroupPanel.addSelectedProducts}}" stepKey="clickAddSelectedGroupProducts"/>
-            <waitForLoadingMaskToDisappear stepKey="waitForProductsAssignedToGroupedProduct" after="clickAddSelectedGroupProducts"/>
+            <waitForPageLoad stepKey="waitForProductsAssignedToGroupedProduct" after="clickAddSelectedGroupProducts"/>
             <actionGroup ref="FillDefaultQuantityForLinkedToGroupProductInGridActionGroup" stepKey="fillDefaultQtyForVirtualProduct">
                 <argument name="productName" value="$$product.name$$"/>
                 <argument name="qty" value="{{minimalProductQty.value}}"/>
@@ -72,10 +72,11 @@
                 <argument name="websiteName" value="{{_defaultWebsite.name}}"/>
             </actionGroup>
             <deleteData createDataKey="stock" stepKey="deleteStock" before="amOnLogoutPage"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </after>
 
         <!--Verify grouped product on storefront.-->
-        <amOnPage url="{{StorefrontCategoryPage.url($createCategory.name$)}}" stepKey="navigateToCategoryPage"/>
+        <amOnPage url="{{StorefrontCategoryPage.url($createCategory.custom_attributes[url_key]$)}}" stepKey="navigateToCategoryPage"/>
         <waitForPageLoad stepKey="waitForCategory"/>
         <see userInput="$groupedProduct.name$" stepKey="assertProductPresent"/>
         <see userInput="$product.price$" stepKey="assertProductPricePresent"/>

@@ -32,7 +32,7 @@ class PartialInventoryTransferTest extends WebapiAbstract
     /** @var SearchCriteriaBuilder */
     private $searchCriteriaBuilder;
 
-    protected function setUp(): void
+    public function setUp(): void
     {
         $this->sourceItemRepository  = Bootstrap::getObjectManager()->get(SourceItemRepositoryInterface::class);
         $this->searchCriteriaBuilder = Bootstrap::getObjectManager()->get(SearchCriteriaBuilder::class);

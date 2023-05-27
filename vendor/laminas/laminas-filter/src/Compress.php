@@ -1,18 +1,31 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
+use Laminas\Filter\Compress\CompressionAlgorithmInterface;
 use Laminas\Stdlib\ArrayUtils;
 use Traversable;
 
+use function call_user_func_array;
+use function class_exists;
+use function get_debug_type;
+use function is_array;
+use function is_string;
+use function method_exists;
+use function sprintf;
+use function ucfirst;
+
 /**
  * Compresses a given string
+ *
+ * @psalm-type Options = array{
+ *     adapter?: Compress\CompressionAlgorithmInterface|'Bz2'|'Gz'|'Lzf'|'Rar'|'Snappy'|'Tar'|'Zip',
+ *     adapter_options?: array,
+ *     ...
+ * }
+ * @extends AbstractFilter<Options>
  */
 class Compress extends AbstractFilter
 {
@@ -27,8 +40,6 @@ class Compress extends AbstractFilter
     protected $adapterOptions = [];
 
     /**
-     * Class constructor
-     *
      * @param string|array|Traversable $options (Optional) Options to set
      */
     public function __construct($options = null)
@@ -49,7 +60,7 @@ class Compress extends AbstractFilter
      * Set filter setate
      *
      * @param  array $options
-     * @throws Exception\InvalidArgumentException if options is not an array or Traversable
+     * @throws Exception\InvalidArgumentException If options is not an array or Traversable.
      * @return self
      */
     public function setOptions($options)
@@ -58,7 +69,7 @@ class Compress extends AbstractFilter
             throw new Exception\InvalidArgumentException(sprintf(
                 '"%s" expects an array or Traversable; received "%s"',
                 __METHOD__,
-                (is_object($options) ? get_class($options) : gettype($options))
+                get_debug_type($options)
             ));
         }
 
@@ -79,7 +90,7 @@ class Compress extends AbstractFilter
      *
      * @throws Exception\RuntimeException
      * @throws Exception\InvalidArgumentException
-     * @return Compress\CompressionAlgorithmInterface
+     * @return CompressionAlgorithmInterface
      */
     public function getAdapter()
     {
@@ -123,7 +134,7 @@ class Compress extends AbstractFilter
     /**
      * Sets compression adapter
      *
-     * @param  string|Compress\CompressionAlgorithmInterface $adapter Adapter to use
+     * @param  string|CompressionAlgorithmInterface $adapter Adapter to use
      * @return self
      * @throws Exception\InvalidArgumentException
      */
@@ -136,7 +147,7 @@ class Compress extends AbstractFilter
         if (! is_string($adapter)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid adapter provided; must be string or instance of '
-                . 'Laminas\\Filter\\Compress\\CompressionAlgorithmInterface'
+                . CompressionAlgorithmInterface::class
             );
         }
         $this->adapter = $adapter;
@@ -157,7 +168,6 @@ class Compress extends AbstractFilter
     /**
      * Set adapter options
      *
-     * @param  array $options
      * @return self
      */
     public function setAdapterOptions(array $options)
@@ -201,8 +211,9 @@ class Compress extends AbstractFilter
      *
      * Compresses the content $value with the defined settings
      *
-     * @param  string $value Content to compress
-     * @return string The compressed content
+     * @param  mixed $value Content to compress
+     * @return string|mixed The compressed content
+     * @psalm-return ($value is string ? string : mixed)
      */
     public function filter($value)
     {

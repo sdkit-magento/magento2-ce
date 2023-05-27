@@ -1,15 +1,16 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter;
 
+use function is_string;
+
 /**
  * Decrypts a given string
+ *
+ * @deprecated Since 2.24.0. This filter will be removed in 3.0. You are encouraged to use an alternative encryption
+ *             library and write your own filter.
  */
 class Decrypt extends Encrypt
 {

@@ -37,13 +37,11 @@ class GetSkusByProductIdsTest extends TestCase
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/products_for_search.php
-     *
      */
     public function testExecuteWithNotExistedIds()
     {
         $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
         $this->expectExceptionMessage('Following products with requested ids were not found: 998, 999');
-
         $ids = [998, 999, 102];
 
         $this->getSkusByProductIds->execute($ids);

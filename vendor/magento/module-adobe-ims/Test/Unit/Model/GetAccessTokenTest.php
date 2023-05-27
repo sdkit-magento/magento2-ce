@@ -11,25 +11,30 @@ use Magento\AdobeIms\Model\GetAccessToken;
 use Magento\AdobeImsApi\Api\Data\UserProfileInterface;
 use Magento\AdobeImsApi\Api\UserProfileRepositoryInterface;
 use Magento\Authorization\Model\UserContextInterface;
+use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Get user acces toke test
+ * Provides tests for getting the user access token
  */
 class GetAccessTokenTest extends TestCase
 {
-
     /**
-     * @var UserContextInterface|MockObject $userContext
+     * @var UserContextInterface|MockObject
      */
     private $userContext;
 
     /**
-     * @var UserProfileRepositoryInterface|MockObject $userProfile
+     * @var UserProfileRepositoryInterface|MockObject
      */
     private $userProfile;
+
+    /**
+     * @var EncryptorInterface|MockObject
+     */
+    private $encryptor;
 
     /**
      * @var GetAccessToken
@@ -41,12 +46,14 @@ class GetAccessTokenTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->userContext = $this->getMockForAbstractClass(UserContextInterface::class);
-        $this->userProfile = $this->getMockForAbstractClass(UserProfileRepositoryInterface::class);
+        $this->userContext = $this->createMock(UserContextInterface::class);
+        $this->userProfile = $this->createMock(UserProfileRepositoryInterface::class);
+        $this->encryptor = $this->createMock(EncryptorInterface::class);
 
         $this->getAccessToken = new GetAccessToken(
             $this->userContext,
-            $this->userProfile
+            $this->userProfile,
+            $this->encryptor
         );
     }
 
@@ -59,11 +66,18 @@ class GetAccessTokenTest extends TestCase
     public function testExecute(?string $token): void
     {
         $this->userContext->expects($this->once())->method('getUserId')->willReturn(1);
-        $userProfileMock = $this->getMockForAbstractClass(UserProfileInterface::class);
+        $userProfileMock = $this->createMock(UserProfileInterface::class);
         $this->userProfile->expects($this->exactly(1))
             ->method('getByUserId')
             ->willReturn($userProfileMock);
         $userProfileMock->expects($this->once())->method('getAccessToken')->willReturn($token);
+
+        $decryptedToken = $token ?? '';
+
+        $this->encryptor->expects($this->once())
+            ->method('decrypt')
+            ->with($token)
+            ->willReturn($decryptedToken);
 
         $this->assertEquals($token, $this->getAccessToken->execute());
     }

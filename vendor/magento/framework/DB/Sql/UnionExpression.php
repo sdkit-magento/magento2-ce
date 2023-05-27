@@ -8,7 +8,7 @@ namespace Magento\Framework\DB\Sql;
 use Magento\Framework\DB\Select;
 
 /**
- * Class UnionExpression handles the build of union clauses in database queries
+ * Class UnionExpression
  */
 class UnionExpression extends Expression
 {

@@ -3,46 +3,50 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Framework\DB\Test\Unit;
 
-use Magento\Framework\DB\SelectFactory;
-use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
-use Magento\Framework\DB\Query\Generator;
 use Magento\Framework\DB\Adapter\AdapterInterface;
-use Magento\Framework\DB\FieldDataConverter;
 use Magento\Framework\DB\DataConverter\DataConverterInterface;
+use Magento\Framework\DB\FieldDataConverter;
+use Magento\Framework\DB\Query\Generator;
 use Magento\Framework\DB\Select;
 use Magento\Framework\DB\Select\QueryModifierInterface;
+use Magento\Framework\DB\SelectFactory;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class FieldDataConverterTest extends \PHPUnit\Framework\TestCase
+class FieldDataConverterTest extends TestCase
 {
     /**
-     * @var AdapterInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var AdapterInterface|MockObject
      */
     private $connectionMock;
 
     /**
-     * @var Generator|\PHPUnit\Framework\MockObject\MockObject
+     * @var Generator|MockObject
      */
     private $queryGeneratorMock;
 
     /**
-     * @var DataConverterInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var DataConverterInterface|MockObject
      */
     private $dataConverterMock;
 
     /**
-     * @var Select|\PHPUnit\Framework\MockObject\MockObject
+     * @var Select|MockObject
      */
     private $selectMock;
 
     /**
-     * @var QueryModifierInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var QueryModifierInterface|MockObject
      */
     private $queryModifierMock;
 
     /**
-     * @var SelectFactory|\PHPUnit\Framework\MockObject\MockObject
+     * @var SelectFactory|MockObject
      */
     private $selectFactoryMock;
 
@@ -143,7 +147,7 @@ class FieldDataConverterTest extends \PHPUnit\Framework\TestCase
     public function convertDataProvider()
     {
         return [
-            [false, 0, ],
+            [false, 0],
             [true, 1]
         ];
     }
@@ -213,9 +217,11 @@ class FieldDataConverterTest extends \PHPUnit\Framework\TestCase
      */
     public function testConvertBatchSizeFromEnvInvalid($batchSize)
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid value for environment variable DATA_CONVERTER_BATCH_SIZE. Should be integer, >= 1 and < value of PHP_INT_MAX');
-
+        $this->expectException('InvalidArgumentException');
+        $this->expectExceptionMessage(
+            'Invalid value for environment variable DATA_CONVERTER_BATCH_SIZE. '
+            . 'Should be integer, >= 1 and < value of PHP_INT_MAX'
+        );
         $table = 'table';
         $identifier = 'id';
         $field = 'field';
@@ -259,7 +265,7 @@ class FieldDataConverterTest extends \PHPUnit\Framework\TestCase
     {
         return [
             ['value'],
-            [bcadd(PHP_INT_MAX, 1)],
+            [bcadd((string)PHP_INT_MAX, (string)1)],
         ];
     }
 }

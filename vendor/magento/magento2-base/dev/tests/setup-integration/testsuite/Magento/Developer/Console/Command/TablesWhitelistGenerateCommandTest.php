@@ -111,7 +111,7 @@ class TablesWhitelistGenerateCommandTest extends SetupTestCase
         $this->assertSame(Cli::RETURN_SUCCESS, $this->tester->getStatusCode());
 
         $this->assertFileExists($whiteListFileName);
-        $this->assertStringContainsString('', $this->tester->getDisplay());
+        $this->assertEmpty($this->tester->getDisplay());
 
         $whitelistFileContent = file_get_contents($whiteListFileName);
         $expectedWhitelistContent = file_get_contents(

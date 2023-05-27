@@ -1,16 +1,15 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-mvc for the canonical source repository
- * @copyright https://github.com/laminas/laminas-mvc/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-mvc/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Mvc;
 
+use Throwable;
+use Exception;
+use Laminas\Mvc\Controller\ControllerManager;
+use Laminas\Mvc\Exception\InvalidControllerException;
 use ArrayObject;
 use Laminas\EventManager\AbstractListenerAggregate;
 use Laminas\EventManager\EventManagerInterface;
+use Laminas\Router\RouteMatch;
 use Laminas\ServiceManager\Exception\InvalidServiceException;
 use Laminas\Stdlib\ArrayUtils;
 
@@ -38,17 +37,8 @@ use Laminas\Stdlib\ArrayUtils;
  */
 class DispatchListener extends AbstractListenerAggregate
 {
-    /**
-     * @var Controller\ControllerManager
-     */
-    private $controllerManager;
-
-    /**
-     * @param Controller\ControllerManager $controllerManager
-     */
-    public function __construct(Controller\ControllerManager $controllerManager)
+    public function __construct(private ControllerManager $controllerManager)
     {
-        $this->controllerManager = $controllerManager;
     }
 
     /**
@@ -69,38 +59,48 @@ class DispatchListener extends AbstractListenerAggregate
     /**
      * Listen to the "dispatch" event
      *
-     * @param  MvcEvent $e
      * @return mixed
      */
     public function onDispatch(MvcEvent $e)
     {
+        if (null !== $e->getResult()) {
+            return;
+        }
+
         $routeMatch        = $e->getRouteMatch();
-        $controllerName    = $routeMatch instanceof Router\RouteMatch
+        $controllerName    = $routeMatch instanceof RouteMatch
             ? $routeMatch->getParam('controller', 'not-found')
             : 'not-found';
         $application       = $e->getApplication();
-        $events            = $application->getEventManager();
         $controllerManager = $this->controllerManager;
 
 
         // Query abstract controllers, too!
         if (! $controllerManager->has($controllerName)) {
-            $return = $this->marshalControllerNotFoundEvent($application::ERROR_CONTROLLER_NOT_FOUND, $controllerName, $e, $application);
+            $return = $this->marshalControllerNotFoundEvent(
+                $application::ERROR_CONTROLLER_NOT_FOUND,
+                $controllerName,
+                $e,
+                $application
+            );
             return $this->complete($return, $e);
         }
 
         try {
             $controller = $controllerManager->get($controllerName);
-        } catch (Exception\InvalidControllerException $exception) {
-            $return = $this->marshalControllerNotFoundEvent($application::ERROR_CONTROLLER_INVALID, $controllerName, $e, $application, $exception);
+        } catch (InvalidControllerException | InvalidServiceException $exception) {
+            $return = $this->marshalControllerNotFoundEvent(
+                $application::ERROR_CONTROLLER_INVALID,
+                $controllerName,
+                $e,
+                $application,
+                $exception
+            );
             return $this->complete($return, $e);
-        } catch (InvalidServiceException $exception) {
-            $return = $this->marshalControllerNotFoundEvent($application::ERROR_CONTROLLER_INVALID, $controllerName, $e, $application, $exception);
-            return $this->complete($return, $e);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $return = $this->marshalBadControllerEvent($controllerName, $e, $application, $exception);
             return $this->complete($return, $e);
-        } catch (\Exception $exception) {  // @TODO clean up once PHP 7 requirement is enforced
+        } catch (Exception $exception) {  // @TODO clean up once PHP 7 requirement is enforced
             $return = $this->marshalBadControllerEvent($controllerName, $e, $application, $exception);
             return $this->complete($return, $e);
         }
@@ -115,9 +115,9 @@ class DispatchListener extends AbstractListenerAggregate
 
         try {
             $return = $controller->dispatch($request, $response);
-        } catch (\Throwable $ex) {
+        } catch (Throwable $ex) {
             $caughtException = $ex;
-        } catch (\Exception $ex) {  // @TODO clean up once PHP 7 requirement is enforced
+        } catch (Exception $ex) {  // @TODO clean up once PHP 7 requirement is enforced
             $caughtException = $ex;
         }
 
@@ -125,7 +125,7 @@ class DispatchListener extends AbstractListenerAggregate
             $e->setName(MvcEvent::EVENT_DISPATCH_ERROR);
             $e->setError($application::ERROR_EXCEPTION);
             $e->setController($controllerName);
-            $e->setControllerClass(get_class($controller));
+            $e->setControllerClass($controller::class);
             $e->setParam('exception', $caughtException);
 
             $return = $application->getEventManager()->triggerEvent($e)->last();
@@ -137,28 +137,29 @@ class DispatchListener extends AbstractListenerAggregate
         return $this->complete($return, $e);
     }
 
-    /**
-     * @param MvcEvent $e
-     */
     public function reportMonitorEvent(MvcEvent $e)
     {
         $error     = $e->getError();
         $exception = $e->getParam('exception');
-        if ($exception instanceof \Exception || $exception instanceof \Throwable) {  // @TODO clean up once PHP 7 requirement is enforced
-            zend_monitor_custom_event_ex($error, $exception->getMessage(), 'Laminas Exception', ['code' => $exception->getCode(), 'trace' => $exception->getTraceAsString()]);
+        // @TODO clean up once PHP 7 requirement is enforced
+        if ($exception instanceof Exception || $exception instanceof Throwable) {
+            zend_monitor_custom_event_ex(
+                $error,
+                $exception->getMessage(),
+                'Laminas Exception',
+                ['code' => $exception->getCode(), 'trace' => $exception->getTraceAsString()]
+            );
         }
     }
 
     /**
      * Complete the dispatch
      *
-     * @param  mixed $return
-     * @param  MvcEvent $event
      * @return mixed
      */
-    protected function complete($return, MvcEvent $event)
+    protected function complete(mixed $return, MvcEvent $event)
     {
-        if (!is_object($return)) {
+        if (! is_object($return)) {
             if (ArrayUtils::hasStringKeys($return)) {
                 $return = new ArrayObject($return, ArrayObject::ARRAY_AS_PROPS);
             }
@@ -172,9 +173,7 @@ class DispatchListener extends AbstractListenerAggregate
      *
      * @param  string $type
      * @param  string $controllerName
-     * @param  MvcEvent $event
-     * @param  Application $application
-     * @param  \Exception $exception
+     * @param Throwable|Exception $exception
      * @return mixed
      */
     protected function marshalControllerNotFoundEvent(
@@ -182,7 +181,7 @@ class DispatchListener extends AbstractListenerAggregate
         $controllerName,
         MvcEvent $event,
         Application $application,
-        \Exception $exception = null
+        $exception = null
     ) {
         $event->setName(MvcEvent::EVENT_DISPATCH_ERROR);
         $event->setError($type);
@@ -202,45 +201,18 @@ class DispatchListener extends AbstractListenerAggregate
     }
 
     /**
-     * Marshal a controller not found exception event
+     * Marshal a bad controller exception event
      *
-     * @deprecated Use marshalControllerNotFoundEvent() instead
-     * @param  string $type
      * @param  string $controllerName
-     * @param  MvcEvent $event
-     * @param  Application $application
-     * @param  \Exception $exception
+     * @param Throwable|Exception $exception
      * @return mixed
      */
-    protected function marshallControllerNotFoundEvent(
-        $type,
+    protected function marshalBadControllerEvent(
         $controllerName,
         MvcEvent $event,
         Application $application,
-        \Exception $exception = null
+        $exception
     ) {
-        trigger_error(sprintf(
-            '%s is deprecated; please use %s::marshalControllerNotFoundEvent instead',
-            __METHOD__,
-            __CLASS__
-        ), E_USER_DEPRECATED);
-
-        return $this->marshalControllerNotFoundEvent($type, $controllerName, $event, $application, $exception);
-    }
-
-    /**
-     * Marshal a bad controller exception event
-     *
-     * @todo   Update $exception typehint to "Throwable" once PHP 7 requirement
-     *         is enforced
-     * @param  string $controllerName
-     * @param  MvcEvent $event
-     * @param  Application $application
-     * @param  \Exception|\Throwable $exception
-     * @return mixed
-     */
-    protected function marshalBadControllerEvent($controllerName, MvcEvent $event, Application $application, $exception)
-    {
         $event->setName(MvcEvent::EVENT_DISPATCH_ERROR);
         $event->setError($application::ERROR_EXCEPTION);
         $event->setController($controllerName);

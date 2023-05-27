@@ -19,13 +19,13 @@ use Magento\AdobeImsApi\Api\GetAccessTokenInterface;
 use Magento\AdobeStockClient\Model\ConnectionFactory;
 use Magento\AdobeStockClient\Model\ConnectionWrapper;
 use Magento\AdobeStockClientApi\Api\ConfigInterface;
+use Magento\Framework\Exception\AuthenticationException;
+use Magento\Framework\Exception\AuthorizationException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
- * Connection wrapper test.
- * Test for ConnectionWrapper class
+ * Test the Adobe Stock SDK wrapper
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class ConnectionWrapperTest extends TestCase
@@ -44,11 +44,6 @@ class ConnectionWrapperTest extends TestCase
      * @var MockObject|ImsConfig $imsConfig
      */
     private $imsConfig;
-
-    /**
-     * @var LoggerInterface|MockObject $logger
-     */
-    private $logger;
 
     /**
      * @var MockObject|GetAccessTokenInterface $getAccessToken
@@ -81,12 +76,11 @@ class ConnectionWrapperTest extends TestCase
     protected function setUp(): void
     {
         $this->connectionFactory = $this->createMock(ConnectionFactory::class);
-        $this->configInterface = $this->getMockForAbstractClass(ConfigInterface::class);
+        $this->configInterface = $this->createMock(ConfigInterface::class);
         $this->imsConfig = $this->createMock(ImsConfig::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
-        $this->getAccessToken = $this->getMockForAbstractClass(GetAccessTokenInterface::class);
-        $this->flushToken = $this->getMockForAbstractClass(FlushUserTokensInterface::class);
-        $this->httpInterface = $this->getMockForAbstractClass(HttpInterface::class);
+        $this->getAccessToken = $this->createMock(GetAccessTokenInterface::class);
+        $this->flushToken = $this->createMock(FlushUserTokensInterface::class);
+        $this->httpInterface = $this->createMock(HttpInterface::class);
         $this->adobeStockMock = $this->createMock(AdobeStock::class);
         $this->connectionFactory->expects($this->once())->method('create')->willReturn($this->adobeStockMock);
         $this->configInterface->expects($this->once())->method('getProductName')->willReturn('name');
@@ -96,7 +90,6 @@ class ConnectionWrapperTest extends TestCase
             $this->configInterface,
             $this->connectionFactory,
             $this->imsConfig,
-            $this->logger,
             $this->getAccessToken,
             $this->flushToken,
             $this->httpInterface
@@ -114,7 +107,7 @@ class ConnectionWrapperTest extends TestCase
         $this->adobeStockMock->expects($this->exactly(1))
             ->method('getNextResponse')
             ->willReturn($nextResponse);
-        $this->assertTrue($this->connectionWrapper->testApiKey('kjhafdaeriuyapikey'));
+        $this->assertEquals(true, $this->connectionWrapper->testApiKey('kjhafdaeriuyapikey'));
     }
 
     /**
@@ -169,6 +162,30 @@ class ConnectionWrapperTest extends TestCase
         $this->adobeStockMock->expects($this->once())
             ->method('getNextResponse')
             ->willThrowException(new \Exception('New error'));
+        $this->connectionWrapper->getNextResponse();
+    }
+
+    /**
+     * Next response with exception that should be explained in more detail
+     *
+     * @param string $connectionException Exception message thrown by the connection
+     * @param string $thrownException Exception message that will throws by the getNextResponse method
+     * @param string $exception Exception class that will throws by the getNextResponse method
+     *
+     * @return void
+     * @dataProvider detailedExceptionsForGetNextResponseProvider
+     */
+    public function testGetNextResponseWithExceptionThatNeedMoreAttention(
+        string $connectionException,
+        string $thrownException,
+        string $exception
+    ): void {
+        $this->expectException($exception);
+        $this->expectExceptionMessage($thrownException);
+        $this->imsConfig->method('getApiKey')
+            ->willReturn('key');
+        $this->adobeStockMock->method('getNextResponse')
+            ->willThrowException(new \Exception('Beginning of the exception message ' . $connectionException));
         $this->connectionWrapper->getNextResponse();
     }
 
@@ -263,8 +280,39 @@ class ConnectionWrapperTest extends TestCase
         $this->adobeStockMock->expects($this->once())
             ->method('downloadAssetUrl')
             ->willThrowException(new \Exception('Oauth token is not valid!'));
-        $this->flushToken->expects($this->once())->method('execute')->willReturn(true);
+        $this->flushToken->expects($this->once())->method('execute');
         $this->connectionWrapper->downloadAssetUrl(new LicenseRequest());
+    }
+
+    /**
+     * Provider of exceptions that need more attention in getNextResponse method
+     *
+     * @return array
+     */
+    public function detailedExceptionsForGetNextResponseProvider(): array
+    {
+        return [
+            [
+                'connection_exception_message' => 'Api Key is invalid',
+                'thrown_exception_message' => 'Adobe API Key is invalid!',
+                'thrown_exception' => AuthenticationException::class,
+            ],
+            [
+                'connection_exception_message' => 'Api Key is required',
+                'thrown_exception_message' => 'Adobe Api Key is required!',
+                'thrown_exception' => AuthenticationException::class,
+            ],
+            [
+                'connection_exception_message' => 'Oauth token is not valid',
+                'thrown_exception_message' => 'Adobe API login has expired!',
+                'thrown_exception' => AuthorizationException::class,
+            ],
+            [
+                'connection_exception_message' => 'Could not validate the oauth token',
+                'thrown_exception_message' => 'Adobe API login has expired!',
+                'thrown_exception' => AuthorizationException::class,
+            ],
+        ];
     }
 
     /**

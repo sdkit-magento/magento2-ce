@@ -5,10 +5,12 @@
  */
 namespace Magento\Framework\MessageQueue\UseCase;
 
+use Magento\TestModuleAsyncAmqp\Model\AsyncTestData;
+
 class MixSyncAndAsyncSingleQueueTest extends QueueTestCaseAbstract
 {
     /**
-     * @var \Magento\TestModuleAsyncAmqp\Model\AsyncTestData
+     * @var AsyncTestData
      */
     protected $msgObject;
 
@@ -29,7 +31,7 @@ class MixSyncAndAsyncSingleQueueTest extends QueueTestCaseAbstract
 
     public function testMixSyncAndAsyncSingleQueue()
     {
-        $this->msgObject = $this->objectManager->create(\Magento\TestModuleAsyncAmqp\Model\AsyncTestData::class);
+        $this->msgObject = $this->objectManager->create(AsyncTestData::class); // @phpstan-ignore-line
 
         // Publish asynchronous messages
         foreach ($this->messages as $item) {

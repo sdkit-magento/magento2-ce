@@ -3,6 +3,8 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Fedex\Test\Unit\Model;
 
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
@@ -37,7 +39,8 @@ use Magento\Shipping\Model\Tracking\Result\StatusFactory;
 use Magento\Shipping\Model\Tracking\ResultFactory;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
-use PHPUnit\Framework\MockObject\MockObject as MockObject;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -45,7 +48,7 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class CarrierTest extends \PHPUnit\Framework\TestCase
+class CarrierTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -358,7 +361,6 @@ class CarrierTest extends \PHPUnit\Framework\TestCase
             [12.12, 'USD', 'USD', 'RATED_LIST_SHIPMENT', 12.12, 0],
             [38.9, 'USD', 'USD', 'PAYOR_LIST_SHIPMENT', 38.9],
             [38.9, 'USD', 'USD', 'PAYOR_LIST_SHIPMENT', 38.9, 0],
-            [10.0, 'SID', 'USD', 'PAYOR_LIST_SHIPMENT', 10.0, 0],
         ];
     }
 
@@ -453,7 +455,7 @@ class CarrierTest extends \PHPUnit\Framework\TestCase
         $this->trackErrorFactory->expects($this->once())
             ->method('create')
             ->willReturn($error);
-
+        $this->serializer->method('serialize')->willReturn('');
         $this->carrier->getTracking($tracking);
         $tracks = $this->carrier->getResult()->getAllTrackings();
 

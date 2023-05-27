@@ -1,14 +1,13 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-crypt for the canonical source repository
- * @copyright https://github.com/laminas/laminas-crypt/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-crypt/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Crypt\Key\Derivation;
 
 use Laminas\Crypt\Hmac;
+
+use function ceil;
+use function hash_hmac;
+use function mb_substr;
+use function pack;
 
 /**
  * PKCS #5 v2.0 standard RFC 2898
@@ -28,8 +27,8 @@ class Pbkdf2
      */
     public static function calc($hash, $password, $salt, $iterations, $length)
     {
-        if (!Hmac::isSupported($hash)) {
-            throw new Exception\InvalidArgumentException("The hash algorithm $hash is not supported by " . __CLASS__);
+        if (! Hmac::isSupported($hash)) {
+            throw new Exception\InvalidArgumentException("The hash algorithm $hash is not supported by " . self::class);
         }
 
         $num    = ceil($length / Hmac::getOutputSize($hash, Hmac::OUTPUT_BINARY));
@@ -43,6 +42,6 @@ class Pbkdf2
             }
             $result .= $mix;
         }
-        return substr($result, 0, $length);
+        return mb_substr($result, 0, $length, '8bit');
     }
 }

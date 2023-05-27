@@ -202,6 +202,7 @@
             </argument>
             <settings>
                 <label translate="true">Description</label>
+                <notice translate="true">Note: Keyboard shortcut to activate editor help : Alt + 0 (Windows) or &#x2325;0 (MacOS)</notice>
                 <dataScope>description</dataScope>
             </settings>
             <formElements>
@@ -354,7 +355,6 @@
                     <additionalClasses>
                         <class name="admin__field-small">true</class>
                     </additionalClasses>
-                    <addBefore>$</addBefore>
                     <label translate="true">Layered Navigation Price Step</label>
                 </settings>
             </field>

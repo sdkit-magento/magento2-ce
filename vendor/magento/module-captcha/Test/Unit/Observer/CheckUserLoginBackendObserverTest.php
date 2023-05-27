@@ -15,12 +15,9 @@ use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Event;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Message\ManagerInterface;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\MockObject\MockObject as MockObject;
 
-/**
- * Class CheckUserLoginBackendObserverTest
- */
 class CheckUserLoginBackendObserverTest extends TestCase
 {
     /**
@@ -82,7 +79,10 @@ class CheckUserLoginBackendObserverTest extends TestCase
 
         /** @var Observer|MockObject $observerMock */
         $observerMock = $this->createPartialMock(Observer::class, ['getEvent']);
-        $eventMock = $this->createPartialMock(Event::class, ['getUsername']);
+        $eventMock = $this->getMockBuilder(Event::class)
+            ->addMethods(['getUsername'])
+            ->disableOriginalConstructor()
+            ->getMock();
         $captcha = $this->createMock(DefaultModel::class);
 
         $eventMock->method('getUsername')->willReturn('admin');
@@ -114,15 +114,17 @@ class CheckUserLoginBackendObserverTest extends TestCase
      */
     public function testCheckOnBackendLoginWithWrongCaptcha(): void
     {
-        $this->expectException(\Magento\Framework\Exception\Plugin\AuthenticationException::class);
-
+        $this->expectException('Magento\Framework\Exception\Plugin\AuthenticationException');
         $formId = 'backend_login';
         $login = 'admin';
         $captchaValue = 'captcha-value';
 
         /** @var Observer|MockObject $observerMock */
         $observerMock = $this->createPartialMock(Observer::class, ['getEvent']);
-        $eventMock = $this->createPartialMock(Event::class, ['getUsername']);
+        $eventMock = $this->getMockBuilder(Event::class)
+            ->addMethods(['getUsername'])
+            ->disableOriginalConstructor()
+            ->getMock();
         $captcha = $this->createMock(DefaultModel::class);
 
         $eventMock->method('getUsername')->willReturn($login);

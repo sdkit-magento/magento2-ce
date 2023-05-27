@@ -3,8 +3,6 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-declare(strict_types=1);
-
 namespace Magento\Catalog\Model\ResourceModel\Category;
 
 use Magento\Framework\Data\Tree\Dbp;
@@ -12,21 +10,24 @@ use Magento\Catalog\Api\Data\CategoryInterface;
 use Magento\Framework\EntityManager\MetadataPool;
 
 /**
- * Category Tree model.
- *
  * @api
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @since 100.0.2
  */
 class Tree extends Dbp
 {
-    const ID_FIELD = 'id';
+    public const ID_FIELD = 'id';
 
-    const PATH_FIELD = 'path';
+    public const PATH_FIELD = 'path';
 
-    const ORDER_FIELD = 'order';
+    public const ORDER_FIELD = 'order';
 
-    const LEVEL_FIELD = 'level';
+    public const LEVEL_FIELD = 'level';
+
+    /**
+     * @var array
+     */
+    private $_inactiveItems;
 
     /**
      * @var \Magento\Framework\Event\ManagerInterface
@@ -51,22 +52,16 @@ class Tree extends Dbp
     protected $_collection;
 
     /**
-     * Join URL rewrites data to collection flag
-     *
      * @var boolean
      */
     protected $_joinUrlRewriteIntoCollection = false;
 
     /**
-     * Inactive categories ids
-     *
      * @var array
      */
     protected $_inactiveCategoryIds = null;
 
     /**
-     * Store id
-     *
      * @var integer
      */
     protected $_storeId = null;
@@ -77,22 +72,16 @@ class Tree extends Dbp
     protected $_coreResource;
 
     /**
-     * Store manager
-     *
      * @var \Magento\Store\Model\StoreManagerInterface
      */
     protected $_storeManager;
 
     /**
-     * Cache
-     *
      * @var \Magento\Framework\App\CacheInterface
      */
     protected $_cache;
 
     /**
-     * Catalog category
-     *
      * @var \Magento\Catalog\Model\ResourceModel\Category
      */
     protected $_catalogCategory;
@@ -102,11 +91,6 @@ class Tree extends Dbp
      * @since 101.0.0
      */
     protected $metadataPool;
-
-    /**
-     * @var array
-     */
-    private $_inactiveItems = [];
 
     /**
      * Tree constructor.
@@ -299,7 +283,7 @@ class Tree extends Dbp
         foreach ($allIds as $id) {
             $parents = $this->getNodeById($id)->getPath();
             foreach ($parents as $parent) {
-                if (!$this->_getItemIsActive($parent->getId(), $storeId)) {
+                if (!$this->_getItemIsActive($parent->getId())) {
                     $disabledIds[] = $id;
                     continue;
                 }
@@ -491,15 +475,7 @@ class Tree extends Dbp
         $where = [$levelField . '=0' => true];
 
         foreach ($this->_conn->fetchAll($select) as $item) {
-            $pathIds = explode('/', $item['path']);
-
-            array_walk(
-                $pathIds,
-                function (&$pathId) {
-                    $pathId = (int)$pathId;
-                }
-            );
-
+            $pathIds = explode('/', $item['path'] ?? '');
             $level = (int)$item['level'];
             while ($level > 0) {
                 $pathIds[count($pathIds) - 1] = '%';
@@ -530,7 +506,7 @@ class Tree extends Dbp
         }
         $childrenItems = [];
         foreach ($arrNodes as $key => $nodeInfo) {
-            $pathToParent = explode('/', $nodeInfo[$this->_pathField]);
+            $pathToParent = explode('/', $nodeInfo[$this->_pathField] ?? '');
             array_pop($pathToParent);
             $pathToParent = implode('/', $pathToParent);
             $childrenItems[$pathToParent][] = $nodeInfo;
@@ -549,7 +525,7 @@ class Tree extends Dbp
      */
     public function loadBreadcrumbsArray($path, $addCollectionData = true, $withRootNode = false)
     {
-        $pathIds = explode('/', $path);
+        $pathIds = explode('/', $path ?: '');
         if (!$withRootNode) {
             array_shift($pathIds);
         }
@@ -697,7 +673,7 @@ class Tree extends Dbp
     }
 
     /**
-     * Return MetadataPool object.
+     * Get entity methadata pool.
      *
      * @return \Magento\Framework\EntityManager\MetadataPool
      */

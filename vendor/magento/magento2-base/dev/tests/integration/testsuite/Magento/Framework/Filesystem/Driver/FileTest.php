@@ -1,15 +1,20 @@
 <?php
 /**
- * Test for \Magento\Framework\Filesystem\Driver\File
- *
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Framework\Filesystem\Driver;
 
 use Magento\Framework\Exception\FileSystemException;
+use PHPUnit\Framework\TestCase;
 
-class FileTest extends \PHPUnit\Framework\TestCase
+/**
+ * Test for \Magento\Framework\Filesystem\Driver\File
+ * Verify File class
+ */
+class FileTest extends TestCase
 {
     /**
      * @var File
@@ -40,7 +45,7 @@ class FileTest extends \PHPUnit\Framework\TestCase
     /**
      * @inheritdoc
      */
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->driver = new File();
         $this->absolutePath = dirname(__DIR__) . '/_files/';
@@ -50,6 +55,8 @@ class FileTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @inheritdoc
+     *
+     * @return void
      */
     protected function tearDown(): void
     {
@@ -57,9 +64,37 @@ class FileTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Tests directory recursive read.
+     * Tests read directory with symlynked folders.
+     *
+     * @return void
      */
-    public function testReadDirectoryRecursively()
+    public function testReadDirectoryRecursivelyWithSymlinkedFolders(): void
+    {
+        $sourceDirectory = $this->generatedPath . '/source';
+        $destinationDirectory = $this->generatedPath . '/destination';
+
+        $this->driver->createDirectory($sourceDirectory);
+        $this->driver->createDirectory($sourceDirectory . '/directory1');
+        $this->driver->createDirectory($destinationDirectory);
+
+        $linkName = $destinationDirectory . '/link';
+        $this->driver->symlink($sourceDirectory, $linkName);
+
+        $paths = [
+            $destinationDirectory . '/link' . '/directory1',
+            $destinationDirectory . '/link'
+
+        ];
+        $actual = $this->driver->readDirectoryRecursively($destinationDirectory);
+        $this->assertEquals($paths, $actual);
+    }
+
+    /**
+     * Tests directory recursive read.
+     *
+     * @return void
+     */
+    public function testReadDirectoryRecursively(): void
     {
         $paths = [
             'foo/bar',
@@ -68,7 +103,7 @@ class FileTest extends \PHPUnit\Framework\TestCase
             'foo/bar/file_two.txt',
             'foo/file_three.txt',
         ];
-        $expected = array_map(['self', 'getTestPath'], $paths);
+        $expected = array_map([self::class, 'getTestPath'], $paths);
         $actual = $this->driver->readDirectoryRecursively($this->getTestPath('foo'));
         sort($actual);
         $this->assertEquals($expected, $actual);
@@ -77,10 +112,12 @@ class FileTest extends \PHPUnit\Framework\TestCase
     /**
      * Tests directory reading exception.
      *
+     * @return void
      */
-    public function testReadDirectoryRecursivelyFailure()
+    public function testReadDirectoryRecursivelyFailure(): void
     {
         $this->expectException(\Magento\Framework\Exception\FileSystemException::class);
+
         $this->driver->readDirectoryRecursively($this->getTestPath('not-existing-directory'));
     }
 
@@ -88,8 +125,9 @@ class FileTest extends \PHPUnit\Framework\TestCase
      * Tests of directory creating.
      *
      * @throws FileSystemException
+     * @return void
      */
-    public function testCreateDirectory()
+    public function testCreateDirectory(): void
     {
         $generatedPath = $this->getTestPath('generated/roo/bar/baz/foo');
         $generatedPathBase = $this->getTestPath('generated');
@@ -121,6 +159,18 @@ class FileTest extends \PHPUnit\Framework\TestCase
         self::assertTrue($this->driver->symlink($sourceDirectory, $linkName));
         self::assertTrue($this->driver->isExists($linkName));
         self::assertTrue($this->driver->deleteDirectory($linkName));
+    }
+
+    /**
+     * Verify file put content without content.
+     *
+     * @return void
+     * @throws FileSystemException
+     */
+    public function testFilePutWithoutContents(): void
+    {
+        $path = $this->absolutePath . 'foo/file_three.txt';
+        $this->assertEquals(0, $this->driver->filePutContents($path, ''));
     }
 
     /**

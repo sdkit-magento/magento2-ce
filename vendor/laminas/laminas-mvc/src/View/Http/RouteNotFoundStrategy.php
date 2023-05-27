@@ -1,13 +1,9 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-mvc for the canonical source repository
- * @copyright https://github.com/laminas/laminas-mvc/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-mvc/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Mvc\View\Http;
 
+use Exception;
+use Throwable;
 use Laminas\EventManager\AbstractListenerAggregate;
 use Laminas\EventManager\EventManagerInterface;
 use Laminas\Http\Response as HttpResponse;
@@ -144,7 +140,7 @@ class RouteNotFoundStrategy extends AbstractListenerAggregate
             case Application::ERROR_ROUTER_NO_MATCH:
                 $this->reason = $error;
                 $response = $e->getResponse();
-                if (!$response) {
+                if (! $response) {
                     $response = new HttpResponse();
                     $e->setResponse($response);
                 }
@@ -158,7 +154,6 @@ class RouteNotFoundStrategy extends AbstractListenerAggregate
     /**
      * Create and return a 404 view model
      *
-     * @param  MvcEvent $e
      * @return void
      */
     public function prepareNotFoundViewModel(MvcEvent $e)
@@ -175,7 +170,7 @@ class RouteNotFoundStrategy extends AbstractListenerAggregate
             return;
         }
 
-        if (!$vars instanceof ViewModel) {
+        if (! $vars instanceof ViewModel) {
             $model = new ViewModel();
             if (is_string($vars)) {
                 $model->setVariable('message', $vars);
@@ -215,7 +210,7 @@ class RouteNotFoundStrategy extends AbstractListenerAggregate
      */
     protected function injectNotFoundReason(ViewModel $model)
     {
-        if (!$this->displayNotFoundReason()) {
+        if (! $this->displayNotFoundReason()) {
             return;
         }
 
@@ -242,7 +237,7 @@ class RouteNotFoundStrategy extends AbstractListenerAggregate
      */
     protected function injectException($model, $e)
     {
-        if (!$this->displayExceptions()) {
+        if (! $this->displayExceptions()) {
             return;
         }
 
@@ -251,7 +246,7 @@ class RouteNotFoundStrategy extends AbstractListenerAggregate
         $exception = $e->getParam('exception', false);
 
         // @TODO clean up once PHP 7 requirement is enforced
-        if (!$exception instanceof \Exception && !$exception instanceof \Throwable) {
+        if (! $exception instanceof Exception && ! $exception instanceof Throwable) {
             return;
         }
 
@@ -273,7 +268,7 @@ class RouteNotFoundStrategy extends AbstractListenerAggregate
      */
     protected function injectController($model, $e)
     {
-        if (!$this->displayExceptions() && !$this->displayNotFoundReason()) {
+        if (! $this->displayExceptions() && ! $this->displayNotFoundReason()) {
             return;
         }
 
@@ -285,7 +280,7 @@ class RouteNotFoundStrategy extends AbstractListenerAggregate
             }
 
             $controller = $routeMatch->getParam('controller', false);
-            if (!$controller) {
+            if (! $controller) {
                 return;
             }
         }

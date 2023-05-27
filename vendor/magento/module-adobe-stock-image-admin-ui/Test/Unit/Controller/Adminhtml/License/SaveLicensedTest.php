@@ -8,18 +8,12 @@ declare(strict_types=1);
 
 namespace Magento\AdobeStockImageAdminUi\Test\Unit\Controller\Adminhtml\License;
 
-use Magento\AdobeStockAssetApi\Api\Data\AssetInterface;
-use Magento\AdobeStockAssetApi\Api\GetAssetByIdInterface;
-use Magento\AdobeStockClientApi\Api\ClientInterface;
 use Magento\AdobeStockImageAdminUi\Controller\Adminhtml\License\SaveLicensed;
-use Magento\AdobeStockImageApi\Api\SaveImageInterface;
 use Magento\AdobeStockImageApi\Api\SaveLicensedImageInterface;
 use Magento\Backend\App\Action\Context as ActionContext;
-use Magento\Framework\Api\Search\Document;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Controller\ResultFactory;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Framework\Phrase;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
@@ -28,8 +22,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * Class SaveLicensedTest
- * Test for SaveLicensed class
+ * Test for the controller saving previously licensed image
  */
 class SaveLicensedTest extends TestCase
 {
@@ -73,11 +66,11 @@ class SaveLicensedTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->loggerMock = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->loggerMock = $this->createMock(LoggerInterface::class);
         $this->contextMock = $this->createMock(ActionContext::class);
         $this->contextMock = $this->createPartialMock(ActionContext::class, ['getRequest', 'getResultFactory']);
-        $this->saveLicensedImageMock = $this->getMockForAbstractClass(SaveLicensedImageInterface::class);
-        $this->requestMock = $this->getMockForAbstractClass(RequestInterface::class);
+        $this->saveLicensedImageMock = $this->createMock(SaveLicensedImageInterface::class);
+        $this->requestMock = $this->createMock(RequestInterface::class);
         $this->resultFactoryMock = $this->createMock(ResultFactory::class);
         $this->jsonObject = $this->createMock(Json::class);
 

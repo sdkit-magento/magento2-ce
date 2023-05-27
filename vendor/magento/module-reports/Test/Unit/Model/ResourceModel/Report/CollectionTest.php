@@ -3,20 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Magento\Reports\Test\Unit\Model\ResourceModel\Report;
 
 use Magento\Framework\Data\Collection\EntityFactory;
+use Magento\Framework\DataObject;
 use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 use Magento\Reports\Model\ResourceModel\Report\Collection;
 use Magento\Reports\Model\ResourceModel\Report\Collection\Factory as ReportCollectionFactory;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
- * Class CollectionTest
- *
  * @covers \Magento\Reports\Model\ResourceModel\Report\Collection
  */
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
      * @var Collection
@@ -24,17 +26,17 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     protected $collection;
 
     /**
-     * @var EntityFactory|\PHPUnit\Framework\MockObject\MockObject
+     * @var EntityFactory|MockObject
      */
     protected $entityFactoryMock;
 
     /**
-     * @var TimezoneInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var TimezoneInterface|MockObject
      */
     protected $timezoneMock;
 
     /**
-     * @var ReportCollectionFactory|\PHPUnit\Framework\MockObject\MockObject
+     * @var ReportCollectionFactory|MockObject
      */
     protected $factoryMock;
 
@@ -117,12 +119,12 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $this->collection->setInterval($fromDate, $toDate);
         $reports = $this->collection->getReports();
         foreach ($reports as $report) {
-            $this->assertInstanceOf(\Magento\Framework\DataObject::class, $report);
+            $this->assertInstanceOf(DataObject::class, $report);
             $reportData = $report->getData();
             $this->assertEmpty($reportData['children']);
             $this->assertTrue($reportData['is_empty']);
         }
-        $this->assertEquals($size, count($reports));
+        $this->assertCount($size, $reports);
     }
 
     /**

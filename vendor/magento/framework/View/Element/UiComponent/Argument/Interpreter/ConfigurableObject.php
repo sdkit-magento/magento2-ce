@@ -15,7 +15,7 @@ use Magento\Framework\Data\Argument\InterpreterInterface;
 use Magento\Framework\View\Element\UiComponent\DataProvider\DataProviderInterface;
 
 /**
- * Configurable ui component argument interpreter.
+ * Class ConfigurableObject
  */
 class ConfigurableObject implements InterpreterInterface
 {
@@ -144,9 +144,7 @@ class ConfigurableObject implements InterpreterInterface
             if (empty($parent)) {
                 continue;
             }
-            //@codingStandardsIgnoreStart
             $classParents = array_merge($classParents, $this->getParents($parent));
-            //@codingStandardsIgnoreEnd
         }
 
         return $classParents;

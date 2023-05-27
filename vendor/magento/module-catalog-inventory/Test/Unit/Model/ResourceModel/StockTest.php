@@ -7,73 +7,78 @@ declare(strict_types=1);
 
 namespace Magento\CatalogInventory\Test\Unit\Model\ResourceModel;
 
-use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\CatalogInventory\Model\Configuration as StockConfiguration;
 use Magento\CatalogInventory\Model\ResourceModel\Stock;
 use Magento\Framework\App\Config;
 use Magento\Framework\DB\Adapter\Pdo\Mysql;
+use Magento\Framework\DB\Select;
 use Magento\Framework\Model\ResourceModel\Db\Context;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Store\Model\StoreManagerInterface;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\CatalogInventory\Model\ResourceModel\Stock
  */
-class StockTest extends \PHPUnit\Framework\TestCase
+class StockTest extends TestCase
 {
     const PRODUCT_TABLE = 'testProductTable';
     const ITEM_TABLE = 'testItemTableName';
 
     /**
-     * @var Stock|\PHPUnit\Framework\MockObject\MockObject
+     * @var Stock|MockObject
      */
     private $stock;
 
     /**
-     * @var Mysql|\PHPUnit\Framework\MockObject\MockObject
+     * @var Mysql|MockObject
      */
     private $connectionMock;
 
     /**
-     * @var Config|\PHPUnit\Framework\MockObject\MockObject
+     * @var Config|MockObject
      */
     private $scopeConfigMock;
 
     /**
-     * @var DateTime|\PHPUnit\Framework\MockObject\MockObject
+     * @var DateTime|MockObject
      */
     private $dateTimeMock;
 
     /**
-     * @var StockConfiguration|\PHPUnit\Framework\MockObject\MockObject
+     * @var StockConfiguration|MockObject
      */
     private $stockConfigurationMock;
 
     /**
-     * @var StoreManagerInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var StoreManagerInterface|MockObject
      */
     private $storeManagerMock;
 
     /**
-     * @var Context|\PHPUnit\Framework\MockObject\MockObject
+     * @var Context|MockObject
      */
     private $contextMock;
 
     /**
-     * @var \Magento\Framework\DB\Select|\PHPUnit\Framework\MockObject\MockObject
+     * @var Select|MockObject
      */
     private $selectMock;
 
     /**
-     * @var \Zend_Db_Statement_Interface|\PHPUnit\Framework\MockObject\MockObject
+     * @var \Zend_Db_Statement_Interface|MockObject
      */
     private $statementMock;
 
+    /**
+     * @inheritDoc
+     */
     protected function setUp(): void
     {
         $objectManager = new ObjectManager($this);
-        $this->selectMock = $this->getMockBuilder(\Magento\Framework\DB\Select::class)
+        $this->selectMock = $this->getMockBuilder(Select::class)
             ->disableOriginalConstructor()
             ->getMock();
         $this->contextMock = $objectManager->getObject(Context::class);
@@ -84,7 +89,7 @@ class StockTest extends \PHPUnit\Framework\TestCase
             ->disableOriginalConstructor()
             ->getMock();
         $this->stockConfigurationMock = $this->getMockBuilder(StockConfiguration::class)
-            ->setMethods(['getIsQtyTypeIds', 'getDefaultScopeId'])
+            ->onlyMethods(['getIsQtyTypeIds', 'getDefaultScopeId'])
             ->disableOriginalConstructor()
             ->getMock();
         $this->storeManagerMock = $this->getMockBuilder(StoreManagerInterface::class)
@@ -95,14 +100,14 @@ class StockTest extends \PHPUnit\Framework\TestCase
             ->getMock();
         $this->statementMock = $this->getMockForAbstractClass(\Zend_Db_Statement_Interface::class);
         $this->stock = $this->getMockBuilder(Stock::class)
-            ->setMethods(['getTable', 'getConnection'])
+            ->onlyMethods(['getTable', 'getConnection'])
             ->setConstructorArgs(
                 [
                     'context' => $this->contextMock,
                     'scopeConfig' => $this->scopeConfigMock,
                     'dateTime' => $this->dateTimeMock,
                     'stockConfiguration' => $this->stockConfigurationMock,
-                    'storeManager' => $this->storeManagerMock,
+                    'storeManager' => $this->storeManagerMock
                 ]
             )->getMock();
     }
@@ -110,7 +115,6 @@ class StockTest extends \PHPUnit\Framework\TestCase
     /**
      * Test Save Product Status per website with product ids.
      *
-     * @dataProvider productsDataProvider
      * @param int $websiteId
      * @param array $productIds
      * @param array $products
@@ -118,6 +122,7 @@ class StockTest extends \PHPUnit\Framework\TestCase
      * @param array $items
      *
      * @return void
+     * @dataProvider productsDataProvider
      */
     public function testLockProductsStock(
         int $websiteId,
@@ -125,7 +130,7 @@ class StockTest extends \PHPUnit\Framework\TestCase
         array $products,
         array $result,
         array $items
-    ) {
+    ): void {
         $itemIds = [];
         foreach ($items as $item) {
             $itemIds[] = $item['item_id'];
@@ -162,12 +167,9 @@ class StockTest extends \PHPUnit\Framework\TestCase
             ->method('query')
             ->with($this->identicalTo($this->selectMock))
             ->willReturn($this->statementMock);
-        $this->statementMock->expects($this->at(0))
+        $this->statementMock
             ->method('fetchAll')
-            ->willReturn($items);
-        $this->statementMock->expects($this->at(1))
-            ->method('fetchAll')
-            ->willReturn($products);
+            ->willReturnOnConsecutiveCalls($items, $products);
         $this->connectionMock->expects($this->once())
             ->method('fetchAll')
             ->with($this->identicalTo($this->selectMock))
@@ -202,24 +204,24 @@ class StockTest extends \PHPUnit\Framework\TestCase
                 [
                     1 => ['product_id' => 1],
                     2 => ['product_id' => 2],
-                    3 => ['product_id' => 3],
+                    3 => ['product_id' => 3]
                 ],
                 [
                     1 => [
                         'product_id' => 1,
-                        'type_id' => 'simple',
+                        'type_id' => 'simple'
                     ],
                     2 => [
                         'product_id' => 2,
-                        'type_id' => 'simple',
+                        'type_id' => 'simple'
                     ],
                     3 => [
                         'product_id' => 3,
-                        'type_id' => 'simple',
+                        'type_id' => 'simple'
                     ],
                 ],
                 [['item_id' => 1], ['item_id' => 2], ['item_id' => 3]]
-            ],
+            ]
         ];
     }
 }

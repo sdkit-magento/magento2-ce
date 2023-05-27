@@ -9,9 +9,12 @@
 <actionGroups xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
               xsi:noNamespaceSchemaLocation="urn:magento:mftf:Test/etc/actionGroupSchema.xsd">
     <actionGroup name="AdminAdobeStockExpandImagePreviewActionGroup">
-        <conditionalClick stepKey="closeImagePreview" selector="{{AdobeStockImagePreviewSection.close}}" dependentSelector="{{AdobeStockImagePreviewSection.close}}" visible="true"/>
+        <annotations>
+            <description>Expands first image in grid.</description>
+        </annotations>
+        <conditionalClick selector="{{AdminAdobeStockImagePreviewSection.close}}" dependentSelector="{{AdminAdobeStockImagePreviewSection.close}}" visible="true" stepKey="closeImagePreview"/>
         <waitForPageLoad stepKey="waitForImagePreviewToClose"/>
-        <click selector="{{AdobeStockSection.modal}} {{AdobeStockSection.firstImageInGrid}}" stepKey="clickOnThumbnail"/>
+        <click selector="{{AdminAdobeStockSection.modal}} {{AdminAdobeStockSection.firstImageInGrid}}" stepKey="clickOnThumbnail"/>
         <waitForPageLoad stepKey="waitForImagePreviewToExpand"/>
     </actionGroup>
 </actionGroups>

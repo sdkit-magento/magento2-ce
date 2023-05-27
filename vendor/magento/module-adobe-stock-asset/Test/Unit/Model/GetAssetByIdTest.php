@@ -11,13 +11,13 @@ use Magento\AdobeStockAsset\Model\GetAssetById;
 use Magento\AdobeStockAssetApi\Api\GetAssetListInterface;
 use Magento\Framework\Api\AttributeValue;
 use Magento\Framework\Api\Filter;
+use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\Search\Document;
 use Magento\Framework\Api\Search\SearchCriteria;
+use Magento\Framework\Api\Search\SearchCriteriaBuilder;
 use Magento\Framework\Api\Search\SearchResultInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Magento\Framework\Api\Search\SearchCriteriaBuilder;
-use Magento\Framework\Api\FilterBuilder;
 
 /**
  * Test for get asset by id service.
@@ -50,7 +50,7 @@ class GetAssetByIdTest extends TestCase
     protected function setUp(): void
     {
         $this->filterBuilder = $this->createMock(FilterBuilder::class);
-        $this->getAssetList = $this->getMockForAbstractClass(GetAssetListInterface::class);
+        $this->getAssetList = $this->createMock(GetAssetListInterface::class);
         $this->searchCriteriaBuilder = $this->createMock(SearchCriteriaBuilder::class);
 
         $this->getAssetById = new GetAssetById(
@@ -75,7 +75,7 @@ class GetAssetByIdTest extends TestCase
             ->willReturn(
                 $this->createMock(SearchCriteria::class)
             );
-        $searchResultMock = $this->getMockForAbstractClass(SearchResultInterface::class);
+        $searchResultMock = $this->createMock(SearchResultInterface::class);
         $this->getAssetList->expects($this->once())
             ->method('execute')
             ->willReturn($searchResultMock);

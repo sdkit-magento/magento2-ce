@@ -29,6 +29,7 @@ use Magento\Framework\Data\Collection\EntityFactory;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\DB\Select;
 use Magento\Framework\Event\ManagerInterface;
+use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
 use Magento\Framework\Module\Manager as Manager;
 use Magento\Framework\Stdlib\DateTime;
 use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
@@ -38,6 +39,8 @@ use Magento\Quote\Model\ResourceModel\Quote\Collection;
 use Magento\Reports\Model\Event\TypeFactory;
 use Magento\Reports\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Store\Model\StoreManagerInterface;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -46,7 +49,7 @@ use Psr\Log\LoggerInterface;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  *
  */
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
      * @var ProductCollection
@@ -54,7 +57,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     private $collection;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $eventTypeFactoryMock;
 
@@ -64,17 +67,17 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     private $objectManager;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $connectionMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $resourceMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $selectMock;
 
@@ -116,7 +119,10 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $context->expects($this->atLeastOnce())->method('getResource')->willReturn($this->resourceMock);
         $context->expects($this->atLeastOnce())->method('getEavConfig')->willReturn($eavConfig);
 
-        $defaultAttributes = $this->createPartialMock(DefaultAttributes::class, ['_getDefaultAttributes']);
+        $defaultAttributes = $this->getMockBuilder(DefaultAttributes::class)
+            ->addMethods(['_getDefaultAttributes'])
+            ->disableOriginalConstructor()
+            ->getMock();
         $productMock = $this->objectManager->getObject(
             ResourceProduct::class,
             ['context' => $context, 'defaultAttributes' => $defaultAttributes]
@@ -200,7 +206,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
             ->method('getResources')
             ->willReturn($this->resourceMock);
         $abstractResourceMock = $this->getMockForAbstractClass(
-            \Magento\Framework\Model\ResourceModel\Db\AbstractDb::class,
+            AbstractDb::class,
             ['context' => $context],
             '',
             true,
@@ -225,14 +231,10 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
             \Magento\Reports\Model\ResourceModel\Event\Type\Collection::class,
             ['resource' => $abstractResourceMock]
         );
-        $eventTypeMock = $this->createPartialMock(
-            \Magento\Reports\Model\Event\Type::class,
-            [
-                'getEventName',
-                'getId',
-                'getCollection',
-            ]
-        );
+        $eventTypeMock = $this->getMockBuilder(\Magento\Reports\Model\Event\Type::class)->addMethods(['getEventName'])
+            ->onlyMethods(['getId', 'getCollection'])
+            ->disableOriginalConstructor()
+            ->getMock();
 
         $eventTypesCollection->addItem($eventTypeMock);
 
@@ -290,7 +292,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
      * @param string $className
      * @param array $methods
      *
-     * @return \PHPUnit\Framework\MockObject\MockObject
+     * @return MockObject
      */
     private function createPartialMockForAbstractClass($className, $methods)
     {

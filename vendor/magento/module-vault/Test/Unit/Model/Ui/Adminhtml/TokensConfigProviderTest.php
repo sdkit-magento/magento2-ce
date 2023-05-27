@@ -3,6 +3,8 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Vault\Test\Unit\Model\Ui\Adminhtml;
 
 use Magento\Backend\Model\Session\Quote;
@@ -29,14 +31,15 @@ use Magento\Vault\Model\Ui\Adminhtml\TokensConfigProvider;
 use Magento\Vault\Model\Ui\TokenUiComponentInterface;
 use Magento\Vault\Model\Ui\TokenUiComponentProviderInterface;
 use Magento\Vault\Model\VaultPaymentInterface;
-use PHPUnit\Framework\MockObject\MockObject as MockObject;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for TokensConfigProvider
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class TokensConfigProviderTest extends \PHPUnit\Framework\TestCase
+class TokensConfigProviderTest extends TestCase
 {
     /**#@+
      * Global values
@@ -131,7 +134,7 @@ class TokensConfigProviderTest extends \PHPUnit\Framework\TestCase
             ->getMock();
         $this->session = $this->getMockBuilder(Quote::class)
             ->disableOriginalConstructor()
-            ->setMethods(['getCustomerId', 'getReordered'])
+            ->setMethods(['getCustomerId', 'getReordered', 'getStoreId'])
             ->getMock();
         $this->dateTimeFactory = $this->getMockBuilder(DateTimeFactory::class)
             ->disableOriginalConstructor()
@@ -188,10 +191,18 @@ class TokensConfigProviderTest extends \PHPUnit\Framework\TestCase
     public function testGetTokensComponentsRegisteredCustomer()
     {
         $customerId = 1;
+        $storeId = 1;
 
         $this->session->expects(static::once())
             ->method('getCustomerId')
             ->willReturn($customerId);
+
+        $this->session->expects(static::once())
+            ->method('getStoreId')
+            ->willReturn($storeId);
+
+        $this->storeManager->expects(static::never())
+            ->method('getStore');
 
         $this->paymentDataHelper->expects(static::once())
             ->method('getMethodInstance')
@@ -247,7 +258,12 @@ class TokensConfigProviderTest extends \PHPUnit\Framework\TestCase
     {
         $customerId = null;
 
-        $this->initStoreMock();
+        $this->session->expects(static::once())
+            ->method('getStoreId')
+            ->willReturn(null);
+
+        $this->storeManager->expects(static::once())
+            ->method('getStore');
 
         $this->session->expects(static::once())
             ->method('getCustomerId')
@@ -526,7 +542,7 @@ class TokensConfigProviderTest extends \PHPUnit\Framework\TestCase
      * @param mixed $value
      * @param int $atIndex
      *
-     * @return \PHPUnit\Framework\MockObject\MockObject
+     * @return MockObject
      */
     private function createExpectedFilter($field, $value, $atIndex)
     {
@@ -553,7 +569,7 @@ class TokensConfigProviderTest extends \PHPUnit\Framework\TestCase
      * @param int $customerId
      * @param int $entityId
      * @param string $vaultProviderCode
-     * @return \PHPUnit\Framework\MockObject\MockObject
+     * @return MockObject
      */
     private function getSearchCriteria($customerId, $entityId, $vaultProviderCode)
     {

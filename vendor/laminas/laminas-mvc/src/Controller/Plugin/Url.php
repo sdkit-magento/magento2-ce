@@ -1,19 +1,16 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-mvc for the canonical source repository
- * @copyright https://github.com/laminas/laminas-mvc/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-mvc/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Mvc\Controller\Plugin;
 
+use Laminas\Mvc\Exception\RuntimeException;
+use Laminas\Mvc\Exception\InvalidArgumentException;
+use Laminas\Mvc\Exception\DomainException;
 use Laminas\EventManager\EventInterface;
 use Laminas\Mvc\Exception;
 use Laminas\Mvc\InjectApplicationEventInterface;
 use Laminas\Mvc\ModuleRouteListener;
 use Laminas\Mvc\MvcEvent;
-use Laminas\Mvc\Router\RouteStackInterface;
+use Laminas\Router\RouteStackInterface;
 use Traversable;
 
 class Url extends AbstractPlugin
@@ -27,21 +24,23 @@ class Url extends AbstractPlugin
      *                                                If boolean, and no fourth argument, used as $reuseMatchedParams.
      * @param  bool               $reuseMatchedParams Whether to reuse matched parameters
      *
-     * @throws \Laminas\Mvc\Exception\RuntimeException
-     * @throws \Laminas\Mvc\Exception\InvalidArgumentException
-     * @throws \Laminas\Mvc\Exception\DomainException
+     * @throws RuntimeException
+     * @throws InvalidArgumentException
+     * @throws DomainException
      * @return string
      */
     public function fromRoute($route = null, $params = [], $options = [], $reuseMatchedParams = false)
     {
         $controller = $this->getController();
-        if (!$controller instanceof InjectApplicationEventInterface) {
-            throw new Exception\DomainException('Url plugin requires a controller that implements InjectApplicationEventInterface');
+        if (! $controller instanceof InjectApplicationEventInterface) {
+            throw new DomainException(
+                'Url plugin requires a controller that implements InjectApplicationEventInterface'
+            );
         }
 
-        if (!is_array($params)) {
-            if (!$params instanceof Traversable) {
-                throw new Exception\InvalidArgumentException(
+        if (! is_array($params)) {
+            if (! $params instanceof Traversable) {
+                throw new InvalidArgumentException(
                     'Params is expected to be an array or a Traversable object'
                 );
             }
@@ -58,8 +57,10 @@ class Url extends AbstractPlugin
             $router  = $event->getParam('router', false);
             $matches = $event->getParam('route-match', false);
         }
-        if (!$router instanceof RouteStackInterface) {
-            throw new Exception\DomainException('Url plugin requires that controller event compose a router; none found');
+        if (! $router instanceof RouteStackInterface) {
+            throw new DomainException(
+                'Url plugin requires that controller event compose a router; none found'
+            );
         }
 
         if (3 == func_num_args() && is_bool($options)) {
@@ -68,14 +69,14 @@ class Url extends AbstractPlugin
         }
 
         if ($route === null) {
-            if (!$matches) {
-                throw new Exception\RuntimeException('No RouteMatch instance present');
+            if (! $matches) {
+                throw new RuntimeException('No RouteMatch instance present');
             }
 
             $route = $matches->getMatchedRouteName();
 
             if ($route === null) {
-                throw new Exception\RuntimeException('RouteMatch does not contain a matched route name');
+                throw new RuntimeException('RouteMatch does not contain a matched route name');
             }
         }
 

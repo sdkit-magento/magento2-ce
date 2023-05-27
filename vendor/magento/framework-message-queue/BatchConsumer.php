@@ -10,8 +10,7 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\MessageQueue\Consumer\ConfigInterface as ConsumerConfig;
 
 /**
- * BatchConsumer is a consumer class which implements the consumer interface
- *
+ * Class BatchConsumer
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class BatchConsumer implements ConsumerInterface
@@ -75,7 +74,9 @@ class BatchConsumer implements ConsumerInterface
      * @param ConsumerConfigurationInterface $configuration
      * @param int $interval [optional]
      * @param int $batchSize [optional]
-     * @param MessageProcessorLoader|null $messageProcessorLoader [optional]
+     * @param MessageProcessorLoader $messageProcessorLoader [optional]
+     * @param MessageController $messageController [optional]
+     * @param ConsumerConfig $consumerConfig [optional]
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
@@ -102,7 +103,7 @@ class BatchConsumer implements ConsumerInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function process($maxNumberOfMessages = null)
     {
@@ -274,7 +275,7 @@ class BatchConsumer implements ConsumerInterface
      *
      * @return ConsumerConfig
      *
-     * @deprecated 102.0.5
+     * @deprecated 103.0.0
      */
     private function getConsumerConfig()
     {
@@ -291,7 +292,7 @@ class BatchConsumer implements ConsumerInterface
      *
      * @return MessageController
      *
-     * @deprecated 102.0.5
+     * @deprecated 103.0.0
      */
     private function getMessageController()
     {

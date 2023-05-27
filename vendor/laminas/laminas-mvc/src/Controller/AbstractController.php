@@ -1,13 +1,15 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-mvc for the canonical source repository
- * @copyright https://github.com/laminas/laminas-mvc/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-mvc/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Mvc\Controller;
 
+use Laminas\View\Model\ModelInterface;
+use Laminas\Http\Header\Accept\FieldValuePart\AbstractFieldValuePart;
+use Laminas\Mvc\Controller\Plugin\Forward;
+use Laminas\Mvc\Controller\Plugin\Layout;
+use Laminas\Mvc\Controller\Plugin\Params;
+use Laminas\Mvc\Controller\Plugin\Redirect;
+use Laminas\Mvc\Controller\Plugin\Url;
+use Laminas\View\Model\ViewModel;
 use Laminas\EventManager\EventInterface as Event;
 use Laminas\EventManager\EventManager;
 use Laminas\EventManager\EventManagerAwareInterface;
@@ -16,7 +18,6 @@ use Laminas\Http\PhpEnvironment\Response as HttpResponse;
 use Laminas\Http\Request as HttpRequest;
 use Laminas\Mvc\InjectApplicationEventInterface;
 use Laminas\Mvc\MvcEvent;
-use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\ServiceManager\ServiceManager;
 use Laminas\Stdlib\DispatchableInterface as Dispatchable;
 use Laminas\Stdlib\RequestInterface as Request;
@@ -26,21 +27,15 @@ use Laminas\Stdlib\ResponseInterface as Response;
  * Abstract controller
  *
  * Convenience methods for pre-built plugins (@see __call):
- *
- * @method \Laminas\View\Model\ModelInterface acceptableViewModelSelector(array $matchAgainst = null, bool $returnDefault = true, \Laminas\Http\Header\Accept\FieldValuePart\AbstractFieldValuePart $resultReference = null)
- * @method bool|array|\Laminas\Http\Response fileprg(\Laminas\Form\FormInterface $form, $redirect = null, $redirectToUrl = false)
- * @method bool|array|\Laminas\Http\Response filePostRedirectGet(\Laminas\Form\FormInterface $form, $redirect = null, $redirectToUrl = false)
- * @method \Laminas\Mvc\Controller\Plugin\FlashMessenger flashMessenger()
- * @method \Laminas\Mvc\Controller\Plugin\Forward forward()
- * @method mixed|null identity()
- * @method \Laminas\Mvc\Controller\Plugin\Layout|\Laminas\View\Model\ModelInterface layout(string $template = null)
- * @method \Laminas\Mvc\Controller\Plugin\Params|mixed params(string $param = null, mixed $default = null)
- * @method \Laminas\Http\Response|array prg(string $redirect = null, bool $redirectToUrl = false)
- * @method \Laminas\Http\Response|array postRedirectGet(string $redirect = null, bool $redirectToUrl = false)
- * @method \Laminas\Mvc\Controller\Plugin\Redirect redirect()
- * @method \Laminas\Mvc\Controller\Plugin\Url url()
- * @method \Laminas\View\Model\ConsoleModel createConsoleNotFoundModel()
- * @method \Laminas\View\Model\ViewModel createHttpNotFoundModel(Response $response)
+ * @codingStandardsIgnoreStart
+ * @method ModelInterface acceptableViewModelSelector(array $matchAgainst = null, bool $returnDefault = true, AbstractFieldValuePart $resultReference = null)
+ * @codingStandardsIgnoreEnd
+ * @method Forward forward()
+ * @method Layout|ModelInterface layout(string $template = null)
+ * @method Params|mixed params(string $param = null, mixed $default = null)
+ * @method Redirect redirect()
+ * @method Url url()
+ * @method ViewModel createHttpNotFoundModel(Response $response)
  */
 abstract class AbstractController implements
     Dispatchable,
@@ -61,11 +56,6 @@ abstract class AbstractController implements
      * @var Response
      */
     protected $response;
-
-    /**
-     * @var ServiceLocatorInterface
-     */
-    protected $serviceLocator;
 
     /**
      * @var Event
@@ -101,7 +91,7 @@ abstract class AbstractController implements
     public function dispatch(Request $request, Response $response = null)
     {
         $this->request = $request;
-        if (!$response) {
+        if (! $response) {
             $response = new HttpResponse();
         }
         $this->response = $response;
@@ -112,9 +102,7 @@ abstract class AbstractController implements
         $e->setResponse($response);
         $e->setTarget($this);
 
-        $result = $this->getEventManager()->triggerEventUntil(function ($test) {
-            return ($test instanceof Response);
-        }, $e);
+        $result = $this->getEventManager()->triggerEventUntil(static fn($test): bool => $test instanceof Response, $e);
 
         if ($result->stopped()) {
             return $result->last();
@@ -130,7 +118,7 @@ abstract class AbstractController implements
      */
     public function getRequest()
     {
-        if (!$this->request) {
+        if (! $this->request) {
             $this->request = new HttpRequest();
         }
 
@@ -144,7 +132,7 @@ abstract class AbstractController implements
      */
     public function getResponse()
     {
-        if (!$this->response) {
+        if (! $this->response) {
             $this->response = new HttpResponse();
         }
 
@@ -159,15 +147,21 @@ abstract class AbstractController implements
      */
     public function setEventManager(EventManagerInterface $events)
     {
-        $className = get_class($this);
+        $className = $this::class;
 
-        $nsPos = strpos($className, '\\') ?: 0;
+        $identifiers = [
+            self::class,
+            $className,
+        ];
+
+        $rightmostNsPos = strrpos($className, '\\');
+        if ($rightmostNsPos) {
+            $identifiers[] = strstr($className, '\\', true); // top namespace
+            $identifiers[] = substr($className, 0, $rightmostNsPos); // full namespace
+        }
+
         $events->setIdentifiers(array_merge(
-            [
-                __CLASS__,
-                $className,
-                substr($className, 0, $nsPos)
-            ],
+            $identifiers,
             array_values(class_implements($className)),
             (array) $this->eventIdentifier
         ));
@@ -187,7 +181,7 @@ abstract class AbstractController implements
      */
     public function getEventManager()
     {
-        if (!$this->events) {
+        if (! $this->events) {
             $this->setEventManager(new EventManager());
         }
 
@@ -204,7 +198,7 @@ abstract class AbstractController implements
      */
     public function setEvent(Event $e)
     {
-        if (!$e instanceof MvcEvent) {
+        if (! $e instanceof MvcEvent) {
             $eventParams = $e->getParams();
             $e = new MvcEvent();
             $e->setParams($eventParams);
@@ -222,41 +216,11 @@ abstract class AbstractController implements
      */
     public function getEvent()
     {
-        if (!$this->event) {
+        if (! $this->event) {
             $this->setEvent(new MvcEvent());
         }
 
         return $this->event;
-    }
-
-    /**
-     * Set serviceManager instance
-     *
-     * @param ServiceLocatorInterface $serviceLocator
-     * @return void
-     */
-    public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-    {
-        $this->serviceLocator = $serviceLocator;
-    }
-
-    /**
-     * Retrieve serviceManager instance
-     *
-     * @return ServiceLocatorInterface
-     */
-    public function getServiceLocator()
-    {
-        trigger_error(sprintf(
-            'You are retrieving the service locator from within the class %s. Please be aware that '
-            . 'ServiceLocatorAwareInterface is deprecated and will be removed in version 3.0, along '
-            . 'with the ServiceLocatorAwareInitializer. You will need to update your class to accept '
-            . 'all dependencies at creation, either via constructor arguments or setters, and use '
-            . 'a factory to perform the injections.',
-            get_class($this)
-        ), E_USER_DEPRECATED);
-
-        return $this->serviceLocator;
     }
 
     /**
@@ -266,7 +230,7 @@ abstract class AbstractController implements
      */
     public function getPluginManager()
     {
-        if (!$this->plugins) {
+        if (! $this->plugins) {
             $this->setPluginManager(new PluginManager(new ServiceManager()));
         }
 
@@ -277,7 +241,6 @@ abstract class AbstractController implements
     /**
      * Set plugin manager
      *
-     * @param  PluginManager $plugins
      * @return AbstractController
      */
     public function setPluginManager(PluginManager $plugins)

@@ -20,7 +20,9 @@ class OutputTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->_helper = Bootstrap::getObjectManager()->get(Output::class);
+        $this->_helper = Bootstrap::getObjectManager()->get(
+            Output::class
+        );
     }
 
     /**
@@ -135,7 +137,7 @@ class OutputTest extends TestCase
         try {
             $this->assertEquals(
                 $expectedResult,
-                $this->_helper->{$method}(uniqid(), "<p>line1</p>\nline2", $attributeName)
+                $this->_helper->{$method}(uniqid(), __("<p>line1</p>\nline2"), $attributeName)
             );
 
             $attribute->setIsHtmlAllowedOnFront($isHtml)->setIsWysiwygEnabled($isWysiwyg);

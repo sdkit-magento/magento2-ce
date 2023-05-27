@@ -3,14 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-
 declare(strict_types=1);
 
 namespace Magento\Framework\Filesystem\Test\Unit\Driver;
 
 use Magento\Framework\Filesystem\Driver\File;
+use PHPUnit\Framework\TestCase;
 
-class FileTest extends \PHPUnit\Framework\TestCase
+class FileTest extends TestCase
 {
     /** @var string Result of file_get_contents() function */
     public static $fileGetContents;
@@ -18,6 +18,9 @@ class FileTest extends \PHPUnit\Framework\TestCase
     /** @var bool Result of file_put_contents() function */
     public static $filePutContents;
 
+    /**
+     * @inheritdoc
+     */
     protected function setUp(): void
     {
         self::$fileGetContents = '';
@@ -50,6 +53,8 @@ class FileTest extends \PHPUnit\Framework\TestCase
             ['/root/path/', '/sub', '/root/path/sub'],
             ['/root/path/', '../sub', '/root/path/../sub'],
             ['/root/path/', '/root/path/sub', '/root/path/sub'],
+            ['', '', ''],
+            ['0', '0', '0']
         ];
     }
 
@@ -79,6 +84,8 @@ class FileTest extends \PHPUnit\Framework\TestCase
             ['/root/path/', '/sub', '/sub'],
             ['/root/path/', '/root/path/sub', 'sub'],
             ['/root/path/sub', '/root/path/other', '/root/path/other'],
+            ['/root/path/', '', ''],
+            ['0', '0', '']
         ];
     }
 

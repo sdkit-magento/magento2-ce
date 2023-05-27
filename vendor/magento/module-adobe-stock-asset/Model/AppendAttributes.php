@@ -7,12 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\AdobeStockAsset\Model;
 
-use Magento\MediaGalleryApi\Model\Asset\Command\GetByIdInterface;
-use Magento\AdobeStockAsset\Model\ResourceModel\Asset\LoadByIds;
+use Magento\AdobeStockAssetApi\Model\Asset\Command\LoadByIdsInterface;
 use Magento\Framework\Api\AttributeValueFactory;
 use Magento\Framework\Api\Search\Document;
 use Magento\Framework\Api\Search\SearchResultInterface;
-use Magento\Framework\App\ResourceConnection;
+use Magento\MediaGalleryApi\Api\GetAssetsByIdsInterface;
 
 /**
  * Class is used for adding an additional assets attributes such as is_downloaded or path to the search results
@@ -29,42 +28,35 @@ class AppendAttributes
     private $attributeValueFactory;
 
     /**
-     * @var ResourceConnection
-     */
-    private $resourceConnection;
-
-    /**
-     * @var LoadByIds
+     * @var LoadByIdsInterface
      */
     private $loadByIds;
 
     /**
-     * @var GetByIdInterface
+     * @var GetAssetsByIdsInterface
      */
-    private $getMediaGalleryAssetById;
+    private $getMediaGalleryAssetsByIds;
 
     /**
-     * @param ResourceConnection $resourceConnection
      * @param AttributeValueFactory $attributeValueFactory
-     * @param LoadByIds $loadByIds
-     * @param GetByIdInterface $getMediaGalleryAssetById
+     * @param LoadByIdsInterface $loadByIds
+     * @param GetAssetsByIdsInterface $getMediaGalleryAssetById
      */
     public function __construct(
-        ResourceConnection $resourceConnection,
         AttributeValueFactory $attributeValueFactory,
-        LoadByIds $loadByIds,
-        GetByIdInterface $getMediaGalleryAssetById
+        LoadByIdsInterface $loadByIds,
+        GetAssetsByIdsInterface $getMediaGalleryAssetById
     ) {
-        $this->resourceConnection = $resourceConnection;
         $this->attributeValueFactory = $attributeValueFactory;
         $this->loadByIds = $loadByIds;
-        $this->getMediaGalleryAssetById = $getMediaGalleryAssetById;
+        $this->getMediaGalleryAssetsByIds = $getMediaGalleryAssetById;
     }
 
     /**
      * Add additional asset attributes
      *
      * @param SearchResultInterface $searchResult
+     *
      * @return SearchResultInterface
      */
     public function execute(SearchResultInterface $searchResult): SearchResultInterface
@@ -76,7 +68,7 @@ class AppendAttributes
         }
 
         $ids = array_map(
-            function ($item) {
+            static function ($item) {
                 return $item->getId();
             },
             $items
@@ -84,7 +76,7 @@ class AppendAttributes
 
         $assets = $this->loadByIds->execute($ids);
 
-        foreach ($items as $key => $item) {
+        foreach ($items as $item) {
             if (!isset($assets[$item->getId()])) {
                 $this->addAttributes(
                     $item,
@@ -97,9 +89,9 @@ class AppendAttributes
                 continue;
             }
 
-            $path = $this->getMediaGalleryAssetById->execute(
-                $assets[$item->getId()]->getMediaGalleryId()
-            )->getPath();
+            $path = $this->getMediaGalleryAssetsByIds->execute(
+                [$assets[$item->getId()]->getMediaGalleryId()]
+            )[0]->getPath();
 
             $this->addAttributes(
                 $item,

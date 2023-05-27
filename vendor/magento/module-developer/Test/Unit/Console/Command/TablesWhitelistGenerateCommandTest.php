@@ -15,10 +15,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
-/**
- * Class TablesWhitelistGenerateCommandTest
- * Test for TablesWhitelistGenerateCommand
- */
 class TablesWhitelistGenerateCommandTest extends TestCase
 {
     // Exception Messages!

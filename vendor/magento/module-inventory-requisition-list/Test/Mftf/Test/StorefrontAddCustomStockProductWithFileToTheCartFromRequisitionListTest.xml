@@ -10,7 +10,10 @@
        xsi:noNamespaceSchemaLocation="urn:magento:mftf:Test/etc/testSchema.xsd">
     <test name="StorefrontAddCustomStockProductWithFileToTheCartFromRequisitionListTest" extends="StorefrontAddProductWithFileToTheCartFromRequisitionListTest">
         <annotations>
+            <stories value="Verify that a product with a custom file option can be added to a requisition list on additional stock"/>
+            <title value="Verify that a product with a custom file option can be added to a requisition list on additional stock"/>
             <description value="Verify that a product with a custom file option can be added to a requisition list on additional stock."/>
+            <severity value="MAJOR"/>
             <group value="msi_b2b"/>
             <group value="multi_mode"/>
         </annotations>
@@ -48,6 +51,7 @@
                 <argument name="sourceCode" value="$$additionalSource.source[source_code]$$"/>
             </actionGroup>
             <deleteData createDataKey="additionalStock" stepKey="deleteStock" after="logout"/>
+            <magentoCron groups="index" stepKey="reindex" after="deleteStock"/>
         </after>
     </test>
 </tests>

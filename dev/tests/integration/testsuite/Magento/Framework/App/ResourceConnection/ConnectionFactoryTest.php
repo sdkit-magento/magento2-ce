@@ -42,5 +42,6 @@ class ConnectionFactoryTest extends \PHPUnit\Framework\TestCase
         $attribute->setAccessible(true);
         $propertyObject = $attribute->getValue($connection);
         $attribute->setAccessible(false);
-        $this->assertInstanceOf(\Magento\Framework\DB\LoggerInterface::class, $propertyObject);    }
+        $this->assertInstanceOf(\Magento\Framework\DB\LoggerInterface::class, $propertyObject);
+    }
 }

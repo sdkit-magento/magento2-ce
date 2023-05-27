@@ -1,17 +1,22 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-crypt for the canonical source repository
- * @copyright https://github.com/laminas/laminas-crypt/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-crypt/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Crypt;
 
 use Laminas\Crypt\Key\Derivation\Pbkdf2;
-use Laminas\Crypt\Symmetric\Mcrypt;
-use Laminas\Crypt\Symmetric\SymmetricInterface;
 use Laminas\Math\Rand;
+
+use function fclose;
+use function file_exists;
+use function filesize;
+use function fopen;
+use function fread;
+use function fseek;
+use function fwrite;
+use function mb_strlen;
+use function mb_substr;
+use function sprintf;
+use function str_repeat;
+use function unlink;
 
 /**
  * Encrypt/decrypt a file using a symmetric cipher in CBC mode
@@ -19,7 +24,7 @@ use Laminas\Math\Rand;
  */
 class FileCipher
 {
-    const BUFFER_SIZE = 1048576; // 16 * 65536 bytes = 1 Mb
+    public const BUFFER_SIZE = 1048576; // 16 * 65536 bytes = 1 Mb
 
     /**
      * Hash algorithm for Pbkdf2
@@ -61,9 +66,12 @@ class FileCipher
      *
      * @param SymmetricInterface $cipher
      */
-    public function __construct()
+    public function __construct(?Symmetric\SymmetricInterface $cipher = null)
     {
-        $this->cipher = new Mcrypt;
+        if (null === $cipher) {
+            $cipher = new Symmetric\Openssl();
+        }
+        $this->cipher = $cipher;
     }
 
     /**
@@ -71,7 +79,7 @@ class FileCipher
      *
      * @param SymmetricInterface $cipher
      */
-    public function setCipher(SymmetricInterface $cipher)
+    public function setCipher(Symmetric\SymmetricInterface $cipher)
     {
         $this->cipher = $cipher;
     }
@@ -168,7 +176,7 @@ class FileCipher
      */
     public function setHashAlgorithm($hash)
     {
-        if (!Hash::isSupported($hash)) {
+        if (! Hash::isSupported($hash)) {
             throw new Exception\InvalidArgumentException(
                 "The specified hash algorithm '{$hash}' is not supported by Laminas\Crypt\Hash"
             );
@@ -194,7 +202,7 @@ class FileCipher
      */
     public function setPbkdf2HashAlgorithm($hash)
     {
-        if (!Hash::isSupported($hash)) {
+        if (! Hash::isSupported($hash)) {
             throw new Exception\InvalidArgumentException(
                 "The specified hash algorithm '{$hash}' is not supported by Laminas\Crypt\Hash"
             );
@@ -229,31 +237,33 @@ class FileCipher
 
         $read    = fopen($fileIn, "r");
         $write   = fopen($fileOut, "w");
-        $iv      = Rand::getBytes($this->cipher->getSaltSize(), true);
-        $keys    = Pbkdf2::calc($this->getPbkdf2HashAlgorithm(),
-                                $this->getKey(),
-                                $iv,
-                                $this->getKeyIteration(),
-                                $this->cipher->getKeySize() * 2);
+        $iv      = Rand::getBytes($this->cipher->getSaltSize());
+        $keys    = Pbkdf2::calc(
+            $this->getPbkdf2HashAlgorithm(),
+            $this->getKey(),
+            $iv,
+            $this->getKeyIteration(),
+            $this->cipher->getKeySize() * 2
+        );
         $hmac    = '';
         $size    = 0;
         $tot     = filesize($fileIn);
         $padding = $this->cipher->getPadding();
 
-        $this->cipher->setKey(substr($keys, 0, $this->cipher->getKeySize()));
-        $this->cipher->setPadding(new Symmetric\Padding\NoPadding);
+        $this->cipher->setKey(mb_substr($keys, 0, $this->cipher->getKeySize(), '8bit'));
+        $this->cipher->setPadding(new Symmetric\Padding\NoPadding());
         $this->cipher->setSalt($iv);
         $this->cipher->setMode('cbc');
 
         $hashAlgo  = $this->getHashAlgorithm();
         $saltSize  = $this->cipher->getSaltSize();
         $algorithm = $this->cipher->getAlgorithm();
-        $keyHmac   = substr($keys, $this->cipher->getKeySize());
+        $keyHmac   = mb_substr($keys, $this->cipher->getKeySize(), null, '8bit');
 
         while ($data = fread($read, self::BUFFER_SIZE)) {
-            $size += strlen($data);
+            $size += mb_strlen($data, '8bit');
             // Padding if last block
-            if ($size == $tot) {
+            if ($size === $tot) {
                 $this->cipher->setPadding($padding);
             }
             $result = $this->cipher->encrypt($data);
@@ -261,20 +271,22 @@ class FileCipher
                 // Write a placeholder for the HMAC and write the IV
                 fwrite($write, str_repeat(0, Hmac::getOutputSize($hashAlgo)));
             } else {
-                $result = substr($result, $saltSize);
+                $result = mb_substr($result, $saltSize, null, '8bit');
             }
-            $hmac = Hmac::compute($keyHmac,
-                                  $hashAlgo,
-                                  $algorithm . $hmac . $result);
-            $this->cipher->setSalt(substr($result, -1 * $saltSize));
-            if (fwrite($write, $result) !== strlen($result)) {
+            $hmac = Hmac::compute(
+                $keyHmac,
+                $hashAlgo,
+                $algorithm . $hmac . $result
+            );
+            $this->cipher->setSalt(mb_substr($result, -1 * $saltSize, null, '8bit'));
+            if (fwrite($write, $result) !== mb_strlen($result, '8bit')) {
                 return false;
             }
         }
         $result = true;
         // write the HMAC at the beginning of the file
         fseek($write, 0);
-        if (fwrite($write, $hmac) !== strlen($hmac)) {
+        if (fwrite($write, $hmac) !== mb_strlen($hmac, '8bit')) {
             $result = false;
         }
         fclose($write);
@@ -288,7 +300,6 @@ class FileCipher
      *
      * @param  string                             $fileIn
      * @param  string                             $fileOut
-     * @param  bool                               $compress
      * @return bool
      * @throws Exception\InvalidArgumentException
      */
@@ -305,36 +316,40 @@ class FileCipher
         $iv       = fread($read, $this->cipher->getSaltSize());
         $tot      = filesize($fileIn);
         $hmac     = $iv;
-        $size     = strlen($iv) + strlen($hmacRead);
-        $keys     = Pbkdf2::calc($this->getPbkdf2HashAlgorithm(),
-                                 $this->getKey(),
-                                 $iv,
-                                 $this->getKeyIteration(),
-                                 $this->cipher->getKeySize() * 2);
+        $size     = mb_strlen($iv, '8bit') + mb_strlen($hmacRead, '8bit');
+        $keys     = Pbkdf2::calc(
+            $this->getPbkdf2HashAlgorithm(),
+            $this->getKey(),
+            $iv,
+            $this->getKeyIteration(),
+            $this->cipher->getKeySize() * 2
+        );
         $padding  = $this->cipher->getPadding();
-        $this->cipher->setPadding(new Symmetric\Padding\NoPadding);
-        $this->cipher->setKey(substr($keys, 0, $this->cipher->getKeySize()));
+        $this->cipher->setPadding(new Symmetric\Padding\NoPadding());
+        $this->cipher->setKey(mb_substr($keys, 0, $this->cipher->getKeySize(), '8bit'));
         $this->cipher->setMode('cbc');
 
         $blockSize = $this->cipher->getBlockSize();
         $hashAlgo  = $this->getHashAlgorithm();
         $algorithm = $this->cipher->getAlgorithm();
         $saltSize  = $this->cipher->getSaltSize();
-        $keyHmac   = substr($keys, $this->cipher->getKeySize());
+        $keyHmac   = mb_substr($keys, $this->cipher->getKeySize(), null, '8bit');
 
         while ($data = fread($read, self::BUFFER_SIZE)) {
-            $size += strlen($data);
+            $size += mb_strlen($data, '8bit');
             // Unpadding if last block
             if ($size + $blockSize >= $tot) {
                 $this->cipher->setPadding($padding);
                 $data .= fread($read, $blockSize);
             }
             $result = $this->cipher->decrypt($iv . $data);
-            $hmac   = Hmac::compute($keyHmac,
-                                    $hashAlgo,
-                                    $algorithm . $hmac . $data);
-            $iv     = substr($data, -1 * $saltSize);
-            if (fwrite($write, $result) !== strlen($result)) {
+            $hmac   = Hmac::compute(
+                $keyHmac,
+                $hashAlgo,
+                $algorithm . $hmac . $data
+            );
+            $iv     = mb_substr($data, -1 * $saltSize, null, '8bit');
+            if (fwrite($write, $result) !== mb_strlen($result, '8bit')) {
                 return false;
             }
         }
@@ -342,7 +357,7 @@ class FileCipher
         fclose($read);
 
         // check for data integrity
-        if (!Utils::compareStrings($hmac, $hmacRead)) {
+        if (! Utils::compareStrings($hmac, $hmacRead)) {
             unlink($fileOut);
             return false;
         }
@@ -351,7 +366,7 @@ class FileCipher
     }
 
     /**
-     * Check that input file exists and output file dont
+     * Check that input file exists and output file don't
      *
      * @param  string $fileIn
      * @param  string $fileOut
@@ -359,14 +374,16 @@ class FileCipher
      */
     protected function checkFileInOut($fileIn, $fileOut)
     {
-        if (!file_exists($fileIn)) {
+        if (! file_exists($fileIn)) {
             throw new Exception\InvalidArgumentException(sprintf(
-                "I cannot open the %s file", $fileIn
+                'I cannot open the %s file',
+                $fileIn
             ));
         }
         if (file_exists($fileOut)) {
             throw new Exception\InvalidArgumentException(sprintf(
-                "The file %s already exists", $fileOut
+                'The file %s already exists',
+                $fileOut
             ));
         }
     }

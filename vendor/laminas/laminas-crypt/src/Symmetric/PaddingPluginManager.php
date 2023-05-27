@@ -1,14 +1,11 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-crypt for the canonical source repository
- * @copyright https://github.com/laminas/laminas-crypt/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-crypt/blob/master/LICENSE.md New BSD License
- */
-
 namespace Laminas\Crypt\Symmetric;
 
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
+
+use function array_key_exists;
+use function sprintf;
 
 /**
  * Plugin manager implementation for the padding adapter instances.
@@ -19,6 +16,7 @@ use Interop\Container\ContainerInterface;
  */
 class PaddingPluginManager implements ContainerInterface
 {
+    /** @var array<string, string> */
     private $paddings = [
         'pkcs7'     => Padding\Pkcs7::class,
         'nopadding' => Padding\NoPadding::class,
@@ -44,6 +42,12 @@ class PaddingPluginManager implements ContainerInterface
      */
     public function get($id)
     {
+        if (! $this->has($id)) {
+            throw new Exception\NotFoundException(sprintf(
+                "The padding adapter %s does not exist",
+                $id
+            ));
+        }
         $class = $this->paddings[$id];
         return new $class();
     }

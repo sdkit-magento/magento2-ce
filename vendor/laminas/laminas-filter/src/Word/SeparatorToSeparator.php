@@ -1,24 +1,33 @@
 <?php
 
-/**
- * @see       https://github.com/laminas/laminas-filter for the canonical source repository
- * @copyright https://github.com/laminas/laminas-filter/blob/master/COPYRIGHT.md
- * @license   https://github.com/laminas/laminas-filter/blob/master/LICENSE.md New BSD License
- */
+declare(strict_types=1);
 
 namespace Laminas\Filter\Word;
 
+use Closure;
 use Laminas\Filter\AbstractFilter;
 use Laminas\Filter\Exception;
 
+use function preg_quote;
+use function preg_replace;
+
+/**
+ * @psalm-type Options = array{
+ *     search_separator?: string,
+ *     replacement_separator?: string,
+ *     ...
+ * }
+ * @template TOptions of Options
+ * @template-extends AbstractFilter<TOptions>
+ */
 class SeparatorToSeparator extends AbstractFilter
 {
+    /** @var string */
     protected $searchSeparator;
+    /** @var string */
     protected $replacementSeparator;
 
     /**
-     * Constructor
-     *
      * @param  string $searchSeparator      Separator to search for
      * @param  string $replacementSeparator Separator to replace with
      */
@@ -77,20 +86,32 @@ class SeparatorToSeparator extends AbstractFilter
      *
      * Returns the string $value, replacing the searched separators with the defined ones
      *
-     * @param  string|array $value
-     * @return string|array
+     * @param  string|mixed $value
+     * @return mixed
+     * @psalm-return ($value is string ? string : mixed)
      */
     public function filter($value)
     {
-        if (! is_scalar($value) && ! is_array($value)) {
-            return $value;
-        }
+        return self::applyFilterOnlyToStringableValuesAndStringableArrayValues(
+            $value,
+            Closure::fromCallable([$this, 'filterNormalizedValue'])
+        );
+    }
 
+    /**
+     * @param  string $value
+     * @return string
+     */
+    private function filterNormalizedValue($value)
+    {
         if ($this->searchSeparator === null) {
             throw new Exception\RuntimeException('You must provide a search separator for this filter to work.');
         }
 
-        $pattern = '#' . preg_quote($this->searchSeparator, '#') . '#';
-        return preg_replace($pattern, $this->replacementSeparator, $value);
+        return preg_replace(
+            '#' . preg_quote($this->searchSeparator, '#') . '#',
+            $this->replacementSeparator,
+            $value
+        );
     }
 }

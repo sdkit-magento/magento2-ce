@@ -17,9 +17,6 @@
             <severity value="MAJOR"/>
             <group value="msi"/>
             <group value="multi_mode"/>
-            <skip>
-                <issueId value="https://github.com/magento/inventory/issues/2583"/>
-            </skip>
         </annotations>
 
         <before>
@@ -33,7 +30,7 @@
                 <requiredEntity createDataKey="stock"/>
                 <requiredEntity createDataKey="source"/>
             </createData>
-            <actionGroup ref="LoginAsAdmin" stepKey="LoginAsAdmin"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="LoginAsAdmin"/>
         </before>
         <after>
             <!--Revert "Notify Quantity Below" configuration.-->
@@ -49,7 +46,8 @@
             <actionGroup ref="DisableSourceActionGroup" stepKey="disableCreatedCustomSource">
                 <argument name="sourceCode" value="$source.source[source_code]$"/>
             </actionGroup>
-            <actionGroup ref="logout" stepKey="logout"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logout"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </after>
 
         <!--Assign source to product and set quantity.-->
@@ -65,6 +63,6 @@
         <actionGroup ref="SaveProductFormActionGroup" stepKey="saveProduct"/>
         <!--Verify Notify Quantity has changed.-->
         <dontSeeCheckboxIsChecked selector="{{AdminProductSourcesGrid.rowNotifyQuantityUseDefault('0')}}" stepKey="verifyNotifyQuantityUseDefaultIsNotUsed"/>
-        <seeInField selector="{{AdminProductSourcesGrid.rowNotifyQuantity('0')}}" userInput="{{RevertNotifyQuantityBelow.value}}" stepKey="verifyNotifyQuantityValue"/>
+        <seeInField selector="{{AdminProductSourcesGrid.rowNotifyQuantity('0')}}" userInput="{{NotifyQuantityBelow.value}}.0000" stepKey="verifyNotifyQuantityValue"/>
     </test>
 </tests>

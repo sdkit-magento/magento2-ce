@@ -27,9 +27,9 @@
             <createData entity="SimpleProduct" stepKey="simpleProduct">
                 <requiredEntity createDataKey="category"/>
             </createData>
-            <createData entity="ApiBundleProduct" stepKey="bundleProduct"/>
+            <createData entity="ApiBundleProductShipmentTypeSeparately" stepKey="bundleProduct"/>
             <createData entity="FullSource1" stepKey="additionalSource"/>
-            <actionGroup ref="LoginAsAdmin" stepKey="loginToAdminArea"/>
+            <actionGroup ref="AdminLoginActionGroup" stepKey="loginToAdminArea"/>
             <!--Assign Default Stock to Default Website.-->
             <actionGroup ref="AssignWebsiteToStockActionGroup" stepKey="assignMainWebsiteToDefaultStock">
                 <argument name="stockName" value="{{_defaultStock.name}}"/>
@@ -40,11 +40,12 @@
             <actionGroup ref="DisableSourceActionGroup" stepKey="disableSource">
                 <argument name="sourceCode" value="$$additionalSource.source[source_code]$$"/>
             </actionGroup>
-            <actionGroup ref="logout" stepKey="logoutOfAdmin"/>
+            <actionGroup ref="AdminLogoutActionGroup" stepKey="logoutOfAdmin"/>
             <!--Delete test data.-->
             <deleteData createDataKey="category" stepKey="deleteCategory"/>
             <deleteData createDataKey="simpleProduct" stepKey="deleteSimpleProduct"/>
             <deleteData createDataKey="bundleProduct" stepKey="deleteBundleProduct"/>
+            <magentoCron groups="index" stepKey="reindex"/>
         </after>
 
         <!--Add simple product to bundle.-->
@@ -70,7 +71,7 @@
             <argument name="categoryName" value="$$category.name$$"/>
         </actionGroup>
         <!--Verify product is not visible storefront.-->
-        <amOnPage url="{{StorefrontCategoryPage.url($$category.name$$)}}" stepKey="navigateToCategoryPage"/>
+        <amOnPage url="{{StorefrontCategoryPage.url($$category.custom_attributes[url_key]$$)}}" stepKey="navigateToCategoryPage"/>
         <waitForPageLoad stepKey="waitForCategoryPageLoad"/>
         <dontSee userInput="{{BundleProduct.name}}" stepKey="assertProductIsNotPresent"/>
         <!--Disable "Manage Stock" On Product Page.-->
@@ -80,9 +81,9 @@
         <uncheckOption selector="{{AdminProductFormAdvancedInventorySection.useConfigSettings}}" stepKey="uncheckConfigSetting"/>
         <selectOption selector="{{AdminProductFormAdvancedInventorySection.manageStock}}"  userInput="No" stepKey="clickOnManageStock"/>
         <click selector="{{AdminProductFormAdvancedInventorySection.doneButton}}" stepKey="clickOnDoneButton"/>
-        <actionGroup ref="AdminFormSaveAndClose" stepKey="saveAndCloseBundleProduct"/>
+        <actionGroup ref="AdminFormSaveAndCloseActionGroup" stepKey="saveAndCloseBundleProduct"/>
         <!--Verify product is visible storefront.-->
-        <amOnPage url="{{StorefrontCategoryPage.url($$category.name$$)}}" stepKey="navigateToCategoryPageToVerifyBundleProduct"/>
+        <amOnPage url="{{StorefrontCategoryPage.url($$category.custom_attributes[url_key]$$)}}" stepKey="navigateToCategoryPageToVerifyBundleProduct"/>
         <waitForPageLoad stepKey="waitForCategoryPageLoadToVerifyBundleProduct"/>
         <see userInput="$$bundleProduct.name$$" stepKey="assertProductIsPresent"/>
         <see userInput="$$simpleProduct.price$$" stepKey="assertProductPriceIsPresent"/>

@@ -9,9 +9,11 @@ namespace Magento\InventoryBundleProduct\Test\Integration\Order;
 
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\CatalogInventory\Api\StockRegistryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\DataObject;
 use Magento\Framework\Registry;
+use Magento\InventoryApi\Api\Data\SourceItemInterface;
 use Magento\InventoryCatalogApi\Api\DefaultStockProviderInterface;
 use Magento\InventoryConfigurationApi\Api\GetStockItemConfigurationInterface;
 use Magento\InventoryConfigurationApi\Api\SaveStockItemConfigurationInterface;
@@ -20,6 +22,8 @@ use Magento\Quote\Api\CartManagementInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\CartInterface;
 use Magento\Quote\Api\Data\CartItemInterfaceFactory;
+use Magento\Sales\Api\Data\ShipmentItemCreationInterface;
+use Magento\Sales\Api\Data\ShipmentItemCreationInterfaceFactory;
 use Magento\Sales\Api\OrderManagementInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -28,10 +32,11 @@ use PHPUnit\Framework\TestCase;
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  *
- * @magentoDataFixture ../../../../app/code/Magento/InventoryBundleProduct/Test/_files/default_stock_bundle_products.php
- * @magentoDataFixture ../../../../app/code/Magento/InventoryBundleProduct/Test/_files/source_items_for_bundle_options_on_default_source.php
- * @magentoDataFixture ../../../../app/code/Magento/InventorySalesApi/Test/_files/quote.php
- * @magentoDataFixture ../../../../app/code/Magento/InventoryIndexer/Test/_files/reindex_inventory.php
+ * @magentoDataFixture Magento_InventoryBundleProduct::Test/_files/default_stock_bundle_products.php
+ * @magentoDataFixture Magento_InventoryBundleProduct::Test/_files/source_items_for_bundle_options_on_default_source.php
+ * @magentoDataFixture Magento_InventorySalesApi::Test/_files/quote.php
+ * @magentoDataFixture Magento_InventoryIndexer::Test/_files/reindex_inventory.php
+ * @magentoAppIsolation enabled
  */
 class PlaceOrderOnDefaultStockTest extends TestCase
 {
@@ -96,6 +101,16 @@ class PlaceOrderOnDefaultStockTest extends TestCase
     private $defaultStockProvider;
 
     /**
+     * @var ShipmentItemCreationInterfaceFactory
+     */
+    private $shipmentItemCreationFactory;
+
+    /**
+     * @var StockRegistryInterface
+     */
+    private $stockRegistry;
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -114,6 +129,9 @@ class PlaceOrderOnDefaultStockTest extends TestCase
             ->get(GetStockItemConfigurationInterface::class);
         $this->saveStockItemConfiguration = Bootstrap::getObjectManager()
             ->get(SaveStockItemConfigurationInterface::class);
+        $this->shipmentItemCreationFactory = Bootstrap::getObjectManager()
+            ->get(ShipmentItemCreationInterfaceFactory::class);
+        $this->stockRegistry = Bootstrap::getObjectManager()->get(StockRegistryInterface::class);
     }
 
     public function testPlaceOrderWithInStockProduct()
@@ -135,13 +153,43 @@ class PlaceOrderOnDefaultStockTest extends TestCase
         $this->deleteOrderById((int)$orderId);
     }
 
-    /**
-     */
+    public function testPlaceOrderToMakeBundleProductOutOfStock()
+    {
+        $bundleSku = 'bundle-product-in-stock';
+        $simpleProductSku = 'simple';
+        $qty = 22;
+        $cart = $this->getCart();
+
+        $bundleProduct = $this->productRepository->get($bundleSku);
+        $cart->addProduct($bundleProduct, $this->getBuyRequest($bundleProduct, $qty));
+
+        $this->cartRepository->save($cart);
+
+        $orderId = $this->cartManagement->placeOrder($cart->getId());
+
+        self::assertNotNull($orderId);
+
+        $order = $this->orderRepository->get($orderId);
+
+        foreach ($order->getItems() as $orderItem) {
+            /** @var ShipmentItemCreationInterface $invoiceItemCreation */
+            $shipmentItemCreation = $this->shipmentItemCreationFactory->create();
+            $shipmentItemCreation->setOrderItemId($orderItem->getItemId());
+            $shipmentItemCreation->setQty($orderItem->getQtyOrdered());
+        }
+        $productsStockStatus = $this->stockRegistry->getProductStockStatusBySku(
+            $simpleProductSku,
+            $this->defaultStockProvider->getId()
+        );
+        self::assertEquals(SourceItemInterface::STATUS_OUT_OF_STOCK, $productsStockStatus);
+        //cleanup
+        $this->deleteOrderById((int)$orderId);
+    }
+
     public function testPlaceOrderWithOutOfStockProduct()
     {
         $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
         $this->expectExceptionMessage('Product that you are trying to add is not available.');
-
         $bundleSku = 'bundle-product-out-of-stock';
         $qty = 3;
         $cart = $this->getCart();
@@ -157,15 +205,8 @@ class PlaceOrderOnDefaultStockTest extends TestCase
     public function testPlaceOrderWithOutOfStockProductAndBackOrdersTurnedOn()
     {
         $bundleSku = 'bundle-product-out-of-stock';
-        $bundleOptionSku = 'simple-out-of-stock';
         $qty = 3;
         $cart = $this->getCart();
-        $defaultStockId = $this->defaultStockProvider->getId();
-        $stockItemConfiguration = $this->getStockItemConfiguration->execute($bundleOptionSku, $defaultStockId);
-        $stockItemConfigurationExtension = $stockItemConfiguration->getExtensionAttributes();
-        $stockItemConfigurationExtension->setIsInStock(true);
-        $stockItemConfiguration->setExtensionAttributes($stockItemConfigurationExtension);
-        $this->saveStockItemConfiguration->execute($bundleOptionSku, $defaultStockId, $stockItemConfiguration);
 
         $bundleProduct = $this->productRepository->get($bundleSku);
 

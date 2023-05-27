@@ -3,54 +3,68 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Framework\View\Test\Unit\Layout\File\Collector;
 
-class AggregateTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\View\Design\ThemeInterface;
+use Magento\Framework\View\File;
+use Magento\Framework\View\File\CollectorInterface;
+use Magento\Framework\View\File\FileList;
+use Magento\Framework\View\File\FileList\Factory;
+use Magento\Framework\View\Layout\File\Collector\Aggregated;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+class AggregateTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\View\Layout\File\Collector\Aggregated
+     * @var Aggregated
      */
     private $_model;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $_fileList;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $_baseFiles;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $_themeFiles;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $_overridingBaseFiles;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $_overridingThemeFiles;
 
+    /**
+     * @inheritdoc
+     */
     protected function setUp(): void
     {
-        $this->_fileList = $this->createMock(\Magento\Framework\View\File\FileList::class);
-        $this->_baseFiles = $this->getMockForAbstractClass(\Magento\Framework\View\File\CollectorInterface::class);
-        $this->_themeFiles = $this->getMockForAbstractClass(\Magento\Framework\View\File\CollectorInterface::class);
+        $this->_fileList = $this->createMock(FileList::class);
+        $this->_baseFiles = $this->getMockForAbstractClass(CollectorInterface::class);
+        $this->_themeFiles = $this->getMockForAbstractClass(CollectorInterface::class);
         $this->_overridingBaseFiles = $this->getMockForAbstractClass(
-            \Magento\Framework\View\File\CollectorInterface::class
+            CollectorInterface::class
         );
         $this->_overridingThemeFiles = $this->getMockForAbstractClass(
-            \Magento\Framework\View\File\CollectorInterface::class
+            CollectorInterface::class
         );
-        $fileListFactory = $this->createMock(\Magento\Framework\View\File\FileList\Factory::class);
+        $fileListFactory = $this->createMock(Factory::class);
         $fileListFactory->expects($this->once())->method('create')->willReturn($this->_fileList);
-        $this->_model = new \Magento\Framework\View\Layout\File\Collector\Aggregated(
+        $this->_model = new Aggregated(
             $fileListFactory,
             $this->_baseFiles,
             $this->_themeFiles,
@@ -63,10 +77,10 @@ class AggregateTest extends \PHPUnit\Framework\TestCase
      * @return void
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
-    public function testGetFiles()
+    public function testGetFiles(): void
     {
-        $parentTheme = $this->getMockForAbstractClass(\Magento\Framework\View\Design\ThemeInterface::class);
-        $theme = $this->getMockForAbstractClass(\Magento\Framework\View\Design\ThemeInterface::class);
+        $parentTheme = $this->getMockForAbstractClass(ThemeInterface::class);
+        $theme = $this->getMockForAbstractClass(ThemeInterface::class);
         $theme->expects(
             $this->once()
         )->method(
@@ -76,88 +90,39 @@ class AggregateTest extends \PHPUnit\Framework\TestCase
         );
 
         $files = [
-            new \Magento\Framework\View\File('0.xml', 'Module_One'),
-            new \Magento\Framework\View\File('1.xml', 'Module_One', $parentTheme),
-            new \Magento\Framework\View\File('2.xml', 'Module_One', $parentTheme),
-            new \Magento\Framework\View\File('3.xml', 'Module_One', $parentTheme),
-            new \Magento\Framework\View\File('4.xml', 'Module_One', $theme),
-            new \Magento\Framework\View\File('5.xml', 'Module_One', $theme),
-            new \Magento\Framework\View\File('6.xml', 'Module_One', $theme),
+            new File('0.xml', 'Module_One'),
+            new File('1.xml', 'Module_One', $parentTheme),
+            new File('2.xml', 'Module_One', $parentTheme),
+            new File('3.xml', 'Module_One', $parentTheme),
+            new File('4.xml', 'Module_One', $theme),
+            new File('5.xml', 'Module_One', $theme),
+            new File('6.xml', 'Module_One', $theme)
         ];
 
-        $this->_baseFiles->expects(
-            $this->once()
-        )->method(
-            'getFiles'
-        )->with(
-            $theme
-        )->willReturn(
-            [$files[0]]
-        );
+        $this->_baseFiles->expects($this->once())
+            ->method('getFiles')
+            ->with($theme)
+            ->willReturn([$files[0]]);
 
-        $this->_themeFiles->expects(
-            $this->at(0)
-        )->method(
-            'getFiles'
-        )->with(
-            $parentTheme
-        )->willReturn(
-            [$files[1]]
-        );
-        $this->_overridingBaseFiles->expects(
-            $this->at(0)
-        )->method(
-            'getFiles'
-        )->with(
-            $parentTheme
-        )->willReturn(
-            [$files[2]]
-        );
-        $this->_overridingThemeFiles->expects(
-            $this->at(0)
-        )->method(
-            'getFiles'
-        )->with(
-            $parentTheme
-        )->willReturn(
-            [$files[3]]
-        );
+        $this->_themeFiles
+            ->method('getFiles')
+            ->withConsecutive([$parentTheme], [$theme])
+            ->willReturnOnConsecutiveCalls([$files[1]], [$files[4]]);
+        $this->_overridingBaseFiles
+            ->method('getFiles')
+            ->withConsecutive([$parentTheme], [$theme])
+            ->willReturnOnConsecutiveCalls([$files[2]], [$files[5]]);
+        $this->_overridingThemeFiles
+            ->method('getFiles')
+            ->withConsecutive([$parentTheme], [$theme])
+            ->willReturnOnConsecutiveCalls([$files[3]], [$files[6]]);
 
-        $this->_themeFiles->expects(
-            $this->at(1)
-        )->method(
-            'getFiles'
-        )->with(
-            $theme
-        )->willReturn(
-            [$files[4]]
-        );
-        $this->_overridingBaseFiles->expects(
-            $this->at(1)
-        )->method(
-            'getFiles'
-        )->with(
-            $theme
-        )->willReturn(
-            [$files[5]]
-        );
-        $this->_overridingThemeFiles->expects(
-            $this->at(1)
-        )->method(
-            'getFiles'
-        )->with(
-            $theme
-        )->willReturn(
-            [$files[6]]
-        );
-
-        $this->_fileList->expects($this->at(0))->method('add')->with([$files[0]]);
-        $this->_fileList->expects($this->at(1))->method('add')->with([$files[1]]);
-        $this->_fileList->expects($this->at(2))->method('replace')->with([$files[2]]);
-        $this->_fileList->expects($this->at(3))->method('replace')->with([$files[3]]);
-        $this->_fileList->expects($this->at(4))->method('add')->with([$files[4]]);
-        $this->_fileList->expects($this->at(5))->method('replace')->with([$files[5]]);
-        $this->_fileList->expects($this->at(6))->method('replace')->with([$files[6]]);
+        $this->_fileList
+            ->method('add')
+            ->withConsecutive([[$files[0]]], [[$files[1]]], [[$files[4]]]);
+        $this->_fileList
+            ->method('replace')
+            ->withConsecutive([[$files[2]]], [[$files[3]]], [[$files[5]]], [[$files[6]]]);
 
         $this->_fileList->expects($this->atLeastOnce())->method('getAll')->willReturn($files);
 

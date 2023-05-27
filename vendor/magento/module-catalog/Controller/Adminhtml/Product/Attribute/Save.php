@@ -135,7 +135,6 @@ class Save extends Attribute implements HttpPostActionInterface
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-     * @throws \Zend_Validate_Exception
      */
     public function execute()
     {
@@ -197,12 +196,10 @@ class Save extends Attribute implements HttpPostActionInterface
             $attributeCode = $model && $model->getId()
                 ? $model->getAttributeCode()
                 : $this->getRequest()->getParam('attribute_code');
-
             if (!$attributeCode) {
                 $frontendLabel = $this->getRequest()->getParam('frontend_label')[0] ?? '';
                 $attributeCode = $this->generateCode($frontendLabel);
             }
-
             $data['attribute_code'] = $attributeCode;
 
             //validate frontend_input
@@ -266,6 +263,10 @@ class Save extends Attribute implements HttpPostActionInterface
                 unset($data['apply_to']);
             }
 
+            if ($model->getBackendType() == 'static' && !$model->getIsUserDefined()) {
+                $data['frontend_class'] = $model->getFrontendClass();
+            }
+
             unset($data['entity_type_id']);
 
             $model->addData($data);
@@ -325,6 +326,9 @@ class Save extends Attribute implements HttpPostActionInterface
                 return $this->returnResult('catalog/*/', [], ['error' => false]);
             } catch (\Exception $e) {
                 $this->messageManager->addErrorMessage($e->getMessage());
+                if ($attributeId === null) {
+                    unset($data['frontend_input']);
+                }
                 $this->_session->setAttributeData($data);
                 return $this->returnResult(
                     'catalog/*/edit',

@@ -10,9 +10,6 @@ use Magento\Framework\Filesystem\Directory\WriteInterface as DirectoryWrite;
 use Magento\Framework\Filesystem\File\Write;
 use Magento\Framework\Exception\FileSystemException;
 
-/**
- * Media storage file storage config
- */
 class Config
 {
     /**
@@ -37,17 +34,14 @@ class Config
     protected $rootDirectory;
 
     /**
-     * Config constructor.
-     *
      * @param \Magento\MediaStorage\Model\File\Storage $storage
      * @param \Magento\Framework\Filesystem $filesystem
      * @param string $cacheFile
-     * @throws FileSystemException
      */
     public function __construct(
         \Magento\MediaStorage\Model\File\Storage $storage,
         \Magento\Framework\Filesystem $filesystem,
-        string $cacheFile
+        $cacheFile
     ) {
         $this->config = $storage->getScriptConfig();
         $this->rootDirectory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);

@@ -10,14 +10,16 @@ namespace Magento\AdobeStockClientApi\Api;
 
 use Magento\AdobeStockClientApi\Api\Data\LicenseConfirmationInterface;
 use Magento\AdobeStockClientApi\Api\Data\UserQuotaInterface;
-use Magento\Framework\Api\Search\SearchResultInterface;
 use Magento\Framework\Api\Search\SearchCriteriaInterface;
+use Magento\Framework\Api\Search\SearchResultInterface;
 use Magento\Framework\Exception\AuthenticationException;
 use Magento\Framework\Exception\AuthorizationException;
 use Magento\Framework\Exception\IntegrationException;
 
 /**
  * Adobe Stock API Client
+ *
+ * @api
  */
 interface ClientInterface
 {

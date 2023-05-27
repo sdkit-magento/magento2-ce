@@ -10,8 +10,8 @@ namespace Magento\AdobeStockAsset\Test\Unit\Model;
 
 use Magento\AdobeStockAsset\Model\GetAssetList;
 use Magento\AdobeStockClientApi\Api\ClientInterface;
-use Magento\Framework\Api\Search\SearchResultInterface;
 use Magento\Framework\Api\Search\SearchCriteriaInterface;
+use Magento\Framework\Api\Search\SearchResultInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Framework\UrlInterface;
@@ -43,8 +43,8 @@ class GetAssetListTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->clientMock = $this->getMockForAbstractClass(ClientInterface::class);
-        $this->urlMock = $this->getMockForAbstractClass(UrlInterface::class);
+        $this->clientMock = $this->createMock(ClientInterface::class);
+        $this->urlMock = $this->createMock(UrlInterface::class);
 
         $this->model = (new ObjectManager($this))->getObject(
             GetAssetList::class,
@@ -61,8 +61,8 @@ class GetAssetListTest extends TestCase
      */
     public function testExecute(): void
     {
-        $searchCriteriaMock = $this->getMockForAbstractClass(SearchCriteriaInterface::class);
-        $documentSearchResults = $this->getMockForAbstractClass(SearchResultInterface::class);
+        $searchCriteriaMock = $this->createMock(SearchCriteriaInterface::class);
+        $documentSearchResults = $this->createMock(SearchResultInterface::class);
 
         $this->clientMock->expects($this->once())
             ->method('search')

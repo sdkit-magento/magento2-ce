@@ -8,6 +8,7 @@ namespace Magento\CatalogWidget\Block\Product;
 
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Block\Product\AbstractProduct;
+use Magento\Catalog\Block\Product\Context;
 use Magento\Catalog\Block\Product\Widget\Html\Pager;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Visibility;
@@ -16,7 +17,7 @@ use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Catalog\Pricing\Price\FinalPrice;
 use Magento\CatalogWidget\Model\Rule;
 use Magento\Framework\App\ActionInterface;
-use Magento\Framework\App\Http\Context;
+use Magento\Framework\App\Http\Context as HttpContext;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\DataObject\IdentityInterface;
 use Magento\Framework\Exception\LocalizedException;
@@ -27,7 +28,7 @@ use Magento\Framework\Url\EncoderInterface;
 use Magento\Framework\View\LayoutFactory;
 use Magento\Framework\View\LayoutInterface;
 use Magento\Rule\Model\Condition\Combine;
-use Magento\Rule\Model\Condition\Sql\Builder;
+use Magento\Rule\Model\Condition\Sql\Builder as SqlBuilder;
 use Magento\Widget\Block\BlockInterface;
 use Magento\Widget\Helper\Conditions;
 
@@ -42,53 +43,48 @@ class ProductsList extends AbstractProduct implements BlockInterface, IdentityIn
     /**
      * Default value for products count that will be shown
      */
-    const DEFAULT_PRODUCTS_COUNT = 10;
+    public const DEFAULT_PRODUCTS_COUNT = 10;
 
     /**
      * Name of request parameter for page number value
      *
-     * @deprecated @see $this->getData('page_var_name')
+     * @deprecated
+     * @see $this->getData('page_var_name')
      */
-    const PAGE_VAR_NAME = 'np';
+    public const PAGE_VAR_NAME = 'np';
 
     /**
      * Default value for products per page
      */
-    const DEFAULT_PRODUCTS_PER_PAGE = 5;
+    public const DEFAULT_PRODUCTS_PER_PAGE = 5;
 
     /**
      * Default value whether show pager or not
      */
-    const DEFAULT_SHOW_PAGER = false;
+    public const DEFAULT_SHOW_PAGER = false;
 
     /**
-     * Instance of pager block
-     *
      * @var Pager
      */
     protected $pager;
 
     /**
-     * @var Context
+     * @var HttpContext
      */
     protected $httpContext;
 
     /**
-     * Catalog product visibility
-     *
      * @var Visibility
      */
     protected $catalogProductVisibility;
 
     /**
-     * Product collection factory
-     *
      * @var CollectionFactory
      */
     protected $productCollectionFactory;
 
     /**
-     * @var Builder
+     * @var SqlBuilder
      */
     protected $sqlBuilder;
 
@@ -125,7 +121,7 @@ class ProductsList extends AbstractProduct implements BlockInterface, IdentityIn
     private $urlEncoder;
 
     /**
-     * @var \Magento\Framework\View\Element\RendererList
+     * @var RendererList
      */
     private $rendererListBlock;
 
@@ -135,34 +131,34 @@ class ProductsList extends AbstractProduct implements BlockInterface, IdentityIn
     private $categoryRepository;
 
     /**
-     * @param \Magento\Catalog\Block\Product\Context $context
+     * @param Context $context
      * @param CollectionFactory $productCollectionFactory
      * @param Visibility $catalogProductVisibility
-     * @param Context $httpContext
-     * @param Builder $sqlBuilder
+     * @param HttpContext $httpContext
+     * @param SqlBuilder $sqlBuilder
      * @param Rule $rule
      * @param Conditions $conditionsHelper
-     * @param CategoryRepositoryInterface $categoryRepository
      * @param array $data
      * @param Json|null $json
      * @param LayoutFactory|null $layoutFactory
      * @param EncoderInterface|null $urlEncoder
+     * @param CategoryRepositoryInterface|null $categoryRepository
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
     public function __construct(
-        \Magento\Catalog\Block\Product\Context $context,
+        Context $context,
         CollectionFactory $productCollectionFactory,
         Visibility $catalogProductVisibility,
-        Context $httpContext,
-        Builder $sqlBuilder,
+        HttpContext $httpContext,
+        SqlBuilder $sqlBuilder,
         Rule $rule,
         Conditions $conditionsHelper,
-        CategoryRepositoryInterface $categoryRepository,
         array $data = [],
         Json $json = null,
         LayoutFactory $layoutFactory = null,
-        EncoderInterface $urlEncoder = null
+        EncoderInterface $urlEncoder = null,
+        CategoryRepositoryInterface $categoryRepository = null
     ) {
         $this->productCollectionFactory = $productCollectionFactory;
         $this->catalogProductVisibility = $catalogProductVisibility;
@@ -173,7 +169,8 @@ class ProductsList extends AbstractProduct implements BlockInterface, IdentityIn
         $this->json = $json ?: ObjectManager::getInstance()->get(Json::class);
         $this->layoutFactory = $layoutFactory ?: ObjectManager::getInstance()->get(LayoutFactory::class);
         $this->urlEncoder = $urlEncoder ?: ObjectManager::getInstance()->get(EncoderInterface::class);
-        $this->categoryRepository = $categoryRepository;
+        $this->categoryRepository = $categoryRepository ?? ObjectManager::getInstance()
+                ->get(CategoryRepositoryInterface::class);
         parent::__construct(
             $context,
             $data
@@ -194,14 +191,12 @@ class ProductsList extends AbstractProduct implements BlockInterface, IdentityIn
             ->addColumnCountLayoutDepend('2columns-right', 4)
             ->addColumnCountLayoutDepend('3columns', 3);
 
-        $this->addData(
-            [
-                'cache_lifetime' => 86400,
-                'cache_tags' => [
-                    Product::CACHE_TAG,
-                ],
-            ]
-        );
+        $this->addData([
+            'cache_lifetime' => 86400,
+            'cache_tags' => [
+                Product::CACHE_TAG,
+            ],
+        ]);
     }
 
     /**
@@ -223,6 +218,7 @@ class ProductsList extends AbstractProduct implements BlockInterface, IdentityIn
             $this->_storeManager->getStore()->getId(),
             $this->_design->getDesignTheme()->getId(),
             $this->httpContext->getValue(\Magento\Customer\Model\Context::CONTEXT_GROUP),
+            $this->json->serialize($this->httpContext->getValue('tax_rates')),
             (int)$this->getRequest()->getParam($this->getData('page_var_name'), 1),
             $this->getProductsPerPage(),
             $this->getProductsCount(),
@@ -337,9 +333,13 @@ class ProductsList extends AbstractProduct implements BlockInterface, IdentityIn
 
         $collection->setVisibility($this->catalogProductVisibility->getVisibleInCatalogIds());
 
+        /**
+         * Change sorting attribute to entity_id because created_at can be the same for products fastly created
+         * one by one and sorting by created_at is indeterministic in this case.
+         */
         $collection = $this->_addProductAttributesAndPrices($collection)
             ->addStoreFilter()
-            ->addAttributeToSort('created_at', 'desc')
+            ->addAttributeToSort('entity_id', 'desc')
             ->setPageSize($this->getPageSize())
             ->setCurPage($this->getRequest()->getParam($this->getData('page_var_name'), 1));
 
@@ -510,10 +510,11 @@ class ProductsList extends AbstractProduct implements BlockInterface, IdentityIn
         if ($this->getProductCollection()) {
             foreach ($this->getProductCollection() as $product) {
                 if ($product instanceof IdentityInterface) {
-                    $identities += $product->getIdentities();
+                    $identities[] = $product->getIdentities();
                 }
             }
         }
+        $identities = array_merge([], ...$identities);
 
         return $identities ?: [Product::CACHE_TAG];
     }
@@ -532,7 +533,8 @@ class ProductsList extends AbstractProduct implements BlockInterface, IdentityIn
      * Get currency of product
      *
      * @return PriceCurrencyInterface
-     * @deprecated 100.2.0
+     * @deprecated
+     * @see Constructor injection
      */
     private function getPriceCurrency()
     {

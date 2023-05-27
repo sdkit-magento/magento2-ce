@@ -3,18 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Magento\Framework\Filter\Test\Unit;
 
+use Magento\Framework\DataObject;
+use Magento\Framework\Filter\Template;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Store\Model\Store;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Template Filter test.
  */
-class TemplateTest extends \PHPUnit\Framework\TestCase
+class TemplateTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Filter\Template
+     * @var Template
      */
     private $templateFilter;
 
@@ -23,11 +28,43 @@ class TemplateTest extends \PHPUnit\Framework\TestCase
      */
     private $store;
 
+    /**
+     * @var \Magento\Framework\Filter\Template\SignatureProvider|\PHPUnit\Framework\MockObject\MockObject
+     */
+    protected $signatureProvider;
+
+    /**
+     * @var \Magento\Framework\Filter\Template\FilteringDepthMeter|\PHPUnit\Framework\MockObject\MockObject
+     */
+    protected $filteringDepthMeter;
+
     protected function setUp(): void
     {
-        $objectManager = new \Magento\Framework\TestFramework\Unit\Helper\ObjectManager($this);
-        $this->templateFilter = $objectManager->getObject(\Magento\Framework\Filter\Template::class);
+        $objectManager = new ObjectManager($this);
+
         $this->store = $objectManager->getObject(Store::class);
+
+        $this->signatureProvider = $this->createPartialMock(
+            \Magento\Framework\Filter\Template\SignatureProvider::class,
+            ['get']
+        );
+
+        $this->signatureProvider->expects($this->any())
+            ->method('get')
+            ->willReturn('Z0FFbeCU2R8bsVGJuTdkXyiiZBzsaceV');
+
+        $this->filteringDepthMeter = $this->createPartialMock(
+            \Magento\Framework\Filter\Template\FilteringDepthMeter::class,
+            ['showMark']
+        );
+
+        $this->templateFilter = $objectManager->getObject(
+            \Magento\Framework\Filter\Template::class,
+            [
+                'signatureProvider' => $this->signatureProvider,
+                'filteringDepthMeter' => $this->filteringDepthMeter
+            ]
+        );
     }
 
     /**
@@ -38,6 +75,10 @@ class TemplateTest extends \PHPUnit\Framework\TestCase
     {
         $value = 'test string';
         $expectedResult = 'TEST STRING';
+
+        $this->filteringDepthMeter->expects($this->any())
+            ->method('showMark')
+            ->willReturn(1);
 
         // Build arbitrary object to pass into the addAfterFilterCallback method
         $callbackObject = $this->getMockBuilder('stdObject')
@@ -66,6 +107,10 @@ class TemplateTest extends \PHPUnit\Framework\TestCase
     {
         $value = 'test string';
         $expectedResult = 'TEST STRING';
+
+        $this->filteringDepthMeter->expects($this->any())
+            ->method('showMark')
+            ->willReturn(1);
 
         // Build arbitrary object to pass into the addAfterFilterCallback method
         $callbackObject = $this->getMockBuilder('stdObject')
@@ -122,7 +167,7 @@ TEMPLATE;
 <ul>
 {{for in order.all_visible_items}}
     <li>
-         name: , lastname: , age: 
+         name: , lastname: , age:
     </li>
 {{/for}}
 </ul>
@@ -132,14 +177,14 @@ TEMPLATE;
                 $template = <<<TEMPLATE
 <ul>
 {{for in order.all_visible_items}}
-    
+
 {{/for}}
 </ul>
 TEMPLATE;
                 $expected = <<<TEMPLATE
 <ul>
 {{for in order.all_visible_items}}
-    
+
 {{/for}}
 </ul>
 TEMPLATE;
@@ -148,14 +193,14 @@ TEMPLATE;
                 $template = <<<TEMPLATE
 <ul>
 {{for in }}
-    
+
 {{/for}}
 </ul>
 TEMPLATE;
                 $expected = <<<TEMPLATE
 <ul>
 {{for in }}
-    
+
 {{/for}}
 </ul>
 TEMPLATE;
@@ -173,17 +218,17 @@ TEMPLATE;
 TEMPLATE;
                 $expected = <<<TEMPLATE
 <ul>
-    
+
     <li>
         index: 0 sku: ABC123
         name: Product ABC price: 123 quantity: 2
     </li>
-    
+
     <li>
         index: 1 sku: DOREMI
         name: Product DOREMI price: 456 quantity: 1
     </li>
-    
+
 </ul>
 TEMPLATE;
         }
@@ -195,8 +240,8 @@ TEMPLATE;
      */
     private function getObjectData()
     {
-        $objectManager = new \Magento\Framework\TestFramework\Unit\Helper\ObjectManager($this);
-        $dataObject = $objectManager->getObject(\Magento\Framework\DataObject::class);
+        $objectManager = new ObjectManager($this);
+        $dataObject = $objectManager->getObject(DataObject::class);
 
         /* $var @dataObject \Magento\Framework\DataObject */
 

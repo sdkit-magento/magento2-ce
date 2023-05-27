@@ -8,15 +8,21 @@ declare(strict_types=1);
 namespace Magento\InventoryCatalog\Test\Integration;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Test\Fixture\Product;
 use Magento\CatalogInventory\Api\StockStatusCriteriaInterface;
 use Magento\CatalogInventory\Api\StockStatusCriteriaInterfaceFactory;
 use Magento\CatalogInventory\Api\StockStatusRepositoryInterface;
+use Magento\CatalogInventory\Model\Stock;
 use Magento\CatalogInventory\Model\Stock\Status;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\InventoryApi\Api\Data\SourceItemInterface;
 use Magento\InventoryApi\Api\SourceItemRepositoryInterface;
 use Magento\InventoryApi\Api\SourceItemsSaveInterface;
 use Magento\InventoryCatalogApi\Api\DefaultSourceProviderInterface;
+use Magento\InventoryIndexer\Model\IsProductSalable;
+use Magento\TestFramework\Fixture\DataFixture;
+use Magento\TestFramework\Fixture\DataFixtureStorage;
+use Magento\TestFramework\Fixture\DataFixtureStorageManager;
 use PHPUnit\Framework\TestCase;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\Indexer\IndexerRegistry;
@@ -69,6 +75,16 @@ class SetDataToLegacyStockStatusAtSourceItemsSaveTest extends TestCase
     private $indexerRegistry;
 
     /**
+     * @var DataFixtureStorage
+     */
+    private $fixtures;
+
+    /**
+     * @var IsProductSalable
+     */
+    private $isProductSalable;
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -88,15 +104,17 @@ class SetDataToLegacyStockStatusAtSourceItemsSaveTest extends TestCase
 
         $this->indexerRegistry = Bootstrap::getObjectManager()
             ->get(IndexerRegistry::class);
+        $this->fixtures = DataFixtureStorageManager::getStorage();
+        $this->isProductSalable = Bootstrap::getObjectManager()->get(IsProductSalable::class);
     }
 
     /**
      * Tests that legacy stock status data will updates with legacy source item data while the indexer is "On Update".
      *
      * @return void
-     * @magentoDataFixture ../../../../app/code/Magento/InventoryApi/Test/_files/products.php
-     * @magentoDataFixture ../../../../app/code/Magento/InventoryCatalog/Test/_files/source_items_on_default_source.php
-     * @magentoDataFixture ../../../../app/code/Magento/InventoryIndexer/Test/_files/reindex_inventory.php
+     * @magentoDataFixture Magento_InventoryApi::Test/_files/products.php
+     * @magentoDataFixture Magento_InventoryCatalog::Test/_files/source_items_on_default_source.php
+     * @magentoDataFixture Magento_InventoryIndexer::Test/_files/reindex_inventory.php
      */
     public function testSetDataIndexedOnUpdate(): void
     {
@@ -142,9 +160,9 @@ class SetDataToLegacyStockStatusAtSourceItemsSaveTest extends TestCase
      *
      * @return void
      * @magentoDbIsolation disabled
-     * @magentoDataFixture ../../../../app/code/Magento/InventoryApi/Test/_files/products.php
-     * @magentoDataFixture ../../../../app/code/Magento/InventoryCatalog/Test/_files/source_items_on_default_source.php
-     * @magentoDataFixture ../../../../app/code/Magento/InventoryIndexer/Test/_files/reindex_inventory.php
+     * @magentoDataFixture Magento_InventoryApi::Test/_files/products.php
+     * @magentoDataFixture Magento_InventoryCatalog::Test/_files/source_items_on_default_source.php
+     * @magentoDataFixture Magento_InventoryIndexer::Test/_files/reindex_inventory.php
      **/
     public function testSetDataWithoutIndexing(): void
     {
@@ -154,5 +172,14 @@ class SetDataToLegacyStockStatusAtSourceItemsSaveTest extends TestCase
         $this->testSetDataIndexedOnUpdate();
 
         $indexer->setScheduled(false);
+    }
+
+    #[
+        DataFixture(Product::class, ['stock_item' => ['qty' => 0]], 'product')
+    ]
+    public function testProductWithQtyZeroShouldBeOutOfStock(): void
+    {
+        $product = $this->fixtures->get('product');
+        $this->assertFalse($this->isProductSalable->execute($product->getSku(), Stock::DEFAULT_STOCK_ID));
     }
 }

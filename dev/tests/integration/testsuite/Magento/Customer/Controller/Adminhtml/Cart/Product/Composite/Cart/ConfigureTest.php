@@ -30,7 +30,7 @@ class ConfigureTest extends AbstractBackendController
     private $json;
 
     /** @inheritdoc */
-    protected function setUp(): void
+    public function setUp(): void
     {
         parent::setUp();
         $this->quoteItemCollectionFactory = $this->_objectManager->get(CollectionFactory::class);

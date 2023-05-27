@@ -3,6 +3,8 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+declare(strict_types=1);
+
 namespace Magento\Variable\Test\Unit\Model;
 
 use Magento\Framework\Escaper;
@@ -12,9 +14,8 @@ use Magento\Variable\Model\ResourceModel\Variable;
 use Magento\Variable\Model\ResourceModel\Variable\Collection;
 use Magento\Framework\Validator\HTML\WYSIWYGValidatorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase as TestCase;
+use PHPUnit\Framework\TestCase;
 use Magento\Framework\Validation\ValidationException;
-use Throwable;
 
 class VariableTest extends TestCase
 {
@@ -29,7 +30,7 @@ class VariableTest extends TestCase
     private $escaperMock;
 
     /**
-     * @var Variable|MockObject
+     * @var \Magento\Variable\Model\ResourceModel\Variable|MockObject
      */
     private $resourceMock;
 
@@ -235,7 +236,7 @@ class VariableTest extends TestCase
 
         try {
             $this->model->beforeSave();
-        } catch (Throwable $exception) {
+        } catch (\Throwable $exception) {
             $actuallyThrown = true;
         }
 
@@ -250,10 +251,10 @@ class VariableTest extends TestCase
     public function getWysiwygValidationCases(): array
     {
         return [
-                'changed-html-value-without-exception' => ['<b>Test Html</b>',true,true,false],
-                'changed-html-value-with-exception' => ['<b>Test Html</b>',true,false,true],
-                'no-changed-html-value-without-exception' => ['<b>Test Html</b>',false,false,false],
-                'no-html-value-with-exception' => ['',true,false,false]
-            ];
+            'changed-html-value-without-exception' => ['<b>Test Html</b>',true,true,false],
+            'changed-html-value-with-exception' => ['<b>Test Html</b>',true,false,true],
+            'no-changed-html-value-without-exception' => ['<b>Test Html</b>',false,false,false],
+            'no-html-value-with-exception' => ['',true,false,false]
+        ];
     }
 }

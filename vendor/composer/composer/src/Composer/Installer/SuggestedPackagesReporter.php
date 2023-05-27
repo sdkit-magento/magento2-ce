@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Composer.
@@ -14,6 +14,7 @@ namespace Composer\Installer;
 
 use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
+use Composer\Pcre\Preg;
 use Composer\Repository\InstalledRepository;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 
@@ -24,14 +25,14 @@ use Symfony\Component\Console\Formatter\OutputFormatter;
  */
 class SuggestedPackagesReporter
 {
-    const MODE_LIST = 1;
-    const MODE_BY_PACKAGE = 2;
-    const MODE_BY_SUGGESTION = 4;
+    public const MODE_LIST = 1;
+    public const MODE_BY_PACKAGE = 2;
+    public const MODE_BY_SUGGESTION = 4;
 
     /**
-     * @var array
+     * @var array<array{source: string, target: string, reason: string}>
      */
-    protected $suggestedPackages = array();
+    protected $suggestedPackages = [];
 
     /**
      * @var IOInterface
@@ -44,9 +45,9 @@ class SuggestedPackagesReporter
     }
 
     /**
-     * @return array Suggested packages with source, target and reason keys.
+     * @return array<array{source: string, target: string, reason: string}> Suggested packages with source, target and reason keys.
      */
-    public function getPackages()
+    public function getPackages(): array
     {
         return $this->suggestedPackages;
     }
@@ -60,26 +61,22 @@ class SuggestedPackagesReporter
      * @param  string                    $source Source package which made the suggestion
      * @param  string                    $target Target package to be suggested
      * @param  string                    $reason Reason the target package to be suggested
-     * @return SuggestedPackagesReporter
      */
-    public function addPackage($source, $target, $reason)
+    public function addPackage(string $source, string $target, string $reason): SuggestedPackagesReporter
     {
-        $this->suggestedPackages[] = array(
+        $this->suggestedPackages[] = [
             'source' => $source,
             'target' => $target,
             'reason' => $reason,
-        );
+        ];
 
         return $this;
     }
 
     /**
      * Add all suggestions from a package.
-     *
-     * @param  PackageInterface          $package
-     * @return SuggestedPackagesReporter
      */
-    public function addSuggestionsFromPackage(PackageInterface $package)
+    public function addSuggestionsFromPackage(PackageInterface $package): SuggestedPackagesReporter
     {
         $source = $package->getPrettyName();
         foreach ($package->getSuggests() as $target => $reason) {
@@ -98,17 +95,16 @@ class SuggestedPackagesReporter
      *
      * Do not list the ones already installed if installed repository provided.
      *
-     * @param  int                       $mode             One of the MODE_* constants from this class
-     * @param  InstalledRepository|null  $installedRepo    If passed in, suggested packages which are installed already will be skipped
-     * @param  PackageInterface|null     $onlyDependentsOf If passed in, only the suggestions from direct dependents of that package, or from the package itself, will be shown
-     * @return SuggestedPackagesReporter
+     * @param  int                      $mode             One of the MODE_* constants from this class
+     * @param  InstalledRepository|null $installedRepo    If passed in, suggested packages which are installed already will be skipped
+     * @param  PackageInterface|null    $onlyDependentsOf If passed in, only the suggestions from direct dependents of that package, or from the package itself, will be shown
      */
-    public function output($mode, InstalledRepository $installedRepo = null, PackageInterface $onlyDependentsOf = null)
+    public function output(int $mode, ?InstalledRepository $installedRepo = null, ?PackageInterface $onlyDependentsOf = null): void
     {
         $suggestedPackages = $this->getFilteredSuggestions($installedRepo, $onlyDependentsOf);
 
-        $suggesters = array();
-        $suggested = array();
+        $suggesters = [];
+        $suggested = [];
         foreach ($suggestedPackages as $suggestion) {
             $suggesters[$suggestion['source']][$suggestion['target']] = $suggestion['reason'];
             $suggested[$suggestion['target']][$suggestion['source']] = $suggestion['reason'];
@@ -122,7 +118,7 @@ class SuggestedPackagesReporter
                 $this->io->write(sprintf('<info>%s</info>', $name));
             }
 
-            return 0;
+            return;
         }
 
         // Grouped by package
@@ -160,36 +156,31 @@ class SuggestedPackagesReporter
                 $this->io->write('<info>'.$diff.' additional suggestions</info> by transitive dependencies can be shown with <info>--all</info>');
             }
         }
-
-        return $this;
     }
 
     /**
      * Output number of new suggested packages and a hint to use suggest command.
      *
-     * @param  InstalledRepository|null  $installedRepo    If passed in, suggested packages which are installed already will be skipped
-     * @param  PackageInterface|null     $onlyDependentsOf If passed in, only the suggestions from direct dependents of that package, or from the package itself, will be shown
-     * @return SuggestedPackagesReporter
+     * @param  InstalledRepository|null $installedRepo    If passed in, suggested packages which are installed already will be skipped
+     * @param  PackageInterface|null    $onlyDependentsOf If passed in, only the suggestions from direct dependents of that package, or from the package itself, will be shown
      */
-    public function outputMinimalistic(InstalledRepository $installedRepo = null, PackageInterface $onlyDependentsOf = null)
+    public function outputMinimalistic(?InstalledRepository $installedRepo = null, ?PackageInterface $onlyDependentsOf = null): void
     {
         $suggestedPackages = $this->getFilteredSuggestions($installedRepo, $onlyDependentsOf);
         if ($suggestedPackages) {
             $this->io->writeError('<info>'.count($suggestedPackages).' package suggestions were added by new dependencies, use `composer suggest` to see details.</info>');
         }
-
-        return $this;
     }
 
     /**
      * @param  InstalledRepository|null $installedRepo    If passed in, suggested packages which are installed already will be skipped
      * @param  PackageInterface|null    $onlyDependentsOf If passed in, only the suggestions from direct dependents of that package, or from the package itself, will be shown
-     * @return array[]
+     * @return mixed[]
      */
-    private function getFilteredSuggestions(InstalledRepository $installedRepo = null, PackageInterface $onlyDependentsOf = null)
+    private function getFilteredSuggestions(?InstalledRepository $installedRepo = null, ?PackageInterface $onlyDependentsOf = null): array
     {
         $suggestedPackages = $this->getPackages();
-        $installedNames = array();
+        $installedNames = [];
         if (null !== $installedRepo && !empty($suggestedPackages)) {
             foreach ($installedRepo->getPackages() as $package) {
                 $installedNames = array_merge(
@@ -199,15 +190,15 @@ class SuggestedPackagesReporter
             }
         }
 
-        $sourceFilter = array();
+        $sourceFilter = [];
         if ($onlyDependentsOf) {
-            $sourceFilter = array_map(function ($link) {
+            $sourceFilter = array_map(static function ($link): string {
                 return $link->getTarget();
             }, array_merge($onlyDependentsOf->getRequires(), $onlyDependentsOf->getDevRequires()));
             $sourceFilter[] = $onlyDependentsOf->getName();
         }
 
-        $suggestions = array();
+        $suggestions = [];
         foreach ($suggestedPackages as $suggestion) {
             if (in_array($suggestion['target'], $installedNames) || ($sourceFilter && !in_array($suggestion['source'], $sourceFilter))) {
                 continue;
@@ -219,24 +210,16 @@ class SuggestedPackagesReporter
         return $suggestions;
     }
 
-    /**
-     * @param  string $string
-     * @return string
-     */
-    private function escapeOutput($string)
+    private function escapeOutput(string $string): string
     {
         return OutputFormatter::escape(
             $this->removeControlCharacters($string)
         );
     }
 
-    /**
-     * @param  string $string
-     * @return string
-     */
-    private function removeControlCharacters($string)
+    private function removeControlCharacters(string $string): string
     {
-        return preg_replace(
+        return Preg::replace(
             '/[[:cntrl:]]/',
             '',
             str_replace("\n", ' ', $string)

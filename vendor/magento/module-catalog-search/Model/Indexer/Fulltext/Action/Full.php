@@ -7,6 +7,7 @@ namespace Magento\CatalogSearch\Model\Indexer\Fulltext\Action;
 
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\CatalogSearch\Model\Indexer\Fulltext;
+use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\ResourceConnection;
 
@@ -28,7 +29,7 @@ class Full
     /**
      * Scope identifier
      */
-    const SCOPE_FIELD_NAME = 'scope';
+    public const SCOPE_FIELD_NAME = 'scope';
 
     /**
      * Searchable attributes cache
@@ -78,21 +79,18 @@ class Full
     protected $productAttributeCollectionFactory;
 
     /**
-     * Catalog product status
      *
      * @var \Magento\Catalog\Model\Product\Attribute\Source\Status
      */
     protected $catalogProductStatus;
 
     /**
-     * Eav config
      *
      * @var \Magento\Eav\Model\Config
      */
     protected $eavConfig;
 
     /**
-     * Catalog product type
      *
      * @var \Magento\Catalog\Model\Product\Type
      * @deprecated 100.1.0 Moved to \Magento\CatalogSearch\Model\Indexer\Fulltext\Action\DataProvider
@@ -116,7 +114,6 @@ class Full
     protected $scopeConfig;
 
     /**
-     * Store manager
      *
      * @var \Magento\Store\Model\StoreManagerInterface
      * @deprecated 100.1.0 Moved to \Magento\CatalogSearch\Model\Indexer\Fulltext\Action\DataProvider
@@ -125,7 +122,7 @@ class Full
     protected $storeManager;
 
     /**
-     * @var \Magento\CatalogSearch\Model\ResourceModel\Engine
+     * @var \Magento\CatalogSearch\Model\ResourceModel\EngineInterface
      */
     protected $engine;
 
@@ -182,13 +179,6 @@ class Full
     protected $connection;
 
     /**
-     * @var \Magento\CatalogSearch\Model\Indexer\Fulltext\Action\IndexIteratorFactory
-     * @deprecated 100.1.0 DataProvider used directly without IndexIterator
-     * @see self::$dataProvider
-     */
-    private $iteratorFactory;
-
-    /**
      * @var \Magento\Framework\EntityManager\MetadataPool
      */
     private $metadataPool;
@@ -206,6 +196,19 @@ class Full
     private $batchSize;
 
     /**
+     * @var DeploymentConfig|null
+     */
+    private $deploymentConfig;
+
+    /**
+     * Deployment config path
+     *
+     * @var string
+     */
+    private const DEPLOYMENT_CONFIG_INDEXER_BATCHES = 'indexer/batch_size/';
+
+    /**
+     * Full constructor.
      * @param ResourceConnection $resource
      * @param \Magento\Catalog\Model\Product\Type $catalogProductType
      * @param \Magento\Eav\Model\Config $eavConfig
@@ -223,11 +226,14 @@ class Full
      * @param \Magento\CatalogSearch\Model\ResourceModel\Fulltext $fulltextResource
      * @param \Magento\Framework\Search\Request\DimensionFactory $dimensionFactory
      * @param \Magento\Framework\Indexer\ConfigInterface $indexerConfig
-     * @param \Magento\CatalogSearch\Model\Indexer\Fulltext\Action\IndexIteratorFactory $indexIteratorFactory
+     * @param mixed $indexIteratorFactory
      * @param \Magento\Framework\EntityManager\MetadataPool $metadataPool
-     * @param DataProvider $dataProvider
+     * @param DataProvider|null $dataProvider
      * @param int $batchSize
+     * @param DeploymentConfig|null $deploymentConfig
+     *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function __construct(
         ResourceConnection $resource,
@@ -247,10 +253,11 @@ class Full
         \Magento\CatalogSearch\Model\ResourceModel\Fulltext $fulltextResource,
         \Magento\Framework\Search\Request\DimensionFactory $dimensionFactory,
         \Magento\Framework\Indexer\ConfigInterface $indexerConfig,
-        \Magento\CatalogSearch\Model\Indexer\Fulltext\Action\IndexIteratorFactory $indexIteratorFactory,
+        $indexIteratorFactory = null,
         \Magento\Framework\EntityManager\MetadataPool $metadataPool = null,
         DataProvider $dataProvider = null,
-        $batchSize = 500
+        $batchSize = 1000,
+        ?DeploymentConfig $deploymentConfig = null
     ) {
         $this->resource = $resource;
         $this->connection = $resource->getConnection();
@@ -270,11 +277,11 @@ class Full
         $this->localeDate = $localeDate;
         $this->fulltextResource = $fulltextResource;
         $this->dimensionFactory = $dimensionFactory;
-        $this->iteratorFactory = $indexIteratorFactory;
         $this->metadataPool = $metadataPool ?: ObjectManager::getInstance()
             ->get(\Magento\Framework\EntityManager\MetadataPool::class);
         $this->dataProvider = $dataProvider ?: ObjectManager::getInstance()->get(DataProvider::class);
         $this->batchSize = $batchSize;
+        $this->deploymentConfig = $deploymentConfig ?: ObjectManager::getInstance()->get(DeploymentConfig::class);
     }
 
     /**
@@ -324,7 +331,7 @@ class Full
             ->select()
             ->from(['relation' => $this->getTable('catalog_product_relation')], [])
             ->distinct(true)
-            ->where('child_id IN (?)', $entityIds)
+            ->where('child_id IN (?)', $entityIds, \Zend_Db::INT_TYPE)
             ->join(
                 ['cpe' => $this->getTable('catalog_product_entity')],
                 'relation.parent_id = cpe.' . $linkField,
@@ -367,6 +374,9 @@ class Full
         ];
 
         $lastProductId = 0;
+        $this->batchSize = $this->deploymentConfig->get(
+            self::DEPLOYMENT_CONFIG_INDEXER_BATCHES . Fulltext::INDEXER_ID . '/mysql_get'
+        ) ?? $this->batchSize;
         $products = $this->dataProvider
             ->getSearchableProducts($storeId, $staticFields, $productIds, $lastProductId, $this->batchSize);
         while (count($products) > 0) {
