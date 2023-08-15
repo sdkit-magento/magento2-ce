@@ -16,7 +16,6 @@ return array(
     'Vertex\\AddressValidation\\' => array($vendorDir . '/vertexinc/module-address-validation'),
     'Vertex\\AddressValidationApi\\' => array($vendorDir . '/vertexinc/module-address-validation-api'),
     'Vertex\\' => array($vendorDir . '/vertexinc/sdk/src'),
-    'TrueBV\\' => array($vendorDir . '/true/punycode/src'),
     'Temando\\ShippingRemover\\' => array($vendorDir . '/temando/module-shipping-remover'),
     'Symfony\\Polyfill\\Php80\\' => array($vendorDir . '/symfony/polyfill-php80'),
     'Symfony\\Polyfill\\Php73\\' => array($vendorDir . '/symfony/polyfill-php73'),

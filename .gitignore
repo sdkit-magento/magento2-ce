@@ -68,3 +68,7 @@ atlassian*
 /generated/*
 !/generated/.htaccess
 .DS_Store
+samples
+magento2-sample-data
+app/code/Sdkit
+app/design/frontend/Sdkit
